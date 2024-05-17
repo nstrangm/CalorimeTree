@@ -32,7 +32,7 @@
 #include <vector>
 #include <time.h>
 #include "TDatabasePDG.h"
-#include "Logging.h"
+#include "../Analysis/Logging.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++ Plotting ++++++++++++++++++++++++++++++++++
@@ -65,6 +65,9 @@ class Plotting
   //  Set the relative empty space between hist and the edges aswell as the canvas dimensions in pixels
   void SetMargins(double low = 0.12, double left = 0.1, double up = 0.025, double right = 0.025, int cw = 2000, int ch = 1500, double s = 1. / 3.);
   //   void SetMargins(double low = 0.1, double left = 0.1, double up = 0.02, double right = 0.02, int cw = 800, int ch = 600, double s = 1. / 3.);
+
+  void AddEMCalOutline();
+  void AddPHOSOutline();
 
   std::vector<TObject*> AdditionalPlottingObjects; // Manually added plotting objects (Additional legends or so)
 
@@ -289,6 +292,37 @@ void Plotting::NewLine(double x1, double y1, double x2, double y2, int style, in
   DrawOption.push_back("l");
 }
 
+void Plotting::AddEMCalOutline()
+{
+  int lineWidth = 1;
+  int lineColor = kGray+2;
+  int lineStyle = 1;
+  NewLine(-0.7, 1.4, -0.7, 3.26, lineStyle, lineWidth, lineColor);
+  NewLine(-0.7, 1.4, +0.7, 1.4, lineStyle, lineWidth, lineColor);
+  NewLine(+0.7, 1.4, +0.7, 3.26, lineStyle, lineWidth, lineColor);
+  NewLine(-0.7, 3.26, +0.7, 3.26, lineStyle, lineWidth, lineColor);
+
+  NewLine(-0.7, 5.7, +0.7, 5.7, lineStyle, lineWidth, lineColor); // rechts
+  NewLine(+0.7, 4.54, +0.7, 5.7, lineStyle, lineWidth, lineColor); // oben
+  NewLine(-0.7, 4.54, -0.7, 5.7, lineStyle, lineWidth, lineColor); // unten
+  NewLine(+0.23, 4.54, +0.23, 5.58, lineStyle, lineWidth, lineColor); // "oben"
+  NewLine(-0.23, 4.54, -0.23, 5.58, lineStyle, lineWidth, lineColor); // "unten"
+  NewLine(-0.23, 5.58, +0.23, 5.58, lineStyle, lineWidth, lineColor); // "links"
+  NewLine(-0.7, 4.54, -0.23, 4.54, lineStyle, lineWidth, lineColor); // links oben
+  NewLine(0.7, 4.54, +0.23, 4.54, lineStyle, lineWidth, lineColor); // links unten
+}
+
+void Plotting::AddPHOSOutline()
+{
+  int lineWidth = 1;
+  int lineColor = kGray+2;
+  int lineStyle = 2;
+
+  NewLine(-0.12, 4.36, +0.12, 4.36, lineStyle, lineWidth, lineColor); // links
+  NewLine(-0.12, 4.36, -0.12, 5.58, lineStyle, lineWidth, lineColor); // links
+  NewLine(+0.12, 4.36, +0.12, 5.58, lineStyle, lineWidth, lineColor); // links
+}
+
 TString Plotting::LegendDrawOption(TString UserDrawOpt)
 {
   TString LegendDrawOpt = "p"; //  If user gives no DrawOption use p as standard
@@ -315,7 +349,8 @@ template <typename T>
 void Plotting::SetStyle(T x, int style, double size, int color, TString opt, int Counter)
 {
   x->SetMarkerStyle((style == -1) ? AutoStyle[Counter] : style);
-  x->SetLineStyle((opt.EndsWith("2") && !opt.EndsWith("E2")) ? 2 : ((opt.Contains("h") || opt.Contains("l") || opt.Contains("E2")) && style < 10 && style > 0) ? style : (style == -1 && (opt.Contains("h") || opt.Contains("l") || opt.Contains("E2")) ? AutoStyleLine[Counter] : 1));
+  x->SetLineStyle((opt.EndsWith("2") && !opt.EndsWith("E2")) ? 2 : ((opt.Contains("h") || opt.Contains("l") || opt.Contains("E2")) && style < 10 && style > 0) ? style
+                                                                                                                                                               : (style == -1 && (opt.Contains("h") || opt.Contains("l") || opt.Contains("E2")) ? AutoStyleLine[Counter] : 1));
   if (opt.Contains("f"))
     x->SetFillColorAlpha((color == -1) ? AutoColor[Counter] : color, 0.7);
   x->SetMarkerColor((color == -1) ? AutoColor[Counter] : color);
@@ -1526,7 +1561,7 @@ void PrintProgress(int i, int N, int Steps = 100)
   if (((double)i) / ((double)N) * Steps > Progress) {
 
     cout.flush();
-    cout << "[" << Progress * 100 / Steps << "%]"
+    cout << " [" << Progress * 100 / Steps << "%]"
          << "[";
     int pos = barWidth * (((double)Progress) / Steps);
     for (int i = 0; i < barWidth; ++i) {
