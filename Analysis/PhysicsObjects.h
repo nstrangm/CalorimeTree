@@ -149,8 +149,8 @@ class IsoGamma : public PhysicsObject
 
 bool IsoGamma::isSignal()
 {
-  if (CheckTagBit(MCTag, kPhoton)) {
-    if (CheckTagBit(MCTag, kPrompt) || CheckTagBit(MCTag, kFragmentation))
+  if (CheckTagBit(MCTag, kMCPhoton)) {
+    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
       return true;
   }
   return false;

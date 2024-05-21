@@ -44,7 +44,7 @@ double TitleSizeScaling = 1.2;
 
 class Plotting
 {
- public:
+public:
   Plotting(); // Empty constructor
 
   ~Plotting(); // Empty destructor
@@ -69,18 +69,18 @@ class Plotting
   void AddEMCalOutline();
   void AddPHOSOutline();
 
-  std::vector<TObject*> AdditionalPlottingObjects; // Manually added plotting objects (Additional legends or so)
+  std::vector<TObject *> AdditionalPlottingObjects; // Manually added plotting objects (Additional legends or so)
 
- protected:
-  TCanvas* Canvas = nullptr; //  The canvas that all classes plot on
+protected:
+  TCanvas *Canvas = nullptr; //  The canvas that all classes plot on
 
-  TH2D* hDummy = nullptr; //  Empty histogram with the correct axis ranges and labels plotted first
+  TH2D *hDummy = nullptr; //  Empty histogram with the correct axis ranges and labels plotted first
 
   TLegend *leg = nullptr, *leg2 = nullptr;
 
   //  Vectors of elements that are added by New... functions and are drawn in the Plot() functions
 
-  std::vector<TObject*> PlottingObjects;
+  std::vector<TObject *> PlottingObjects;
 
   std::vector<TString> DrawOption;  //  A histogram is plotted using the corresponding DrawOption ("p","h",..)
   std::vector<TString> LegendLabel; //  Strings corresponding to histograms are added to legend
@@ -193,7 +193,8 @@ void Plotting::InitializeLegend()
     leg->SetFillStyle(0);
 
   bool bLegendTable = false;
-  for (int iLegEntry = 0; iLegEntry < (int)LegendLabel.size(); iLegEntry++) {
+  for (int iLegEntry = 0; iLegEntry < (int)LegendLabel.size(); iLegEntry++)
+  {
     if (LegendLabel.at(iLegEntry).BeginsWith("42") && !Leg2ManSet)
       bLegendTable = true;
   }
@@ -218,14 +219,19 @@ void Plotting::AutoSetAxisRanges(bool logy)
 {
   double Range[3][2] = {{1E12, -1E12}, {1E12, -1E12}, {1E12, -1E12}}; // Set the minima large enough and the maxima low enough, so that they will be overwritten in the first iteration of the following object loop
 
-  for (int io = 0; io < (int)PlottingObjects.size(); io++) {
+  for (int io = 0; io < (int)PlottingObjects.size(); io++)
+  {
     TString ClassName = (TString)PlottingObjects.at(io)->ClassName();
-    TH1F* h = nullptr;
-    if (ClassName.Contains("TH1")) {
-      h = (TH1F*)PlottingObjects.at(io);
-    } else if (ClassName.Contains("TGraph")) {
-      h = ((TGraph*)PlottingObjects.at(io))->GetHistogram();
-    } else
+    TH1F *h = nullptr;
+    if (ClassName.Contains("TH1"))
+    {
+      h = (TH1F *)PlottingObjects.at(io);
+    }
+    else if (ClassName.Contains("TGraph"))
+    {
+      h = ((TGraph *)PlottingObjects.at(io))->GetHistogram();
+    }
+    else
       continue;
     Range[0][0] = h->GetBinLowEdge(1) < Range[0][0] ? h->GetBinLowEdge(1) : Range[0][0];
     Range[0][1] = h->GetBinLowEdge(h->GetNbinsX()) + h->GetBinWidth(h->GetNbinsX()) > Range[0][1] ? h->GetBinLowEdge(h->GetNbinsX()) + h->GetBinWidth(h->GetNbinsX()) : Range[0][1];
@@ -236,8 +242,10 @@ void Plotting::AutoSetAxisRanges(bool logy)
   Range[1][1] = logy ? 2 * Range[1][1] : Range[1][1] + (Range[1][1] - Range[1][0]) / 10;                                                                                    //  With log scales a factor 2 isn't too much
   Range[1][0] = logy ? 0.5 * Range[1][0] : (Range[1][1] - 2 * Range[1][0] > 0 ? (Range[1][0] > 0 ? 0 : 1.1 * Range[1][0]) : Range[1][0] - (Range[1][1] - Range[1][0]) / 8); //  max-2*min>0 ? min is small->go down to 0 : all bins rather full
 
-  for (int iA = 0; iA < 2; iA++) {
-    for (int iE = 0; iE < 2; iE++) {
+  for (int iA = 0; iA < 2; iA++)
+  {
+    for (int iE = 0; iE < 2; iE++)
+    {
       if (AxisRange[iA][iE] > 41.99 && AxisRange[iA][iE] < 42.01)
         AxisRange[iA][iE] = Range[iA][iE];
     }
@@ -249,15 +257,17 @@ void Plotting::AutoSetAxisRanges(bool logy)
 void Plotting::NewLatex(const double PositX, const double PositY, TString text, const double TextSize, const double dDist, const int font, const int color, const int angle)
 {
   std::vector<TString> LatStr;             //  Each element corresponds to a line of the printed latex string
-  TObjArray* textStr = text.Tokenize(";"); //  The semicolon seperates the string into different lines
-  for (int i = 0; i < textStr->GetEntries(); i++) {
-    TObjString* tempObj = (TObjString*)textStr->At(i);
+  TObjArray *textStr = text.Tokenize(";"); //  The semicolon seperates the string into different lines
+  for (int i = 0; i < textStr->GetEntries(); i++)
+  {
+    TObjString *tempObj = (TObjString *)textStr->At(i);
     LatStr.push_back(tempObj->GetString());
   }
 
   //  Loop thru the latex lines and set the formatting
-  for (int i = 0; i < (int)LatStr.size(); ++i) {
-    TLatex* latex = new TLatex(PositX, PositY - i * dDist, LatStr[i]);
+  for (int i = 0; i < (int)LatStr.size(); ++i)
+  {
+    TLatex *latex = new TLatex(PositX, PositY - i * dDist, LatStr[i]);
     latex->SetNDC();
     latex->SetTextFont(font);
     latex->SetTextColor(color);
@@ -275,14 +285,17 @@ void Plotting::NewLine(double x1, double y1, double x2, double y2, int style, in
 {
 
   //  Curly lines can be used to draw photons or similar
-  if (style < 0) {
-    TCurlyLine* line = new TCurlyLine(x1, y1, x2, y2);
+  if (style < 0)
+  {
+    TCurlyLine *line = new TCurlyLine(x1, y1, x2, y2);
     line->SetLineColor(color);
     line->SetLineWidth(size);
     line->SetWaveLength(-0.02 * style); //  Standard wavelength is 0.02 -> Style -1
     PlottingObjects.push_back(line);
-  } else {
-    TLine* line = new TLine(x1, y1, x2, y2);
+  }
+  else
+  {
+    TLine *line = new TLine(x1, y1, x2, y2);
     line->SetLineColor(color);
     line->SetLineStyle(style);
     line->SetLineWidth(size);
@@ -295,27 +308,27 @@ void Plotting::NewLine(double x1, double y1, double x2, double y2, int style, in
 void Plotting::AddEMCalOutline()
 {
   int lineWidth = 1;
-  int lineColor = kGray+2;
+  int lineColor = kGray + 2;
   int lineStyle = 1;
   NewLine(-0.7, 1.4, -0.7, 3.26, lineStyle, lineWidth, lineColor);
   NewLine(-0.7, 1.4, +0.7, 1.4, lineStyle, lineWidth, lineColor);
   NewLine(+0.7, 1.4, +0.7, 3.26, lineStyle, lineWidth, lineColor);
   NewLine(-0.7, 3.26, +0.7, 3.26, lineStyle, lineWidth, lineColor);
 
-  NewLine(-0.7, 5.7, +0.7, 5.7, lineStyle, lineWidth, lineColor); // rechts
-  NewLine(+0.7, 4.54, +0.7, 5.7, lineStyle, lineWidth, lineColor); // oben
-  NewLine(-0.7, 4.54, -0.7, 5.7, lineStyle, lineWidth, lineColor); // unten
+  NewLine(-0.7, 5.7, +0.7, 5.7, lineStyle, lineWidth, lineColor);     // rechts
+  NewLine(+0.7, 4.54, +0.7, 5.7, lineStyle, lineWidth, lineColor);    // oben
+  NewLine(-0.7, 4.54, -0.7, 5.7, lineStyle, lineWidth, lineColor);    // unten
   NewLine(+0.23, 4.54, +0.23, 5.58, lineStyle, lineWidth, lineColor); // "oben"
   NewLine(-0.23, 4.54, -0.23, 5.58, lineStyle, lineWidth, lineColor); // "unten"
   NewLine(-0.23, 5.58, +0.23, 5.58, lineStyle, lineWidth, lineColor); // "links"
-  NewLine(-0.7, 4.54, -0.23, 4.54, lineStyle, lineWidth, lineColor); // links oben
-  NewLine(0.7, 4.54, +0.23, 4.54, lineStyle, lineWidth, lineColor); // links unten
+  NewLine(-0.7, 4.54, -0.23, 4.54, lineStyle, lineWidth, lineColor);  // links oben
+  NewLine(0.7, 4.54, +0.23, 4.54, lineStyle, lineWidth, lineColor);   // links unten
 }
 
 void Plotting::AddPHOSOutline()
 {
   int lineWidth = 1;
-  int lineColor = kGray+2;
+  int lineColor = kGray + 2;
   int lineStyle = 2;
 
   NewLine(-0.12, 4.36, +0.12, 4.36, lineStyle, lineWidth, lineColor); // links
@@ -365,7 +378,7 @@ void Plotting::SetStyle(T x, int style, double size, int color, TString opt, int
 
 class Plotting1D : public Plotting
 {
- public:
+public:
   Plotting1D(); // This empty constructor always has to be called when plotting 1D
 
   ~Plotting1D(); // Destructor
@@ -374,16 +387,16 @@ class Plotting1D : public Plotting
   void Plot(TString name = "dummy.pdf", bool logx = false, bool logy = false, bool TransCanvas = false);
 
   //  Add a histogram to the hists vector and put all its settings into different vectors
-  void New(TH1* h = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "p", bool InSecondLegend = false);
-  void New(TF1* f = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "l", bool InSecondLegend = false);
-  void New(TGraphAsymmErrors* g = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "p", bool InSecondLegend = false);
+  void New(TH1 *h = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "p", bool InSecondLegend = false);
+  void New(TF1 *f = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "l", bool InSecondLegend = false);
+  void New(TGraphAsymmErrors *g = nullptr, TString label = "", int style = -1, double size = 2, int color = -1, TString opt = "p", bool InSecondLegend = false);
 
-  void Add(TObject* AdditionalObject);
+  void Add(TObject *AdditionalObject);
 
   //  Store the user wishes for labels and offsets in the AxisLabel and AxisLabelOffset attributes. They will later be used in InitializeAxis.
   void SetAxisLabel(TString labelx = "", TString labely = "", double offsetx = 1., double offsety = 1.25, int ndigits = 3);
 
- private:
+private:
   //  Create the canvas using the standard dimensions and margins, if they were not set by SetMargins
   void InitializeCanvas(bool logx, bool logy, bool TransCanvas);
 
@@ -411,22 +424,27 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
 
   //  Loop thru all elements of all vectors and plot them on top of the empty hDummy and add them to leg
   //----------------------------------------------------------------------------
-  for (int i = 0; i < (int)PlottingObjects.size(); ++i) {
+  for (int i = 0; i < (int)PlottingObjects.size(); ++i)
+  {
     PlottingObjects.at(i)->Draw(Form("same %s", ((TString)DrawOption.at(i)).Data()));
-    if (LegendLabel.at(i).BeginsWith("42")) {
+    if (LegendLabel.at(i).BeginsWith("42"))
+    {
       LegendLabel.at(i).Replace(0, 2, "");
       leg2->AddEntry(PlottingObjects.at(i), LegendLabel.at(i) == "" ? " " : LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i)));
-    } else if ((int)*(LegendLabel.at(i).Data()))
+    }
+    else if ((int)*(LegendLabel.at(i).Data()))
       leg->AddEntry(PlottingObjects.at(i), LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i)).Data());
   }
   //----------------------------------------------------------------------------
   //  Now that everything is drawn just add the legend and print it.
-  if (leg->GetNRows() > 1) {
+  if (leg->GetNRows() > 1)
+  {
     if (leg->GetNRows() > 10)
       leg->SetTextSize(leg->GetTextSize() / 1.5);
     leg->Draw("same");
   }
-  if (leg2->GetNRows() > 1) {
+  if (leg2->GetNRows() > 1)
+  {
     if (leg2->GetNRows() > 10)
       leg2->SetTextSize(leg2->GetTextSize() / 1.5);
     leg2->Draw("same");
@@ -439,34 +457,34 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
   delete Canvas;
 }
 
-void Plotting1D::New(TH1* h, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
+void Plotting1D::New(TH1 *h, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
 {
   if (!h)
     ERRORETURN("New was given a invalid (nullptr) TH1.");
   PlottingObjects.push_back(h);
-  SetStyle<TH1*>(h, style, size, color, opt, counter);
+  SetStyle<TH1 *>(h, style, size, color, opt, counter);
   DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabel.push_back(Form("%s%s", InSecondLegend ? "42" : "", label.Data()));
   if ((style == -1) || (color == -1))
     counter++;
 }
 
-void Plotting1D::New(TF1* f, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
+void Plotting1D::New(TF1 *f, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
 {
   if (!f)
     ERRORETURN("New was given a invalid (nullptr) TF1.");
   PlottingObjects.push_back(f);
-  SetStyle<TF1*>(f, style, size, color, opt, counter);
+  SetStyle<TF1 *>(f, style, size, color, opt, counter);
   DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabel.push_back(Form("%s%s", InSecondLegend ? "42" : "", label.Data()));
 }
 
-void Plotting1D::New(TGraphAsymmErrors* g, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
+void Plotting1D::New(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
 {
   if (!g)
     ERRORETURN("New was given a invalid (nullptr) TGraphAsymmError.");
   PlottingObjects.push_back(g);
-  SetStyle<TGraphAsymmErrors*>(g, style, size, color, opt, counter);
+  SetStyle<TGraphAsymmErrors *>(g, style, size, color, opt, counter);
   LegendLabel.push_back(Form("%s%s", InSecondLegend ? "42" : "", label.Data()));
   DrawOption.push_back(opt);
   if ((style == -1) || (color == -1))
@@ -506,7 +524,7 @@ void Plotting1D::InitializeAxis(bool logx, bool logy, bool TransCanvas)
   AutoSetAxisRanges(logy); //  If any AxisRanges are still set to 42 -> Autoset them
 
   hDummy = new TH2D("hDummy", "hDummy", 1000, AxisRange[0][0], AxisRange[0][1], 1000, AxisRange[1][0], AxisRange[1][1]);
-  TAxis* Axis[3] = {hDummy->GetXaxis(), hDummy->GetYaxis(), hDummy->GetZaxis()};
+  TAxis *Axis[3] = {hDummy->GetXaxis(), hDummy->GetYaxis(), hDummy->GetZaxis()};
   hDummy->SetTitle("");
   hDummy->SetStats(0);
   if (logx && AxisRange[0][0] > 0.05 && AxisRange[0][1] < 100)
@@ -515,13 +533,15 @@ void Plotting1D::InitializeAxis(bool logx, bool logy, bool TransCanvas)
     hDummy->SetLabelOffset(-0.005);
   hDummy->GetYaxis()->SetMaxDigits(Ndigits);
 
-  for (int iA = 0; iA < 3; iA++) {
+  for (int iA = 0; iA < 3; iA++)
+  {
     Axis[iA]->SetRangeUser(AxisRange[iA][0], AxisRange[iA][1]);
     Axis[iA]->SetTitleSize(TitleSizeScaling * StdTextSize);
     Axis[iA]->SetLabelSize(StdTextSize);
     Axis[iA]->SetLabelFont(43);
     Axis[iA]->SetTitleFont(43);
-    if (TransCanvas) {
+    if (TransCanvas)
+    {
       Axis[iA]->SetTitleColor(kWhite);
       Axis[iA]->SetLabelColor(kWhite);
     }
@@ -540,7 +560,7 @@ void Plotting1D::InitializeAxis(bool logx, bool logy, bool TransCanvas)
 
 class Plotting2D : public Plotting
 {
- public:
+public:
   Plotting2D(); // This empty constructor always has to be called when plotting 2D
 
   ~Plotting2D(); //  Destructor
@@ -549,21 +569,21 @@ class Plotting2D : public Plotting
   void Plot(TString name = "dummy.pdf", bool logx = false, bool logy = false, bool logz = false, bool TransCanvas = false, int numcontours = 100);
 
   //  The standard palette is kBird, but there are also other nice 2D plotting styles (https://root.cern.ch/doc/master/classTColor.html)
-  void New(TH2F* h = nullptr, TString opt = "COLZ", int palette = kBird);
-  void New(TH2D* h = nullptr, TString opt = "COLZ", int palette = kBird); //  Convert to TH2F and call that NewHist function
+  void New(TH2F *h = nullptr, TString opt = "COLZ", int palette = kBird);
+  void New(TH2D *h = nullptr, TString opt = "COLZ", int palette = kBird); //  Convert to TH2F and call that NewHist function
 
-  void New(TGraphAsymmErrors* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TGraphAsymmErrors *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
 
   //  Add a new function to the funcs vector that will be drawn when calling Plot()
-  void New(TF1* f = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
-  void New(TF2* f = nullptr, TString opt = "l");
+  void New(TF1 *f = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
+  void New(TF2 *f = nullptr, TString opt = "l");
   // void NewFunc(TF2* f = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
 
   void SetAxisLabel(TString labelx = "", TString labely = "", double offsetx = 1., double offsety = 1.);
 
- protected:
-  TH2F* hist = nullptr;
-  TF2* func2 = nullptr;
+protected:
+  TH2F *hist = nullptr;
+  TF2 *func2 = nullptr;
   TString DrawOptionf2 = "";
 
   void InitializeCanvas(bool logx, bool logy, bool logz, bool TransCanvas);
@@ -593,7 +613,8 @@ void Plotting2D::Plot(TString name, bool logx, bool logy, bool logz, bool TransC
 
   hist->Draw(Form("same,%s", ((TString)DrawOption.at(0)).Data()));
 
-  for (int i = 0; i < (int)PlottingObjects.size(); ++i) {
+  for (int i = 0; i < (int)PlottingObjects.size(); ++i)
+  {
     PlottingObjects.at(i)->Draw(Form("same %s", ((TString)DrawOption.at(i + 1)).Data()));
     if ((int)*(LegendLabel.at(i).Data()))
       leg->AddEntry(PlottingObjects.at(i), LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i + 1)).Data());
@@ -609,7 +630,7 @@ void Plotting2D::Plot(TString name, bool logx, bool logy, bool logz, bool TransC
   delete Canvas;
 }
 
-void Plotting2D::New(TH2F* h, TString opt, int palette)
+void Plotting2D::New(TH2F *h, TString opt, int palette)
 {
   if (!h)
     FATAL("NewHist was given a nullptr.");
@@ -618,30 +639,30 @@ void Plotting2D::New(TH2F* h, TString opt, int palette)
   DrawOption.push_back((opt == "p") ? "p" : opt);
 }
 
-void Plotting2D::New(TH2D* h, TString opt, int palette)
+void Plotting2D::New(TH2D *h, TString opt, int palette)
 {
-  TH2F* hd = (TH2F*)h;
+  TH2F *hd = (TH2F *)h;
   New(hd, opt, palette);
 }
 
-void Plotting2D::New(TGraphAsymmErrors* g, TString label, int style, double size, int color, TString opt)
+void Plotting2D::New(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt)
 {
   if (!g)
     FATAL("New was given a invalid (nullptr) TGraphAsymmError.");
   PlottingObjects.push_back(g);
-  SetStyle<TGraphAsymmErrors*>(g, style, size, color, opt, counter);
+  SetStyle<TGraphAsymmErrors *>(g, style, size, color, opt, counter);
   DrawOption.push_back((opt == "p") ? "p" : opt);
   LegendLabel.push_back(label);
   if ((style == -1) || (color == -1))
     counter++;
 }
 
-void Plotting2D::New(TF1* f, TString label, int style, double size, int color, TString opt)
+void Plotting2D::New(TF1 *f, TString label, int style, double size, int color, TString opt)
 {
   if (!f)
     FATAL("New was given a invalid (nullptr) TF1.");
   PlottingObjects.push_back(f);
-  SetStyle<TF1*>(f, style, size, color, opt, counter);
+  SetStyle<TF1 *>(f, style, size, color, opt, counter);
   LegendLabel.push_back(label);
   DrawOption.push_back(opt);
   // DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
@@ -649,7 +670,7 @@ void Plotting2D::New(TF1* f, TString label, int style, double size, int color, T
     counter++;
 }
 
-void Plotting2D::New(TF2* f, TString opt)
+void Plotting2D::New(TF2 *f, TString opt)
 {
   if (!f)
     FATAL("New was given a invalid (nullptr) TF2.");
@@ -699,20 +720,24 @@ void Plotting2D::InitializeAxis(bool logx, bool TransCanvas)
   if (logx && AxisRange[0][0] > 0.05 && AxisRange[0][1] < 100)
     hist->SetLabelOffset(-0.01);
   hist->GetYaxis()->SetMaxDigits(3);
-  TAxis* Axis[3] = {hist->GetXaxis(), hist->GetYaxis(), hist->GetZaxis()};
-  for (int iA = 0; iA < 3; iA++) {
+  TAxis *Axis[3] = {hist->GetXaxis(), hist->GetYaxis(), hist->GetZaxis()};
+  for (int iA = 0; iA < 3; iA++)
+  {
     Axis[iA]->SetTitleSize(TitleSizeScaling * StdTextSize);
     Axis[iA]->SetLabelSize(StdTextSize);
     Axis[iA]->SetLabelFont(43);
     Axis[iA]->SetTitleFont(43);
 
-    if (TransCanvas) {
+    if (TransCanvas)
+    {
       Axis[iA]->SetTitleColor(kWhite);
       Axis[iA]->SetLabelColor(kWhite);
     }
-    if (iA == 2)
+    if (iA == 2 && AxisRange[2][0] == 42)
       continue;
     Axis[iA]->SetRangeUser(AxisRange[iA][0], AxisRange[iA][1]);
+    if (iA == 2)
+      continue;
     Axis[iA]->SetTitle(AxisLabel[iA]);
     Axis[iA]->SetTitleOffset(iA == 1 ? 1.1 * AxisLabelOffset[iA] : AxisLabelOffset[iA]);
   }
@@ -726,7 +751,7 @@ void Plotting2D::InitializeAxis(bool logx, bool TransCanvas)
 
 class PlottingRatio : public Plotting
 {
- public:
+public:
   PlottingRatio(); // This empty constructor always has to be called when plotting Ratio
 
   ~PlottingRatio(); //  Destructor
@@ -734,16 +759,16 @@ class PlottingRatio : public Plotting
   void Plot(TString name = "dummy.pdf", bool logx = false, bool logy = false, bool logz = false, bool TransCanvas = false);
 
   //  Add histograms to the upper pad
-  void New(TH1* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p", bool InSecondLegend = kFALSE);
-  void New(TGraphAsymmErrors* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
-  void New(TF1* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
+  void New(TH1 *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p", bool InSecondLegend = kFALSE);
+  void New(TGraphAsymmErrors *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TF1 *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
 
   void NewRatioLine(double x1 = 2, double y1 = 1, double x2 = 20, double y2 = 1, int style = 1, int size = 1, int color = kBlack, TString label = "");
 
   //  Add histograms to the lower pad
-  void NewRatio(TH1* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
-  void NewRatio(TGraphAsymmErrors* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
-  void NewRatio(TF1* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
+  void NewRatio(TH1 *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void NewRatio(TGraphAsymmErrors *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void NewRatio(TF1 *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
 
   //  To remove the label conflict where y and ratio axis meet, add a white box there. This function can move that box (e.g. when margins are changed) or set to red to visualize the pad.
   void SetWhite(double low = 0.32, double left = 0.04, double up = 0.35, double right = 0.095, bool red = false);
@@ -754,22 +779,22 @@ class PlottingRatio : public Plotting
   //  The ratio label can be set indiviually, but its offset is set via the y axis label offset
   void SetAxisLabel(TString labelx = "", TString labely = "", TString labelz = "", double offsetx = 1., double offsety = 1., int ndigits = 3);
 
- protected:
+protected:
   //  Add the pads that are drawn on the canvas in Plot() as attributes
-  TPad* HistoPad = nullptr; //  The upper pad containing all hists added by NewHist and TopFuncs
-  TPad* RatioPad = nullptr; //  The lower pad containing all ratios added by NewRatio and BotFuncs
-  TPad* WhitePad = nullptr; //  A white filled rectangle hiding the y axis label conflict at their border
+  TPad *HistoPad = nullptr; //  The upper pad containing all hists added by NewHist and TopFuncs
+  TPad *RatioPad = nullptr; //  The lower pad containing all ratios added by NewRatio and BotFuncs
+  TPad *WhitePad = nullptr; //  A white filled rectangle hiding the y axis label conflict at their border
 
   double WhiteBorders[2][2] = {{0.05, 0.13}, {0.365, 0.39}}; //  Defines where the white pad is drawn to hide the label conflict
   bool wred = false;                                         //  Can be set to true to make WhitePad red (visible)
 
-  TH2D* rDummy = nullptr; // Dummy for the ratio histogram analogously to hdummy
-  TLegend* legR = nullptr;
+  TH2D *rDummy = nullptr; // Dummy for the ratio histogram analogously to hdummy
+  TLegend *legR = nullptr;
   bool LRhollow = false;
   double RatioLegendBorders[2][2] = {{0.7, 0.95}, {0.15, 0.25}};
 
   //  Vectors containing the functions for the upper pad as well as the functions and ratios for the lower pad
-  std::vector<TObject*> RatiObjects;
+  std::vector<TObject *> RatiObjects;
   std::vector<TString> LegendLabelR; //  Ratio
   std::vector<TString> DrawOptionR;
 
@@ -821,12 +846,15 @@ void PlottingRatio::Plot(TString name, bool logx, bool logy, bool logz, bool Tra
   //     leg->AddEntry(PlottingObjects.at(i), LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i)).Data());
   // }
 
-  for (int i = 0; i < (int)PlottingObjects.size(); ++i) {
+  for (int i = 0; i < (int)PlottingObjects.size(); ++i)
+  {
     PlottingObjects.at(i)->Draw(Form("same %s", ((TString)DrawOption.at(i)).Data()));
-    if (LegendLabel.at(i).BeginsWith("42")) {
+    if (LegendLabel.at(i).BeginsWith("42"))
+    {
       LegendLabel.at(i).Replace(0, 2, "");
       leg2->AddEntry(PlottingObjects.at(i), LegendLabel.at(i) == "" ? " " : LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i)));
-    } else if ((int)*(LegendLabel.at(i).Data()))
+    }
+    else if ((int)*(LegendLabel.at(i).Data()))
       leg->AddEntry(PlottingObjects.at(i), LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i)).Data());
   }
 
@@ -845,7 +873,8 @@ void PlottingRatio::Plot(TString name, bool logx, bool logy, bool logz, bool Tra
 
   //  Print all ratios, bot funcs and lines on the HistoPad
   //----------------------------------------------------------------------------
-  for (int i = 0; i < (int)RatiObjects.size(); ++i) {
+  for (int i = 0; i < (int)RatiObjects.size(); ++i)
+  {
     RatiObjects.at(i)->Draw(Form("same %s", ((TString)DrawOptionR.at(i)).Data()));
     if ((int)*(LegendLabelR.at(i).Data()))
       legR->AddEntry(RatiObjects.at(i), LegendLabelR.at(i).Data(), LegendDrawOption(DrawOptionR.at(i)).Data());
@@ -861,12 +890,14 @@ void PlottingRatio::Plot(TString name, bool logx, bool logy, bool logz, bool Tra
   Canvas->cd(); //  cd back to canvas in order to draw legend and Latex over entire canvas in relative coordinates
   Canvas->Update();
 
-  if (leg->GetNRows() > 1) {
+  if (leg->GetNRows() > 1)
+  {
     if (leg->GetNRows() > 10)
       leg->SetTextSize(leg->GetTextSize() / 1.5);
     leg->Draw("same");
   }
-  if (leg2->GetNRows() > 1) {
+  if (leg2->GetNRows() > 1)
+  {
     if (leg2->GetNRows() > 10)
       leg2->SetTextSize(leg2->GetTextSize() / 1.5);
     leg2->Draw("same");
@@ -880,59 +911,59 @@ void PlottingRatio::Plot(TString name, bool logx, bool logy, bool logz, bool Tra
   delete Canvas;
 }
 
-void PlottingRatio::New(TH1* h, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
+void PlottingRatio::New(TH1 *h, TString label, int style, double size, int color, TString opt, bool InSecondLegend)
 {
   if (!h)
     FATAL("New was given a invalid (nullptr) TH1.");
 
   PlottingObjects.push_back(h);
-  SetStyle<TH1*>(h, style, size, color, opt, counter);
+  SetStyle<TH1 *>(h, style, size, color, opt, counter);
   DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabel.push_back(Form("%s%s", InSecondLegend ? "42" : "", label.Data()));
   if ((style == -1) || (color == -1))
     counter++;
 }
 
-void PlottingRatio::New(TGraphAsymmErrors* g, TString label, int style, double size, int color, TString opt)
+void PlottingRatio::New(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt)
 {
   if (!g)
     FATAL("New was given a invalid (nullptr) TGraphAsymmErrors.");
 
   PlottingObjects.push_back(g);
-  SetStyle<TGraphAsymmErrors*>(g, style, size, color, opt, counter);
+  SetStyle<TGraphAsymmErrors *>(g, style, size, color, opt, counter);
   DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabel.push_back(label);
   if ((style == -1) || (color == -1))
     counter++;
 }
 
-void PlottingRatio::NewRatio(TH1* h, TString label, int style, double size, int color, TString opt)
+void PlottingRatio::NewRatio(TH1 *h, TString label, int style, double size, int color, TString opt)
 {
   if (!h)
     FATAL("NewRatio was given a nullptr.");
 
   RatiObjects.push_back(h);
-  SetStyle<TH1*>(h, style, size, color, opt, counteR);
+  SetStyle<TH1 *>(h, style, size, color, opt, counteR);
   DrawOptionR.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabelR.push_back(label);
   if ((style == -1) || (color == -1))
     counteR++;
 }
 
-void PlottingRatio::NewRatio(TGraphAsymmErrors* g, TString label, int style, double size, int color, TString opt)
+void PlottingRatio::NewRatio(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt)
 {
   if (!g)
     FATAL("NewRatio was given a nullptr.");
 
   RatiObjects.push_back(g);
-  SetStyle<TGraphAsymmErrors*>(g, style, size, color, opt, counteR);
+  SetStyle<TGraphAsymmErrors *>(g, style, size, color, opt, counteR);
   DrawOptionR.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabelR.push_back(label);
   if ((style == -1) || (color == -1))
     counteR++;
 }
 
-void PlottingRatio::New(TF1* f, TString label, int style, double size, int color, TString opt)
+void PlottingRatio::New(TF1 *f, TString label, int style, double size, int color, TString opt)
 {
   if (!f)
     FATAL("New was given a nullptr.");
@@ -940,7 +971,7 @@ void PlottingRatio::New(TF1* f, TString label, int style, double size, int color
   PlottingObjects.push_back(f);
   LegendLabel.push_back(label);
   DrawOption.push_back(opt);
-  SetStyle<TF1*>(f, style, size, color, opt, counter);
+  SetStyle<TF1 *>(f, style, size, color, opt, counter);
 
   if ((style == -1) || (color == -1))
     counter++;
@@ -948,7 +979,7 @@ void PlottingRatio::New(TF1* f, TString label, int style, double size, int color
 
 void PlottingRatio::NewRatioLine(double x1, double y1, double x2, double y2, int style, int size, int color, TString label)
 {
-  TLine* line = new TLine(x1, y1, x2, y2);
+  TLine *line = new TLine(x1, y1, x2, y2);
   LegendLabelR.push_back(label);
   line->SetLineColor(color);
   line->SetLineStyle(style);
@@ -957,14 +988,14 @@ void PlottingRatio::NewRatioLine(double x1, double y1, double x2, double y2, int
   RatiObjects.push_back(line);
 }
 
-void PlottingRatio::NewRatio(TF1* f, TString label, int style, double size, int color, TString opt)
+void PlottingRatio::NewRatio(TF1 *f, TString label, int style, double size, int color, TString opt)
 {
   if (!f)
     FATAL("NewBotFunc was given a nullptr.");
 
   RatiObjects.push_back(f);
 
-  SetStyle<TF1*>(f, style, size, color, opt, counteR);
+  SetStyle<TF1 *>(f, style, size, color, opt, counteR);
   DrawOptionR.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
   LegendLabelR.push_back(label);
 
@@ -992,14 +1023,19 @@ void PlottingRatio::InitializeAxis(bool logx, bool logy, bool TransCanvas)
 
   double Range[2] = {1E12, -1E12}; // Set the minima large enough and the maxima low enough, so that they will be overwritten in the first iteration of the following object loop
 
-  for (int io = 0; io < (int)RatiObjects.size(); io++) {
+  for (int io = 0; io < (int)RatiObjects.size(); io++)
+  {
     TString ClassName = (TString)RatiObjects.at(io)->ClassName();
-    TH1F* h = nullptr;
-    if (ClassName.Contains("TH1")) {
-      h = (TH1F*)RatiObjects.at(io);
-    } else if (ClassName.Contains("TGraph")) {
-      h = ((TGraph*)RatiObjects.at(io))->GetHistogram();
-    } else
+    TH1F *h = nullptr;
+    if (ClassName.Contains("TH1"))
+    {
+      h = (TH1F *)RatiObjects.at(io);
+    }
+    else if (ClassName.Contains("TGraph"))
+    {
+      h = ((TGraph *)RatiObjects.at(io))->GetHistogram();
+    }
+    else
       continue;
     Range[0] = (h->GetMinimum() < Range[0] && (!logy || h->GetMinimum() > 0)) ? h->GetMinimum() : Range[0];
     Range[1] = h->GetMaximum() > Range[1] ? h->GetMaximum() : Range[1];
@@ -1007,7 +1043,8 @@ void PlottingRatio::InitializeAxis(bool logx, bool logy, bool TransCanvas)
 
   Range[1] = logy ? 2 * Range[1] : Range[1] + (Range[1] - Range[0]) / 10;                                                                        //  With log scales a factor 2 isn't too much
   Range[0] = logy ? 0.5 * Range[0] : (Range[1] - 2 * Range[0] > 0 ? (Range[0] > 0 ? 0 : 1.1 * Range[0]) : Range[0] - (Range[1] - Range[0]) / 8); //  max-2*min>0 ? min is small->go down to 0 : all bins rather full
-  for (int iE = 0; iE < 2; iE++) {
+  for (int iE = 0; iE < 2; iE++)
+  {
     if (AxisRange[2][iE] > 41.99 && AxisRange[2][iE] < 42.01)
       AxisRange[2][iE] = Range[iE];
   }
@@ -1018,16 +1055,18 @@ void PlottingRatio::InitializeAxis(bool logx, bool logy, bool TransCanvas)
   if (logx && AxisRange[0][0] > 0.5 && AxisRange[0][1] < 100)
     rDummy->SetLabelOffset(-0.025);
 
-  TAxis* Axis[3] = {rDummy->GetXaxis(), hDummy->GetYaxis(), rDummy->GetYaxis()};
+  TAxis *Axis[3] = {rDummy->GetXaxis(), hDummy->GetYaxis(), rDummy->GetYaxis()};
 
-  for (int iA = 0; iA < 3; iA++) {
+  for (int iA = 0; iA < 3; iA++)
+  {
     Axis[iA]->SetRangeUser(AxisRange[iA][0], AxisRange[iA][1]);
     Axis[iA]->SetTitleSize(TitleSizeScaling * StdTextSize);
     Axis[iA]->SetLabelSize(StdTextSize);
     Axis[iA]->SetLabelFont(43);
     Axis[iA]->SetTitleFont(43);
 
-    if (TransCanvas) {
+    if (TransCanvas)
+    {
       Axis[iA]->SetTitleColor(kWhite);
       Axis[iA]->SetLabelColor(kWhite);
     }
@@ -1068,7 +1107,8 @@ void PlottingRatio::InitializeCanvas(bool logx, bool logy, bool logz, bool Trans
   HistoPad = new TPad("HistoPad", "HistoPad", 0.0, PadSplit, 1, 1);
   RatioPad = new TPad("RatioPad", "RatioPad", 0.0, 0.0, 1, PadSplit);
   WhitePad = new TPad("WhitePad", "WhitePad", WhiteBorders[0][0], WhiteBorders[1][0], WhiteBorders[0][1], WhiteBorders[1][1]);
-  if (TransCanvas) {
+  if (TransCanvas)
+  {
     Canvas->SetFillStyle(0);
     HistoPad->SetFillStyle(0);
     RatioPad->SetFillStyle(0);
@@ -1120,7 +1160,7 @@ void PlottingRatio::InitializeLegendR()
 
 class PlottingGrid : public Plotting
 {
- public:
+public:
   PlottingGrid(); // This empty constructor always has to be called when plotting Ratio
 
   ~PlottingGrid(); //  Destructor
@@ -1128,9 +1168,9 @@ class PlottingGrid : public Plotting
   void Plot(TString name = "dummy.pdf", bool logx = false, bool logy = false);
 
   //  Add histograms to the upper pad
-  void New(TH1F* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
-  void New(TH1D* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
-  void New(TGraphAsymmErrors* g = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TH1F *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TH1D *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TGraphAsymmErrors *g = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
 
   //  Adds a line to vector lines that will be drawn on canvas in function Plot(). The lines coordinates relate to the axis. When setting negative style a curly line will be drawn instead of the straight one.
   void NewLine(double x1 = 0, double y1 = 0, double x2 = 1, double y2 = 1, int style = 1, int color = kBlack, double width = 1, TString label = "");
@@ -1139,7 +1179,7 @@ class PlottingGrid : public Plotting
   void SetGridLegend(double x1 = 0.7, double x2 = 0.95, double y1 = 0.15, double y2 = 0.25);
 
   //  Add functions to the tfuncs and bfuncs vector, which are added to the top and bottom pad when drawing in Plot()
-  void NewFunc(TF1* h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
+  void NewFunc(TF1 *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "l");
 
   void NextPad(TString Title, bool bFade = false);
 
@@ -1147,7 +1187,7 @@ class PlottingGrid : public Plotting
 
   void SetAxisLabel(TString labelx = "", TString labely = "", double offsetx = 0.9, double offsety = 1.);
 
- protected:
+protected:
   int ColumnsRows[31][2] = {{1, 1}, {1, 1}, {2, 1}, {2, 2}, {2, 2}, {3, 2}, {3, 2}, {4, 2}, {4, 2}, {3, 3}, {4, 3}, {4, 3}, {4, 3}, {5, 3}, {5, 3}, {5, 3}, {5, 4}, {5, 4}, {5, 4}, {5, 4}, {5, 4}, {6, 4}, {6, 4}, {6, 4}, {6, 4}, {6, 5}, {6, 5}, {6, 5}, {6, 5}, {6, 5}, {6, 5}};
 
   int Columns = 0;
@@ -1160,12 +1200,12 @@ class PlottingGrid : public Plotting
   std::vector<TString> LegendLabelL;
 
   //  Add the pads that are drawn on the canvas in Plot() as attributes
-  std::vector<TPad*> pads;
-  std::vector<TPad*> Fadepads;
+  std::vector<TPad *> pads;
+  std::vector<TPad *> Fadepads;
 
   int PadCounter = 1;
 
-  TLegend* legR = nullptr;
+  TLegend *legR = nullptr;
   double GridLegendBorders[2][2] = {{0.7, 0.95}, {0.15, 0.25}};
 
   //  Vectors containing the functions for the upper pad as well as the functions and ratios for the lower pad
@@ -1202,14 +1242,16 @@ void PlottingGrid::NextPad(TString Title, bool bFade)
 {
   histsinpad.at(0).SetTitle(Title);
 
-  if (histsinpad.size() > 0) {
+  if (histsinpad.size() > 0)
+  {
     double max = histsinpad.at(0).GetMaximum(); //  Estimated upper y border
 
     //  For logarithmic y axis the minimum has be be larger than 0
     double min = histsinpad.at(0).GetMinimum();
 
     //  Find the smalles and largest bin in all loaded histograms (larger than 0 for logy)
-    for (int i = 0; i < (int)histsinpad.size(); i++) {
+    for (int i = 0; i < (int)histsinpad.size(); i++)
+    {
       max = histsinpad.at(i).GetMaximum() > max ? histsinpad.at(i).GetMaximum() : max;
       min = histsinpad.at(i).GetMinimum() < min ? histsinpad.at(i).GetMinimum() : min;
     }
@@ -1246,7 +1288,7 @@ void PlottingGrid::NextPad(TString Title, bool bFade)
 void PlottingGrid::NewLine(double x1, double y1, double x2, double y2, int style, int color, double width, TString label)
 {
 
-  TLine* line = new TLine(x1, y1, x2, y2);
+  TLine *line = new TLine(x1, y1, x2, y2);
   if (PadCounter == 1)
     LegendLabelL.push_back(label);
   line->SetLineColor(color);
@@ -1288,32 +1330,39 @@ void PlottingGrid::Plot(TString name, bool logx, bool logy)
   leg->SetBorderSize(0); //  Remove black rectangle around legend
   leg->SetFillStyle(0);  // Solid white background to make legend readable. Set to 0 to make it hollow
 
-  for (int iPad = 0; iPad < (int)pads.size(); ++iPad) {
+  for (int iPad = 0; iPad < (int)pads.size(); ++iPad)
+  {
 
     Canvas->cd();
     pads.at(iPad)->Draw();
     pads.at(iPad)->cd();
 
-    if (iPad == Columns - 1) {
+    if (iPad == Columns - 1)
+    {
 
       for (int i = 0; i < (int)PlottingObjects.size(); ++i)
         PlottingObjects.at(i)->Draw("same");
 
-      for (int i = 0; i < (int)hists.at(0).size(); ++i) {
-        if ((int)*(LegendLabel.at(i).Data())) {
+      for (int i = 0; i < (int)hists.at(0).size(); ++i)
+      {
+        if ((int)*(LegendLabel.at(i).Data()))
+        {
           leg->AddEntry(&hists.at(0).at(i), LegendLabel.at(i).Data(), LegendDrawOption(DrawOption.at(i))); //  Dont add anything to the legend if LegendLabel is empty
         }
       }
-      for (int i = 0; i < (int)graphs.at(0).size(); ++i) {
+      for (int i = 0; i < (int)graphs.at(0).size(); ++i)
+      {
         if ((int)*(LegendLabelG.at(i).Data()))
           leg->AddEntry(&graphs.at(0).at(i), LegendLabelG.at(i).Data(), LegendDrawOption(DrawOptionG.at(i))); //  Dont add anything to the legend if LegendLabel is empty
       }
-      for (int i = 0; i < (int)funcs.at(0).size(); ++i) {
+      for (int i = 0; i < (int)funcs.at(0).size(); ++i)
+      {
         if ((int)*(LegendLabelF.at(i).Data()))
           leg->AddEntry(&funcs.at(0).at(i), LegendLabelF.at(i).Data(), LegendDrawOption(DrawOptionF.at(i))); //  Dont add anything to the legend if LegendLabel is empty
       }
 
-      for (int i = 0; i < (int)lines.at(0).size(); ++i) {
+      for (int i = 0; i < (int)lines.at(0).size(); ++i)
+      {
         if ((int)*(LegendLabelL.at(i).Data()))
           leg->AddEntry(&lines.at(0).at(i), LegendLabelL.at(i).Data(), "l");
       }
@@ -1336,7 +1385,8 @@ void PlottingGrid::Plot(TString name, bool logx, bool logy)
     for (int itex = 0; itex < (int)padtex.at(iPad).size(); ++itex)
       padtex.at(iPad).at(itex).Draw("same");
 
-    if (bFadePad.at(iPad)) {
+    if (bFadePad.at(iPad))
+    {
       Fadepads.at(iPad)->SetFillColorAlpha(kWhite, FadeScale);
       Fadepads.at(iPad)->Draw();
     }
@@ -1346,7 +1396,7 @@ void PlottingGrid::Plot(TString name, bool logx, bool logy)
   delete Canvas;
 }
 
-void PlottingGrid::New(TH1F* h, TString label, int style, double size, int color, TString opt)
+void PlottingGrid::New(TH1F *h, TString label, int style, double size, int color, TString opt)
 {
 
   if (!h)
@@ -1367,13 +1417,13 @@ void PlottingGrid::New(TH1F* h, TString label, int style, double size, int color
   if (PadCounter == 1)
     LegendLabel.push_back(label);
 
-  SetStyle<TH1*>(h, style, size, color, opt, counter);
+  SetStyle<TH1 *>(h, style, size, color, opt, counter);
   h->SetLineWidth(1);
   histsinpad.push_back(*h);
   counter++;
 }
 
-void PlottingGrid::New(TGraphAsymmErrors* g, TString label, int style, double size, int color, TString opt)
+void PlottingGrid::New(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt)
 {
 
   if (!g)
@@ -1394,30 +1444,32 @@ void PlottingGrid::New(TGraphAsymmErrors* g, TString label, int style, double si
   if (PadCounter == 1)
     LegendLabelG.push_back(label);
 
-  SetStyle<TGraphAsymmErrors*>(g, style, size, color, opt, counter);
+  SetStyle<TGraphAsymmErrors *>(g, style, size, color, opt, counter);
   g->SetLineWidth(1);
   counter++;
   graphsinpad.push_back(*g);
 }
 
-void PlottingGrid::New(TH1D* h, TString label, int style, double size, int color, TString opt)
+void PlottingGrid::New(TH1D *h, TString label, int style, double size, int color, TString opt)
 {
-  TH1F* hd = (TH1F*)h;
+  TH1F *hd = (TH1F *)h;
   New(hd, label, style, size, color, opt);
 }
 
 void PlottingGrid::NewPadTex(const double PositX, const double PositY, TString text, const double TextSize, const double dDist, const int font, const int color)
 {
   std::vector<TString> LatStr;             //  Each element corresponds to a line of the printed latex string
-  TObjArray* textStr = text.Tokenize(";"); //  The semicolon seperates the string into different lines
-  for (int i = 0; i < textStr->GetEntries(); i++) {
-    TObjString* tempObj = (TObjString*)textStr->At(i);
+  TObjArray *textStr = text.Tokenize(";"); //  The semicolon seperates the string into different lines
+  for (int i = 0; i < textStr->GetEntries(); i++)
+  {
+    TObjString *tempObj = (TObjString *)textStr->At(i);
     LatStr.push_back(tempObj->GetString());
   }
 
   //  Loop thru the latex lines and set the formatting
-  for (int i = 0; i < (int)LatStr.size(); ++i) {
-    TLatex* textmp = new TLatex(PositX, PositY - i * dDist, LatStr[i]);
+  for (int i = 0; i < (int)LatStr.size(); ++i)
+  {
+    TLatex *textmp = new TLatex(PositX, PositY - i * dDist, LatStr[i]);
     texinpad.push_back(*textmp);
     texinpad.at(texinpad.size() - 1).SetNDC();
     texinpad.at(texinpad.size() - 1).SetTextFont(font);
@@ -1426,7 +1478,7 @@ void PlottingGrid::NewPadTex(const double PositX, const double PositY, TString t
   }
 }
 
-void PlottingGrid::NewFunc(TF1* f, TString label, int style, double size, int color, TString opt)
+void PlottingGrid::NewFunc(TF1 *f, TString label, int style, double size, int color, TString opt)
 {
 
   if (!f)
@@ -1461,8 +1513,9 @@ void PlottingGrid::InitializeCanvas(bool logx, bool logy)
 
   int Column = 0;     // Left to right
   int Row = Rows - 1; // Up to down
-  for (int iPad = 0; iPad < NPads; iPad++) {
-    TPad* Pad = new TPad(Form("Pad_%d", iPad), Form("Pad_%d", iPad), ((double)Column) / ((double)Columns), ((double)Row) / ((double)Rows), ((double)Column + 1) / ((double)Columns), ((double)Row + 1) / ((double)Rows));
+  for (int iPad = 0; iPad < NPads; iPad++)
+  {
+    TPad *Pad = new TPad(Form("Pad_%d", iPad), Form("Pad_%d", iPad), ((double)Column) / ((double)Columns), ((double)Row) / ((double)Rows), ((double)Column + 1) / ((double)Columns), ((double)Row + 1) / ((double)Rows));
     Pad->SetTopMargin(0.09);
     Pad->SetRightMargin(0.01);
     Pad->SetLeftMargin(0.09);
@@ -1472,11 +1525,12 @@ void PlottingGrid::InitializeCanvas(bool logx, bool logy)
 
     pads.push_back(Pad);
 
-    TPad* FadePad = new TPad(Form("FadePad_%d", iPad), Form("FadePad_%d", iPad), 0, 0, 1, 1);
+    TPad *FadePad = new TPad(Form("FadePad_%d", iPad), Form("FadePad_%d", iPad), 0, 0, 1, 1);
     Fadepads.push_back(FadePad);
 
     Column++;
-    if (Column == Columns) {
+    if (Column == Columns)
+    {
       Column = 0;
       Row--;
       if (Row < 0)
@@ -1492,7 +1546,7 @@ void PlottingGrid::InitializeCanvas(bool logx, bool logy)
 class PlottingPaint : public Plotting
 {
 
- public:
+public:
   //  Using this class one can draw ellipses, angles, lines and curly lines
   void Plot(TString name = "You_forgot_the_name_..._dummy.pdf");
 
@@ -1502,7 +1556,7 @@ class PlottingPaint : public Plotting
   void NewAngle(double x = 0.5, double y = 0.5, double r1 = 0.3, double r2 = 0.2,
                 double phimin = 60, double phimax = 120, double theta = 0);
 
- protected:
+protected:
   void InitializeCanvas();
 };
 
@@ -1521,7 +1575,7 @@ void PlottingPaint::Plot(TString name)
 void PlottingPaint::NewAngle(double x, double y, double r1, double r2, double phimin, double phimax, double theta)
 {
 
-  TEllipse* angle = new TEllipse(x, y, r1, r2, phimin, phimax, theta);
+  TEllipse *angle = new TEllipse(x, y, r1, r2, phimin, phimax, theta);
   angle->SetNoEdges();
   PlottingObjects.push_back(angle);
 }
@@ -1558,13 +1612,15 @@ void PrintProgress(int i, int N, int Steps = 100)
 
   static clock_t t = clock();
 
-  if (((double)i) / ((double)N) * Steps > Progress) {
+  if (((double)i) / ((double)N) * Steps > Progress)
+  {
 
     cout.flush();
     cout << " [" << Progress * 100 / Steps << "%]"
          << "[";
     int pos = barWidth * (((double)Progress) / Steps);
-    for (int i = 0; i < barWidth; ++i) {
+    for (int i = 0; i < barWidth; ++i)
+    {
       if (i < pos)
         cout << "|";
       else
@@ -1575,16 +1631,28 @@ void PrintProgress(int i, int N, int Steps = 100)
 
     Progress++;
   }
-  if (i == N - 1) {
+  if (i == N - 1)
+  {
     cout.flush();
     cout << "[" << Progress << "%]"
          << "[";
     int pos = barWidth * (Progress / 100.);
-    for (int i = 0; i < barWidth; ++i) {
+    for (int i = 0; i < barWidth; ++i)
+    {
       cout << "|";
     }
     cout << "] - "
          << "Processing finished in " << ReturnTimehms((clock() - t) / CLOCKS_PER_SEC) << endl;
+  }
+}
+
+void PrintProgressNumber(int i, int N, int Steps = 100)
+{
+  static int Progress = 0;
+  if (((double)i) / ((double)N) * Steps > Progress)
+  {
+    cout << "[" << Form("%.1f", Progress * 100. / Steps) << "%]" << endl;
+    Progress++;
   }
 }
 

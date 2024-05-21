@@ -6,25 +6,29 @@
 #include "ClusterECorrections.h"
 
 
-void makeHistosFromTree(bool isMC, bool doQA, TString EventCutString = "", TString IsoGammaCutString = "", TString JetCutString = "", TString Pi0CutString = "")
+void makeHistosFromTree(TString AnalysisDirectory, int jobId)
 {
   ENTER
 
-  GlobalOptions optns(isMC, doQA, EventCutString, IsoGammaCutString, JetCutString, Pi0CutString);
+  if(jobId < 0) 
+    FATAL("Negative jobId")
+  
+  GlobalOptions optns(AnalysisDirectory);
 
-  EventCuts eventCuts(EventCutString);
-  IsoGammaCuts isoGammaCuts(IsoGammaCutString);
-  JetCuts jetCuts(JetCutString);
-  Pi0Cuts pi0Cuts(Pi0CutString);
+  EventCuts eventCuts(optns);
+  IsoGammaCuts isoGammaCuts(optns);
+  JetCuts jetCuts(optns);
+  Pi0Cuts pi0Cuts(optns);
 
-  TFile* fOut = new TFile("Output/CalorimeTree.root", "RECREATE");
+
+  TFile* fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
   TDirectory* hDirEvents = DefineEventHistograms(fOut);
-  TDirectory* hQADirEvents = doQA ? DefineEventQAHistograms(fOut) : nullptr;
+  TDirectory* hQADirEvents = optns.doQA ? DefineEventQAHistograms(fOut) : nullptr;
   TDirectory* hDirIsoGammas = DefineIsoGammaHistograms(fOut);
-  TDirectory* hQADirIsoGammas = doQA ? DefineIsoGammaQAHistograms(fOut, optns) : nullptr;
+  TDirectory* hQADirIsoGammas = optns.doQA ? DefineIsoGammaQAHistograms(fOut, optns) : nullptr;
   TDirectory* hDirJets = DefineJetHistograms(fOut);
-  TDirectory* hQADirJets = doQA ? DefineJetQAHistograms(fOut) : nullptr;
+  TDirectory* hQADirJets = optns.doQA ? DefineJetQAHistograms(fOut) : nullptr;
 
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
@@ -34,8 +38,8 @@ void makeHistosFromTree(bool isMC, bool doQA, TString EventCutString = "", TStri
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<Pi0> Pi0s;
 
-  TChain* chain = readTree("Input/InputFiles.txt");
-  // TODO: Read histograms from input file
+  TChain* chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
+  // TODO: Merge histograms from input files
 
   optns.TreeFormat = listTreeBranches(chain);
 
@@ -44,14 +48,15 @@ void makeHistosFromTree(bool isMC, bool doQA, TString EventCutString = "", TStri
   for (int iEvent = 0; iEvent < tree.NEvents; iEvent++) {
     chain->GetEntry(iEvent);
 
-    PrintProgress(iEvent, tree.NEvents);
+    PrintProgressNumber(iEvent, tree.NEvents, 1000);
+    // PrintProgress(iEvent, tree.NEvents);
 
     Event event(tree, optns);
 
     if (!eventCuts.PassedCuts(event))
       continue;
     fillHistograms(event, hDirEvents, event.weight);
-    if (doQA)
+    if (optns.doQA)
       fillQAHistograms(event, hQADirEvents, event.weight, optns);
 
     if (optns.doIsoGamma) {
@@ -61,7 +66,7 @@ void makeHistosFromTree(bool isMC, bool doQA, TString EventCutString = "", TStri
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas, hDirIsoGammas, event.weight);
-      if (doQA){
+      if (optns.doQA){
         fillQAHistograms(IsoGammas, hQADirIsoGammas, event.weight, optns);
         fillQAHistograms(Pi0sForIsoGammaQA, hQADirIsoGammas, event.weight, optns);
       }
@@ -70,14 +75,14 @@ void makeHistosFromTree(bool isMC, bool doQA, TString EventCutString = "", TStri
       saveJetsFromEventInVector(tree, Jets);
       // TODO: JetCuts
       fillHistograms(Jets, hDirJets, event.weight);
-      if (doQA)
+      if (optns.doQA)
         fillQAHistograms(Jets, hQADirJets, event.weight, optns);
       if (optns.isMC) {
         savePLJetsFromEventInVector(tree, PLJets);
         mapPLtoDLjets(Jets, PLJets, jetCuts.R);
         // TODO: Do I need PL jet cuts?
         fillHistograms(PLJets, hDirJets, event.weight);
-        if (doQA)
+        if (optns.doQA)
           fillQAHistograms(PLJets, hQADirJets, event.weight, optns);
       }
     }

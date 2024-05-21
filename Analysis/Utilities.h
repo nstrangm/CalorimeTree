@@ -2,41 +2,77 @@
 #define _UTILITIES_
 
 #include "../Plotting/PlottingClass.h"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <yaml-cpp/yaml.h>
 
 class GlobalOptions
 {
- public:
+public:
   bool isMC = false;
+  TString parentDir;
+  TString dataSet;
+  TString dataSetLabel;
+  TString trainConfig;
+  TString cutString;
   int TreeFormat = 0;
-  bool doQA = false;
+  bool doQA = true;
   bool doIsoGamma = false;
   bool doJets = false;
   bool doPi0 = false;
-  GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
+  GlobalOptions(TString AnalysisDirectory);
+  // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
   ~GlobalOptions(){};
 };
 
-GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
+// GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
+GlobalOptions::GlobalOptions(TString AnalysisDirectory)
 {
-  isMC = userWantsMC;
-  doQA = userWantsQA;
-  doIsoGamma = !(IsoGammaCutString == "");
-  doJets = !(JetCutString == "");
-  doPi0 = !(Pi0CutString == "");
+  std::stringstream ss((std::string)AnalysisDirectory.Data());
+  std::string word;
+  std::string words[4];
+
+  for (int i = 0; i < 4; i++)
+  {
+    std::getline(ss, word, '/');
+    words[i] = word;
+  }
+  parentDir = (TString)words[0].c_str();
+  dataSet = (TString)words[1].c_str();
+  trainConfig = (TString)words[2].c_str();
+  cutString = (TString)words[3].c_str();
+
+  INFO(Form("parentDir = %s, dataSet = %s, trainConfig = %s, cutString = %s", parentDir.Data(), dataSet.Data(), trainConfig.Data(), cutString.Data()))
+
+  const char *YAMLFilePath = Form("%s/RunConfig.yaml", parentDir.Data());
+  YAML::Node config = YAML::LoadFile(YAMLFilePath);
+
+  doIsoGamma = config["doIsoGamma"].as<bool>();
+  doJets = config["doJets"].as<bool>();
+  doPi0 = config["doPi0"].as<bool>();
+
+  if (!config[(std::string)dataSet])
+    FATAL(Form("Dataset %s not found in YAML file %s", dataSet.Data(), YAMLFilePath))
+
+  YAML::Node dataSetConfig = config[(std::string)dataSet];
+  dataSetLabel = dataSetConfig["label"].as<string>().c_str();
+  isMC = dataSetConfig["isMC"].as<bool>();
 
   std::cout << R"(
-  ________/\\\\\\\\\_________________/\\\\\\__________________________________________________________________________/\\\\\\\\\\\\\\\_____________________________________________        
-   _____/\\\////////_________________\////\\\_________________________________________________________________________\///////\\\/////______________________________________________       
-    ___/\\\/_____________________________\/\\\_________________________________/\\\__________________________________________\/\\\___________________________________________________      
-     __/\\\______________/\\\\\\\\\_______\/\\\________/\\\\\_____/\\/\\\\\\\__\///_____/\\\\\__/\\\\\_______/\\\\\\\\________\/\\\________/\\/\\\\\\\______/\\\\\\\\______/\\\\\\\\__     
-      _\/\\\_____________\////////\\\______\/\\\______/\\\///\\\__\/\\\/////\\\__/\\\__/\\\///\\\\\///\\\___/\\\/////\\\_______\/\\\_______\/\\\/////\\\___/\\\/////\\\___/\\\/////\\\_    
-       _\//\\\______________/\\\\\\\\\\_____\/\\\_____/\\\__\//\\\_\/\\\___\///__\/\\\_\/\\\_\//\\\__\/\\\__/\\\\\\\\\\\________\/\\\_______\/\\\___\///___/\\\\\\\\\\\___/\\\\\\\\\\\__   
-        __\///\\\___________/\\\/////\\\_____\/\\\____\//\\\__/\\\__\/\\\_________\/\\\_\/\\\__\/\\\__\/\\\_\//\\///////_________\/\\\_______\/\\\_________\//\\///////___\//\\///////___  
-         ____\////\\\\\\\\\_\//\\\\\\\\/\\__/\\\\\\\\\__\///\\\\\/___\/\\\_________\/\\\_\/\\\__\/\\\__\/\\\__\//\\\\\\\\\\_______\/\\\_______\/\\\__________\//\\\\\\\\\\__\//\\\\\\\\\\_ 
+  ________/\\\\\\\\\_________________/\\\\\\__________________________________________________________________________/\\\\\\\\\\\\\\\_____________________________________________
+   _____/\\\////////_________________\////\\\_________________________________________________________________________\///////\\\/////______________________________________________
+    ___/\\\/_____________________________\/\\\_________________________________/\\\__________________________________________\/\\\___________________________________________________
+     __/\\\______________/\\\\\\\\\_______\/\\\________/\\\\\_____/\\/\\\\\\\__\///_____/\\\\\__/\\\\\_______/\\\\\\\\________\/\\\________/\\/\\\\\\\______/\\\\\\\\______/\\\\\\\\__
+      _\/\\\_____________\////////\\\______\/\\\______/\\\///\\\__\/\\\/////\\\__/\\\__/\\\///\\\\\///\\\___/\\\/////\\\_______\/\\\_______\/\\\/////\\\___/\\\/////\\\___/\\\/////\\\_
+       _\//\\\______________/\\\\\\\\\\_____\/\\\_____/\\\__\//\\\_\/\\\___\///__\/\\\_\/\\\_\//\\\__\/\\\__/\\\\\\\\\\\________\/\\\_______\/\\\___\///___/\\\\\\\\\\\___/\\\\\\\\\\\__
+        __\///\\\___________/\\\/////\\\_____\/\\\____\//\\\__/\\\__\/\\\_________\/\\\_\/\\\__\/\\\__\/\\\_\//\\///////_________\/\\\_______\/\\\_________\//\\///////___\//\\///////___
+         ____\////\\\\\\\\\_\//\\\\\\\\/\\__/\\\\\\\\\__\///\\\\\/___\/\\\_________\/\\\_\/\\\__\/\\\__\/\\\__\//\\\\\\\\\\_______\/\\\_______\/\\\__________\//\\\\\\\\\\__\//\\\\\\\\\\_
           _______\/////////___\////////\//__\/////////_____\/////_____\///__________\///__\///___\///___\///____\//////////________\///________\///____________\//////////____\//////////__
         )" << '\n';
 
-  LOG(Form("Analyzing %s%s%s with%s QA", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doPi0 ? " + Pi0" : "", doQA ? "" : "out"))
+  LOG(Form("Analyzing %s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doPi0 ? " + Pi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
 }
 
 // Returns the fraction of a cone at Eta = cEta and radius r that lies within the acceptance of a detector covering +-maxEta
