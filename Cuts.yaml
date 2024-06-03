@@ -1,0 +1,11 @@
+Standard:
+  cluster_applyNonLin: false
+  cluster_min_E: 5
+  cluster_max_E: 200
+  useRhoInsteadOfPerpCone: true
+
+Cluster_E_max_increased:
+  cluster_max_E: 220
+
+Cluster_E_max_decreased:
+  cluster_max_E: 180

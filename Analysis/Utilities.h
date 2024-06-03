@@ -1,7 +1,7 @@
 #ifndef _UTILITIES_
 #define _UTILITIES_
 
-#include "../Plotting/PlottingClass.h"
+#include "PlottingClass.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,11 +12,11 @@ class GlobalOptions
 {
 public:
   bool isMC = false;
-  TString parentDir;
   TString dataSet;
   TString dataSetLabel;
   TString trainConfig;
   TString cutString;
+  TString analysisDirPath;
   int TreeFormat = 0;
   bool doQA = true;
   bool doIsoGamma = false;
@@ -30,31 +30,30 @@ public:
 // GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
 GlobalOptions::GlobalOptions(TString AnalysisDirectory)
 {
+  analysisDirPath = AnalysisDirectory;
   std::stringstream ss((std::string)AnalysisDirectory.Data());
   std::string word;
-  std::string words[4];
+  std::string words[3];
 
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 3; i++)
   {
     std::getline(ss, word, '/');
     words[i] = word;
   }
-  parentDir = (TString)words[0].c_str();
-  dataSet = (TString)words[1].c_str();
-  trainConfig = (TString)words[2].c_str();
-  cutString = (TString)words[3].c_str();
+  dataSet = (TString)words[0].c_str();
+  trainConfig = (TString)words[1].c_str();
+  cutString = (TString)words[2].c_str();
 
-  INFO(Form("parentDir = %s, dataSet = %s, trainConfig = %s, cutString = %s", parentDir.Data(), dataSet.Data(), trainConfig.Data(), cutString.Data()))
+  INFO(Form("dataSet = %s, trainConfig = %s, cutString = %s", dataSet.Data(), trainConfig.Data(), cutString.Data()))
 
-  const char *YAMLFilePath = Form("%s/RunConfig.yaml", parentDir.Data());
-  YAML::Node config = YAML::LoadFile(YAMLFilePath);
+  YAML::Node config = YAML::LoadFile("RunConfig.yaml");
 
   doIsoGamma = config["doIsoGamma"].as<bool>();
   doJets = config["doJets"].as<bool>();
   doPi0 = config["doPi0"].as<bool>();
 
   if (!config[(std::string)dataSet])
-    FATAL(Form("Dataset %s not found in YAML file %s", dataSet.Data(), YAMLFilePath))
+    FATAL(Form("Dataset %s not found in YAML file RunConfig.yaml", dataSet.Data()))
 
   YAML::Node dataSetConfig = config[(std::string)dataSet];
   dataSetLabel = dataSetConfig["label"].as<string>().c_str();

@@ -25,22 +25,34 @@ logging.basicConfig(
 )
 log = logging.getLogger("rich")
 
+def source_environment(script_path):
+    """Source the script and return the updated environment variables."""
+    command = f"source {script_path} && env"
+    proc = subprocess.Popen(command, shell=True, executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    
+    if proc.returncode != 0:
+        raise RuntimeError(f"Failed to source environment: {err.decode().strip()}")
+    
+    env = {}
+    for line in out.decode().splitlines():
+        key, _, value = line.partition("=")
+        env[key] = value
+    return env
+
 def load_root_environment():
     """Ensure the ROOT environment is loaded."""
     try:
         # Check if ROOT is already loaded
         subprocess.run(['root-config', '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print("ROOT environment is already loaded.")
+        log.info(f"ROOT environment is already loaded.")
     except (subprocess.CalledProcessError, FileNotFoundError):
         # Load ROOT environment
         root_setup_script = "/software/nstrangmann/root/bin/thisroot.sh"  # Update this path
         if os.path.exists(root_setup_script):
-            command = f"source {root_setup_script} && root-config --version"
-            # Use a subshell to source the script and check ROOT version
-            result = subprocess.run(command, shell=True, executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode != 0:
-                raise RuntimeError("Failed to load ROOT environment.")
-            print("ROOT environment loaded successfully.")
+            new_env = source_environment(root_setup_script)
+            os.environ.update(new_env)
+            log.info(f"ROOT environment loaded successfully.")
         else:
             raise FileNotFoundError("ROOT environment setup script not found.")
 
@@ -57,10 +69,26 @@ def read_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
+# def find_files(directory, pattern, output_file):
+#     with open(output_file, 'w') as f:
+#         for root, dirs, files in os.walk(directory):
+#             print(f"Searching in: {root}")  # Debug statement
+#             for file in files:
+#                 if file.endswith(pattern):
+#                     file_path = os.path.join(root, file)
+#                     print(f"Found: {file_path}")  # Debug statement
+#                     f.write(file_path + '\n')
 
-def clear_logs(directory):
+# if __name__ == "__main__":
+#     directory = "/alf/data/nstrangmann/CalorimeTree/Input"  # Replace with the path to your directory
+#     pattern = "_101_Charged.root"
+#     output_file = "output.txt"  # Output file name
+#     find_files(directory, pattern, output_file)
+
+
+def clear_logs():
     # Delete all existing log files before starting new jobs
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk("./"):
         for file in files:
             if file.endswith(".log"):
                 os.remove(os.path.join(root, file))
@@ -82,8 +110,8 @@ def hadd_root_files(input_folder, output_file):
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     
     if result.returncode != 0:
-        print("Error running hadd:")
-        print(result.stderr)
+        log.error("Error running hadd:")
+        log.error(result.stderr.decode('utf-8'))
         raise RuntimeError("hadd failed")
     else:
         print(f"Successfully combined ROOT files into {output_file}")
@@ -92,18 +120,18 @@ def hadd_root_files(input_folder, output_file):
         for root_file in root_files:
             try:
                 os.remove(root_file)
-                print(f"Deleted file: {root_file}")
+                # log.info(f"Deleted file: {root_file}")
             except OSError as e:
-                print(f"Error deleting file {root_file}: {e}")
+                log.error(f"Error deleting file {root_file}: {e}")
 
-def run_macro(directory, dataset, setting, cut, nSplit, task_id, progress):
+def run_macro(dataset, setting, cut, nSplit, task_id, progress):
     processes = []
     progress_values = [0] * nSplit  # Initialize progress list for all jobs
 
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
             for iJob, process in processes:
-                log_file = f"{directory}/{dataset}/{setting}/{cut}/log_{iJob}.log"
+                log_file = f"{dataset}/{setting}/{cut}/log_{iJob}.log"
                 if os.path.exists(log_file):
                     with open(log_file, 'r') as f:
                         lines = f.readlines()
@@ -118,8 +146,7 @@ def run_macro(directory, dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        # command = f'srun --job-name=ct_{iJob} --output={directory}/{dataset}/{setting}/{cut}/log_{iJob}.log "root -q -b -x gSystem->Load("./Analysis/makeHistosFromTree_C.so"); makeHistosFromTree_C.so\(\\"{directory}/{dataset}/{setting}/{cut}\\"\,\{iJob}\)"'
-        command = f'srun --job-name=ct_{iJob} --output={directory}/{dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{directory}/{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=vip --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
 
@@ -127,12 +154,25 @@ def run_macro(directory, dataset, setting, cut, nSplit, task_id, progress):
 
     progress_thread = threading.Thread(target=monitor_progress)
     progress_thread.start()
+    # Wait for all subprocesses to complete
+    for _, process in processes:
+        process.wait()
+
+    # Ensure the progress is marked as 100% upon completion
+    progress.update(task_id, completed=100)
     progress_thread.join()  # Wait for the progress monitoring thread to complete
 
-    hadd_root_files(f'{directory}/{dataset}/{setting}/{cut}', f'{directory}/{dataset}/{setting}/{cut}/HistosFromTree.root')
+    hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
+    
+    command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        log.error(result.stderr)
+        raise RuntimeError("plotHistosFromTree.C failed")
 
-def run_multiple_macros(directory, jobs):
+def run_multiple_macros(jobs):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
+    trainconfig_colors = {}
 
     console = Console()
     bar_columns = {}
@@ -148,13 +188,9 @@ def run_multiple_macros(directory, jobs):
         threads = []
 
         for job in jobs:
-            dataset, setting, cut, nSplit = job[:4]  # Ensure we only unpack the expected number of elements
+            dataset, trainconfig, cut, nSplit = job[:4]  # Ensure we only unpack the expected number of elements
             nSplit = int(nSplit)  # Ensure nSplit is an integer
-            description = f"{dataset}, {setting}, {cut}"
-
-            # Assign a new color if not already assigned
-            color = next(color_cycle)
-            style = f"[{color}]"
+            description = f"{dataset}, {trainconfig}, {cut}"
 
             # Temporarily update progress columns to include the custom BarColumn
             progress.columns = (
@@ -164,11 +200,17 @@ def run_multiple_macros(directory, jobs):
                 TimeRemainingColumn(),
             )
 
+            # Assign a new color if not already assigned
+            if trainconfig not in trainconfig_colors:
+                color = next(color_cycle)
+                style = f"[{color}]"
+                trainconfig_colors.update({trainconfig : style})
+
             # Create a new task with a styled description
-            task_id = progress.add_task(f"{style}{description}[/]", total=100)
+            task_id = progress.add_task(f"{trainconfig_colors[trainconfig]}{description}[/]", total=100)
             tasks[description] = task_id
 
-            thread = threading.Thread(target=run_macro, args=(directory, dataset, setting, cut, nSplit, task_id, progress))
+            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress))
             threads.append(thread)
             thread.start()
 
@@ -199,7 +241,7 @@ def delete_existing_grouped_files(subdirectory):
             file_path = os.path.join(subdirectory, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
-                print(f"Deleted file: {file_path}")
+                log.info(f"Deleted file: {file_path}")
 
 def get_file_size(file_path):
     return os.path.getsize(file_path)
@@ -220,16 +262,16 @@ def distribute_files_evenly(file_groups, num_output_files):
     
     return output_files
 
-def distribute_files(subdirectory, num_output_files):
-    subdirectory+='/InputFiles'
-    if check_files_need_distributing(subdirectory, num_output_files):
-        log.info(f"Distributing files for {subdirectory}...")
-        delete_existing_grouped_files(subdirectory)
+def distribute_files(analysisdirectory, inputdatapath, trainconfig, num_output_files):
+    analysisdirectory+='/InputFiles'
+    if check_files_need_distributing(analysisdirectory, num_output_files):
+        log.info(f"Distributing files for {analysisdirectory}...")
+        delete_existing_grouped_files(analysisdirectory)
     else:
-        log.info(f"Files in {subdirectory} do not need to be redistributed")
+        log.info(f"Files in {analysisdirectory} do not need to be redistributed")
         return
 
-    input_file=subdirectory + '/InputFiles.txt'
+    input_file=inputdatapath + '/InputFiles_GammaIsoTree_' + trainconfig + '.txt'
 
     input_path = pathlib.Path(input_file).resolve()
     input_directory = input_path.parent
@@ -238,8 +280,7 @@ def distribute_files(subdirectory, num_output_files):
         with open(input_path, 'r') as f:
             file_paths = [line.strip() for line in f.readlines()]
     except FileNotFoundError:
-        print(f"Error: The file {input_file} does not exist.")
-        return
+        log.fatal(f"The file {input_file} does not exist.")
     
     # Group files by their main part (excluding _histos_)
     file_dict = defaultdict(lambda: [None, None])
@@ -254,26 +295,25 @@ def distribute_files(subdirectory, num_output_files):
     file_groups = [(main_file, histos_file) for main_file, histos_file in file_dict.values() if main_file]
     
     if len(file_groups) < num_output_files:
-        print(f"Warning: Number of input file groups ({len(file_groups)}) is less than the number of requested output files ({num_output_files}). Creating {len(file_groups)} output files instead.")
+        log.warning(f"Warning: Number of input file groups ({len(file_groups)}) is less than the number of requested output files ({num_output_files}). Creating {len(file_groups)} output files instead.")
         num_output_files = len(file_groups)
     
     distributed_files = distribute_files_evenly(file_groups, num_output_files)
     
     for i, file_group in enumerate(distributed_files):
-        output_file_name = f"{input_path.stem}_group_{i+1}{input_path.suffix}"
-        output_file_path = input_directory / output_file_name
+        output_file_name = f"InputFiles_group_{i+1}{input_path.suffix}"
+        output_file_path = f"{analysisdirectory}/{output_file_name}"
         with open(output_file_path, 'w') as f:
             for path in file_group:
                 f.write(f"{path}\n")
     
-    print(f"Distributed paths into {num_output_files} files in the directory: {input_directory}")
+    log.info(f"Distributed paths into {num_output_files} files in the directory: {analysisdirectory}")
 
 def compile_makeHistosFromTree():
     command = 'root -q -b -x ./Analysis/makeHistosFromTree.C+\(\\"\\"\,\-1\)'
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
         print("Error compiling makeHistosFromTree.C:")
-        print(result.stderr)
         raise RuntimeError("Compilation failed")
 
 def check_and_create_folder(folder_path):
@@ -287,25 +327,21 @@ def check_and_create_folder(folder_path):
 
 
 # Main function
-def main(analysis_directory):
+def main():
 
     # Ensure ROOT environment is loaded
     load_root_environment()
 
     compile_makeHistosFromTree()
 
-    # Load configurations
-    analysis_config_path = os.path.join(analysis_directory, 'RunConfig.yaml')
-    cuts_config_path = os.path.join(analysis_directory, 'Cuts.yaml')
-
-    analysis_config = read_yaml(analysis_config_path)
-    cuts_config = read_yaml(cuts_config_path)
+    analysis_config = read_yaml('RunConfig.yaml')
+    cuts_config = read_yaml('Cuts.yaml')
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
-    print(f"Running {nSplit} parallel jobs per variation")
+    log.info(f"Running {nSplit} parallel jobs per variation.")
 
      # Clear all existing log files
-    clear_logs(analysis_directory)
+    clear_logs()
 
     # Keep track of processed MC productions to ensure distribute_files runs only once per MC production
     processed_settings = set()
@@ -317,10 +353,15 @@ def main(analysis_directory):
         if 'trainconfigs' not in settings:
             continue
         # Now we know this is actually a dataset
+        inputdatapath = settings.get('path', None)
         for trainconfig, cut in settings['trainconfigs'].items():
-            trainconfigdir = f'{analysis_directory}/{dataset}/{trainconfig}'
+            trainconfigdir = f'{dataset}/{trainconfig}'
             if (dataset, trainconfig) not in processed_settings and cut != 'disabled':
-                distribute_files(trainconfigdir, nSplit)
+                if not inputdatapath:
+                    log.warning(f"No path specified for dataset {dataset}. Skipping.")
+                    continue
+                check_and_create_folder(f'{trainconfigdir}/InputFiles')
+                distribute_files(trainconfigdir, inputdatapath, trainconfig, nSplit)
                 processed_settings.add((dataset, trainconfig))
             
             if cut == 'disabled':
@@ -333,14 +374,14 @@ def main(analysis_directory):
                     check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                     jobs.append((dataset, trainconfig, cut_name, nSplit))
 
-    run_multiple_macros(analysis_directory, jobs)
+    run_multiple_macros(jobs)
 
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <AnalysisDirectory>")
-        sys.exit(1)
+    # if len(sys.argv) != 2:
+    #     print("Usage: python script.py <AnalysisDirectory>")
+    #     sys.exit(1)
 
-    analysis_directory = sys.argv[1]
-    main(analysis_directory)
+    # analysis_directory = sys.argv[1]
+    main()

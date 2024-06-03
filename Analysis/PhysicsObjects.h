@@ -144,7 +144,7 @@ class IsoGamma : public PhysicsObject
   TrackMatchedToIsoGamma MatchedTrack;
   float DistanceToBadChannel = 0;
 
-  float MCTag;
+  int MCTag;
 };
 
 bool IsoGamma::isSignal()

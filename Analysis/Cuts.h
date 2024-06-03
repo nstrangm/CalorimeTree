@@ -35,6 +35,11 @@ bool EventCuts::PassedCuts(Event Event)
   {
     passed = false;
   }
+  if (!Event.IsTriggered)
+  {
+    passed = false;
+  }
+  
 
   return passed;
 }
@@ -56,25 +61,29 @@ public:
   ~IsoGammaCuts(){};
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
+  bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
   bool PassedCuts(IsoGamma IsoGamma);
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns)
 {
-  const char *YAMLFilePath = Form("%s/Cuts.yaml", optns.parentDir.Data());
-  YAML::Node ycut = YAML::LoadFile(YAMLFilePath);
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
 
   if (!ycut[(std::string)optns.cutString])
-    FATAL(Form("Cutstring %s not found in YAML file %s", optns.cutString.Data(), YAMLFilePath))
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
 
-  YAML::Node cuts = ycut[(std::string)optns.cutString];
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
-  EMin = cuts["cluster_min_E"].as<float>();
-  EMax = cuts["cluster_max_E"].as<float>();
-  useRhoInsteadOfPerpCone = cuts["useRhoInsteadOfPerpCone"].as<bool>();
+  applyNonLin = chosencut["cluster_applyNonLin"].IsDefined() ? chosencut["cluster_applyNonLin"].as<bool>() : standardcut["cluster_applyNonLin"].as<bool>();
+  EMin = chosencut["cluster_min_E"].IsDefined() ? chosencut["cluster_min_E"].as<float>() : standardcut["cluster_min_E"].as<float>();
+  EMax = chosencut["cluster_max_E"].IsDefined() ? chosencut["cluster_max_E"].as<float>() : standardcut["cluster_max_E"].as<float>();
+  useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 
   INFO(Form("EMin = %f, EMax = %f, useRhoInsteadOfPerpCone = %s", EMin, EMax, useRhoInsteadOfPerpCone ? "true" : "false"))
 }
+
+
 
 bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
 {

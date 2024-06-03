@@ -165,7 +165,7 @@ class TreeBuffer
   std::vector<float>* TrueCluster_IsoCharged2 = 0;
   std::vector<float>* TrueCluster_IsoCharged3 = 0;
   std::vector<float>* TrueCluster_IsoBckPerp = 0;
-  std::vector<float>* TrueCluster_MCTag = 0;
+  std::vector<int>* TrueCluster_MCTag = 0;
   std::vector<bool>* TrueCluster_IsConv = 0;
 
   std::vector<float>* GenPhoton_E = 0;
@@ -176,7 +176,7 @@ class TreeBuffer
   std::vector<float>* GenPhoton_IsoCharged2 = 0;
   std::vector<float>* GenPhoton_IsoCharged3 = 0;
   std::vector<float>* GenPhoton_IsoBckPerp = 0;
-  std::vector<float>* GenPhoton_MCTag = 0;
+  std::vector<int>* GenPhoton_MCTag = 0;
   std::vector<bool>* GenPhoton_IsConv = 0;
 
   // ------------ Jet branches ---------------

@@ -7,7 +7,7 @@
 #include "TFile.h"
 #include "Utilities.h"
 
-TDirectory* DefineEventHistograms(TFile* f)
+TDirectory* DefineEventHistograms(TFile* f, GlobalOptions optns)
 {
   TDirectory* dir = f->mkdir("Events");
   dir->cd();
@@ -15,7 +15,7 @@ TDirectory* DefineEventHistograms(TFile* f)
   return dir;
 }
 
-TDirectory* DefineEventQAHistograms(TFile* f)
+TDirectory* DefineEventQAHistograms(TFile* f, GlobalOptions optns)
 {
   TDirectory* dir = f->mkdir("EventQA");
   dir->cd();
@@ -29,7 +29,7 @@ TDirectory* DefineEventQAHistograms(TFile* f)
   return dir;
 }
 
-TDirectory* DefineIsoGammaHistograms(TFile* f)
+TDirectory* DefineIsoGammaHistograms(TFile* f, GlobalOptions optns)
 {
 
   TDirectory* dir = f->mkdir("IsoGammas");
@@ -61,37 +61,40 @@ TDirectory* DefineIsoGammaQAHistograms(TFile* f, GlobalOptions optns)
 
   TH2F* hIsoGammaEBeforeAfterNL = new TH2F("hIsoGammaEBeforeAfterNL", "hIsoGammaEBeforeAfterNL;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
 
-  TH1F* hTrueIsoGammaMCTag = new TH1F("hTrueIsoGammaMCTag", "hMCTag", 20, 0.5, 20.5);
-  hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
-  hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
-
   TH2F* hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
 
-  if (optns.isMC) {
+  if (optns.isMC) { // ------------------> MC IsoGammaQA histograms
     TH1F* hMinMassDiffToPi0Signal = new TH1F("hMinMassDiffToPi0Signal", "hMinMassDiffToPi0Signal", 50, 0., 0.1);
     TH1F* hMinMassDiffToPi0Background = new TH1F("hMinMassDiffToPi0Background", "hMinMassDiffToPi0Background", 50, 0., 0.1);
-  } else {
+
+    TH1F* hTrueIsoGammaMCTag = new TH1F("hTrueIsoGammaMCTag", "hMCTag", 20, 0.5, 20.5);
+    hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
+    hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
+  } else { // ------------------> Only in data Jet histograms
     TH1F* hMinMassDiffToPi0 = new TH1F("hMinMassDiffToPi0", "hMinMassDiffToPi0", 50, 0., 0.1);
   }
 
   return dir;
 }
 
-TDirectory* DefineJetHistograms(TFile* f)
+TDirectory* DefineJetHistograms(TFile* f, GlobalOptions optns)
 {
   TDirectory* dir = f->mkdir("Jets");
   dir->cd();
 
   TH1F* hJetPt = new TH1F("hJetPt", "hPt", 1000, 0., 100.);
 
-  TH1F* hPLJetPt = new TH1F("hPLJetPt", "hPt", 1000, 0., 100.);
+  // ------------------> MC Jet histograms
+  if (optns.isMC) {
+    TH1F* hPLJetPt = new TH1F("hPLJetPt", "hPt", 1000, 0., 100.);
 
-  TH2F* hDLJetPtVsPLJetPt = new TH2F("hDLJetPtVsPLJetPt", "hPt;#it{p}_{T}^{DL Jet} (GeV/#it{c});#it{p}_{T}^{PL Jet} (GeV/#it{c})", 400, 0., 200., 400, 0., 200.);
+    TH2F* hDLJetPtVsPLJetPt = new TH2F("hDLJetPtVsPLJetPt", "hPt;#it{p}_{T}^{DL Jet} (GeV/#it{c});#it{p}_{T}^{PL Jet} (GeV/#it{c})", 400, 0., 200., 400, 0., 200.);
+  }
 
   return dir;
 }
 
-TDirectory* DefineJetQAHistograms(TFile* f)
+TDirectory* DefineJetQAHistograms(TFile* f, GlobalOptions optns)
 {
   TDirectory* dir = f->mkdir("JetQA");
   dir->cd();
@@ -103,16 +106,19 @@ TDirectory* DefineJetQAHistograms(TFile* f)
   TH1F* hJetNclus = new TH1F("hJetNclus", "hNclus", 51, -0.5, 50.5);
   TH2F* hJetEtaPhi = new TH2F("hJetEtaPhi", "hJetPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
 
-  TH1F* hPLJetPx = new TH1F("hPLJetPx", "hPx", 1000, -50., 50.);
-  TH1F* hPLJetPy = new TH1F("hPLJetPy", "hPy", 1000, -50., 50.);
-  TH1F* hPLJetPz = new TH1F("hPLJetPz", "hPz", 1000, -50., 50.);
-  TH1F* hPLJetArea = new TH1F("hPLJetArea", "hArea", 100, 0., 1.);
-  TH1F* hPLJetNPart = new TH1F("hPLJetNPart", "hNPart", 51, -0.5, 50.5);
-  TH2F* hPLJetEtaPhi = new TH2F("hPLJetEtaPhi", "hPLJetPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+  // ------------------> MC Jet QA histograms
+  if (optns.isMC) {
+    TH1F* hPLJetPx = new TH1F("hPLJetPx", "hPx", 1000, -50., 50.);
+    TH1F* hPLJetPy = new TH1F("hPLJetPy", "hPy", 1000, -50., 50.);
+    TH1F* hPLJetPz = new TH1F("hPLJetPz", "hPz", 1000, -50., 50.);
+    TH1F* hPLJetArea = new TH1F("hPLJetArea", "hArea", 100, 0., 1.);
+    TH1F* hPLJetNPart = new TH1F("hPLJetNPart", "hNPart", 51, -0.5, 50.5);
+    TH2F* hPLJetEtaPhi = new TH2F("hPLJetEtaPhi", "hPLJetPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
 
-  TH2F* hDLJetPVsPLJetP = new TH2F("hDLJetPVsPLJetP", "hPt;#it{p}_{T}^{DL Jet} (GeV/#it{c});#it{p}_{T}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
-  TH2F* hDLJetPxVsPLJetPx = new TH2F("hDLJetPxVsPLJetPx", "hPx;#it{p}_{x}^{DL Jet} (GeV/#it{c});#it{p}_{x}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
-  TH2F* hDLJetPyVsPLJetPy = new TH2F("hDLJetPyVsPLJetPy", "hPx;#it{p}_{y}^{DL Jet} (GeV/#it{c});#it{p}_{y}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
+    TH2F* hDLJetPVsPLJetP = new TH2F("hDLJetPVsPLJetP", "hPt;#it{p}_{T}^{DL Jet} (GeV/#it{c});#it{p}_{T}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
+    TH2F* hDLJetPxVsPLJetPx = new TH2F("hDLJetPxVsPLJetPx", "hPx;#it{p}_{x}^{DL Jet} (GeV/#it{c});#it{p}_{x}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
+    TH2F* hDLJetPyVsPLJetPy = new TH2F("hDLJetPyVsPLJetPy", "hPx;#it{p}_{y}^{DL Jet} (GeV/#it{c});#it{p}_{y}^{PL Jet} (GeV/#it{c})", 1000, 0., 100., 1000, 0., 100.);
+  }
 
   return dir;
 }
@@ -160,7 +166,7 @@ void fillQAHistograms(T obj, TDirectory* dir, float eventWeight, GlobalOptions o
         else
           ((TH1F*)dir->FindObject("hMinMassDiffToPi0Background"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
       } else {
-        ((TH1F*)dir->FindObject("MinMassDiffToPi0"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
+        ((TH1F*)dir->FindObject("hMinMassDiffToPi0"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
       }
     }
   }

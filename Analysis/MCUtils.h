@@ -1,4 +1,4 @@
-#include "../Plotting/PlottingClass.h"
+#include "PlottingClass.h"
 
 enum mcTypes { kMCPhoton,
                kMCPrompt,
