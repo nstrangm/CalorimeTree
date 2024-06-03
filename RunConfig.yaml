@@ -4,7 +4,7 @@ doJets: true
 doPi0: false
 
 GJ18D: 
-  path: /alf/data/calorimetrees/GA_pp_MC_AOD/6038_20240523-1434_13TeV_GJDCal18
+  # path: /home/nico/alice/GammaJet/calorimetrees/MC_Trees.txt
   isMC: true
   label: '#gamma-Jet 18 DCal'
   trainconfigs:
@@ -16,7 +16,7 @@ GJ18D:
     102_Full: disabled
 
 LHC18_pass2: 
-  path: /alf/data/calorimetrees/GA_pp_AOD/2708_20240527-1343_13TeV_LHC18pass2
+  path: /home/nico/alice/GammaJet/calorimetrees/Data_Trees.txt
   isMC: false
   label: 'LHC18[b-p]'
   trainconfigs:
