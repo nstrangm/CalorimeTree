@@ -187,11 +187,16 @@ void calculateIsolation(std::vector<IsoGamma>& IsoGammas, Event& Event, bool use
 {
   for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++) {
     IsoGamma* isoGamma = &IsoGammas.at(iGamma);
-    float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
+    //float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
+
+    //Calculate corrected isolation pT subtracting backperp mult by cone area.
+    float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)-isoGamma->IsoBckPerp*TMath::Pi()*0.4*0.4;
 
     if (useRhoInsteadOfPerpCone) {
+      //cout<<"WRONG!"<<"\n";
 
-      float IsoBckPerpAcceptanceCorrected = isoGamma->IsoBckPerp / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
+      float IsoBckPerpAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)-Event.Rho*TMath::Pi()*0.4*0.4;
+//isoGamma->IsoBckPerp / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
     } else {
     }
     isoGamma->IsoChargedCorrected = IsoChargedAcceptanceCorrected;

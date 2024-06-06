@@ -1,6 +1,6 @@
 nParallelJobsPerVar: 10
 doIsoGamma: true
-doJets: true
+doJets: false
 doPi0: false
 
 GJ18D: 
@@ -28,7 +28,9 @@ LHC18_pass2:
     102_Full: disabled
 
 JJ18D:
+  isMC: true
+  label: '#Jet-Jet 18 DCal'
   trainconfigs: 
-    100C: disabled
-    101C: disabled
-    102C: disabled
+    100_Charged: Standard
+    101_Charged: disabled
+    102_Charged: disabled
