@@ -68,12 +68,8 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas, hDirIsoGammas, event.weight);
-<<<<<<< Updated upstream
-      if (optns.doQA) {
-=======
       if (optns.doQA)
       {
->>>>>>> Stashed changes
         fillQAHistograms(IsoGammas, hQADirIsoGammas, event.weight, optns);
         fillQAHistograms(Pi0sForIsoGammaQA, hQADirIsoGammas, event.weight, optns);
       }
