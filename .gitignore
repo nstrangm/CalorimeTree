@@ -1,0 +1,19 @@
+# Ignore everything
+/*
+
+# Do not ignore the .gitignore file itself
+!.gitignore
+
+# Do not ignore the Analysis folder and its contents
+!Analysis/
+!Analysis/**
+Analysis/*_C.d
+Analysis/*_C.so
+Analysis/*_C_ACLiC_dict_rdict.pcm
+
+# Do not ignore the CutStudies directory and its files, but ignore all subfolders within it
+!CutStudies/
+!CutStudies/*
+
+# Ignore all subfolders within CutStudies
+CutStudies/*/**
