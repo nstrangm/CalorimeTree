@@ -76,17 +76,52 @@ void CompareCuts(const char* path){
     //Get identifiers
     YAML::Node fileIdent = config["Identifier"];
 
+    //Get x-ranges
+    YAML::Node xmax = config["xmax"];
+    YAML::Node xmin = config["xmin"];
+
     //Get directory 
     YAML::Node directory = config["Directory"];
     YAML::Emitter outdir;
     outdir << directory;
     std::string outdirstring = outdir.c_str();
 
-    std::string All[10]={"hIsoGammaIsoCharged","hIsoGammaIsoChargedCorrected","hIsoGammaPx","hIsoGammaPy","hIsoGammaPz","hIsoGammaE","hIsoGammaM02","hIsoGammaM20","hIsoGammaEtaPhi","hIsoGammaEBeforeAfterNL"};
-
+    //For the case where all QA plots are compared:
+    std::vector<std::string> objectNames;
     if(plotstring1=="All"){
-        nplots=10;
+        nplots=0;
+        YAML::Emitter out;
+        out << filepaths[0];
+        std::string filename = out.c_str();
+        //Read current file
+        TFile *file = TFile::Open(filename.c_str(),"READ");
+        //Navigate to directory
+        TDirectory* dh = (TDirectory*)file->Get(outdirstring.c_str());
+        //Get entries in tdirectory:
+        TList *listofkeys = dh->GetListOfKeys();
+        TIter next(listofkeys);
+        TKey *key;
+        // Loop over the keys and store the object names
+        while ((key = (TKey*)next())) {
+            // Get the name of the object
+            std::string name = key->GetName();
+            cout<< key->GetClassName()<<"\n";
+            // Add the name to the vector
+
+            if(strcmp(key->GetClassName(),"TH1F")==0){
+                nplots+=1;
+                objectNames.push_back(name);
+                cout<<name<<"\n";
+            }
+            
+        }
+        cout<<"\n";
     }
+    
+    //std::string All[10]={"hIsoGammaIsoCharged","hIsoGammaIsoChargedCorrected","hIsoGammaPx","hIsoGammaPy","hIsoGammaPz","hIsoGammaE","hIsoGammaM02","hIsoGammaM20","hIsoGammaEtaPhi","hIsoGammaEBeforeAfterNL"};
+    //if(plotstring1=="All"){
+    //    nplots=10;
+    //}
 
     std::string toplotstring = "";
 
@@ -95,13 +130,13 @@ void CompareCuts(const char* path){
         //Read name of current QAplot
 
         if(plotstring1=="All"){
-            toplotstring = All[j];
+            toplotstring = objectNames.at(j);
         }else{
-            YAML::Emitter outplot;
+           YAML::Emitter outplot;
             outplot << toplot[j];
-            toplotstring = outplot.c_str();
+            toplotstring = outplot.c_str(); 
         }
-
+        
         //Initiate plot class:
         Plotting1D Phdum;
         TH1F* hdum;
@@ -136,6 +171,19 @@ void CompareCuts(const char* path){
                 TH1F* h = (TH1F*)dh->Get((toplotstring+groupstring).c_str())->Clone(toplotstring.c_str());
                 float integralSignal = h->Integral(1, h->GetNbinsX());
                 h->Scale(1. / integralSignal);
+                //Adjust bin contents to avoid logy conflict.
+                double min_nonzero = std::numeric_limits<double>::max();
+                for (int i = 1; i <= h->GetNbinsX(); ++i) {
+                    float content = h->GetBinContent(i);
+                    if (content > 1e-10 && content < min_nonzero) {
+                        min_nonzero = content;
+                    }
+                    if (h->GetBinContent(i) == 0) {
+                        h->SetBinContent(i, 1e-10);
+                    }
+                }
+                h->SetMinimum(min_nonzero);
+
                 //Add to ouput vector:
                 Phdum.New(h, fileident+groupstring);
             }
@@ -143,7 +191,7 @@ void CompareCuts(const char* path){
             
         }
         //Plot finalplots
-        Phdum.Plot(Form("%s/Test.%s", path, suffix));
+        Phdum.Plot(Form("%s/%s.%s", path,toplotstring.c_str(), suffix),false,true);
     }
     
     
