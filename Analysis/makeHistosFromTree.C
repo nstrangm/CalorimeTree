@@ -66,7 +66,9 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
+      cout<<"IsoGammas size before cuts"<<IsoGammas.size()<<"\n";
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
+      cout<<"IsoGammas size after cuts"<<IsoGammas.size()<<"\n";
       fillHistograms(IsoGammas, hDirIsoGammas, event.weight);
       if (optns.doQA)
       {

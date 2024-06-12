@@ -143,6 +143,7 @@ class IsoGamma : public PhysicsObject
   float IsoBckPerp = 0;
   TrackMatchedToIsoGamma MatchedTrack;
   float DistanceToBadChannel = 0;
+  float NLM = 0;
 
   int MCTag;
 };
@@ -174,6 +175,7 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma>& IsoGa
     isoGamma.IsoBckPerp = tree.Cluster_IsoBckPerp->at(iCluster);
     isoGamma.MatchedTrack.SetMatchedTrackProperties(tree.Cluster_MatchTrackP->at(iCluster), tree.Cluster_MatchTrackPt->at(iCluster), tree.Cluster_MatchTrackdEta->at(iCluster), tree.Cluster_MatchTrackdPhi->at(iCluster), tree.Cluster_MatchTrackIsConv->at(iCluster));
     isoGamma.DistanceToBadChannel = tree.Cluster_DistanceToBadChannel->at(iCluster);
+    isoGamma.NLM = tree.Cluster_NLM->at(iCluster);
 
     if (optns.isMC) {
       isoGamma.MCTag = tree.TrueCluster_MCTag->at(iCluster);
