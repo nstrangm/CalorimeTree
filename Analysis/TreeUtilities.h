@@ -123,7 +123,7 @@ class TreeBuffer
   std::vector<float>* Cluster_V1SplitMass = 0;          // Can be removed (not in light tree)
   std::vector<float>* Cluster_MinMassDiffToPi0 = 0;     // Can be removed (not in light tree)
   std::vector<float>* Cluster_MinMassDiffToEta = 0;     // Can be removed (not in light tree)
-  std::vector<float>* Cluster_NLM = 0;                  // Essential
+  std::vector<unsigned short>* Cluster_NLM = 0;                  // Essential
   std::vector<unsigned short>* Cluster_SM = 0;          // Can be removed (not in light tree)
   std::vector<float>* Cluster_EFrac = 0;                // Essential
   std::vector<float>* Cluster_IsoCharged1 = 0;          // Essential R = 0.2

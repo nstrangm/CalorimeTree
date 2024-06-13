@@ -419,7 +419,7 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
 
   InitializeCanvas(logx, logy, TransCanvas); //  Creating Canvas with margins
   InitializeAxis(logx, logy, TransCanvas);   //  Create the hDummy and set its axis label + ranges
-  hDummy->Draw();                            //  Draw the just set axis (label) on the Canvas
+  hDummy->Draw("0");                            //  Draw the just set axis (label) on the Canvas
   InitializeLegend();                        //  Create leg and set its dimensions + format
 
   //  Loop thru all elements of all vectors and plot them on top of the empty hDummy and add them to leg
