@@ -92,7 +92,7 @@ protected:
   double LegendBorders[2][2] = {{0.2, 0.4}, {0.7, 0.9}};   //  xlow,xup,ylow,yup in relative units (0-1)
   double Legend2Borders[2][2] = {{0.7, 0.95}, {0.7, 0.9}}; //  xlow,xup,ylow,yup in relative units (0-1)
   bool L1hollow = true, L2hollow = true, Leg2ManSet = false;
-  double CanvasMargins[2][2] = {{0.1, 0.025}, {0.12, 0.025}}; //  left,right,low,up in relative units
+  double CanvasMargins[2][2] = {{0.1, 0.025}, {0.12, 0.1}}; //  left,right,low,up in relative units
   //   int CanvasDimensions[2] = {800, 600};                 // Dimension given in pixels (Standard defined by the ALICE collaboration)
   int CanvasDimensions[2] = {2000, 1500}; // Dimension given in pixels (Same ratio as ALICE standard but twice as large for better png quality)
   double Split = 1. / 3.;
@@ -417,15 +417,24 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
   if (PlottingObjects.size() < 1)
     ERRORETURN("Nothing added for plotting.")
 
-  InitializeCanvas(logx, logy, TransCanvas); //  Creating Canvas with margins
-  InitializeAxis(logx, logy, TransCanvas);   //  Create the hDummy and set its axis label + ranges
-  hDummy->Draw("0");                            //  Draw the just set axis (label) on the Canvas
-  InitializeLegend();                        //  Create leg and set its dimensions + format
+  
 
   //  Loop thru all elements of all vectors and plot them on top of the empty hDummy and add them to leg
   //----------------------------------------------------------------------------
   for (int i = 0; i < (int)PlottingObjects.size(); ++i)
   {
+    
+    if(i==0){
+      TH1* plot=(TH1*)PlottingObjects.at(i);
+      const char* plotTitle=plot->GetTitle();
+      cout<<plotTitle<<"\n";
+      InitializeCanvas(logx, logy, TransCanvas); //  Creating Canvas with margins
+      InitializeAxis(logx, logy, TransCanvas);   //  Create the hDummy and set its axis label + ranges
+      hDummy->SetTitle(plotTitle);
+      hDummy->Draw("0");                            //  Draw the just set axis (label) on the Canvas
+      InitializeLegend();                        //  Create leg and set its dimensions + format
+
+    }
     PlottingObjects.at(i)->Draw(Form("same %s", ((TString)DrawOption.at(i)).Data()));
     if (LegendLabel.at(i).BeginsWith("42"))
     {

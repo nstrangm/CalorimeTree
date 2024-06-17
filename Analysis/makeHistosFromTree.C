@@ -19,7 +19,12 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   JetCuts jetCuts(optns);
   Pi0Cuts pi0Cuts(optns);
 
-  TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
+  string teststring="";
+  if(jobId==0){
+    teststring="_Testing";
+  }
+
+  TFile *fOut = new TFile(Form("%s/HistosFromTree_%d%s.root", AnalysisDirectory.Data(), jobId,teststring.c_str()), "RECREATE");
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
   TDirectory *hQADirEvents = optns.doQA ? DefineEventQAHistograms(fOut, optns) : nullptr;
@@ -35,7 +40,13 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<Pi0> Pi0s;
 
-  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
+  TChain *chain;
+  if(jobId==0){
+    chain = readTree(Form("%s/../InputFiles/InputFilesTesting_group_%d.txt", AnalysisDirectory.Data(), jobId));
+  }else{
+    chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
+  }
+  
   // TODO: Merge histograms from input files
 
   optns.TreeFormat = listTreeBranches(chain);
@@ -66,9 +77,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
-      cout<<"IsoGammas size before cuts"<<IsoGammas.size()<<"\n";
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
-      cout<<"IsoGammas size after cuts"<<IsoGammas.size()<<"\n";
       fillHistograms(IsoGammas, hDirIsoGammas, event.weight);
       if (optns.doQA)
       {

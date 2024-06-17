@@ -126,7 +126,11 @@ class IsoGamma : public PhysicsObject
  public:
   using PhysicsObject::PhysicsObject;
   ~IsoGamma(){};
+  bool isPhoton();
   bool isSignal();
+  bool isGammaFromPion();
+  bool isGammaFromEta();
+  bool isPion();
   float E = 0;
   float EBeforeNL = 0; // To monitor the application of the NL
   float M02 = 0;
@@ -148,11 +152,48 @@ class IsoGamma : public PhysicsObject
   int MCTag;
 };
 
+bool IsoGamma::isPhoton()
+{
+  if (CheckTagBit(MCTag, kMCPhoton)) {
+    return true;
+  } 
+  return false;
+}
+
 bool IsoGamma::isSignal()
 {
   if (CheckTagBit(MCTag, kMCPhoton)) {
-    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
+    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation)){
       return true;
+    }  
+  }
+  return false;
+}
+
+bool IsoGamma::isGammaFromPion()
+{
+  if (CheckTagBit(MCTag, kMCPhoton)) {
+    if (CheckTagBit(MCTag, kMCPi0Decay)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsoGamma::isGammaFromEta()
+{
+  if (CheckTagBit(MCTag, kMCPhoton)) {
+    if (CheckTagBit(MCTag, kMCEtaDecay)){
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsoGamma::isPion()
+{
+  if (CheckTagBit(MCTag, kMCPion)){
+    return true;
   }
   return false;
 }
