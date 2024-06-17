@@ -160,7 +160,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns)
 
 bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
 {
-  bool passed = true;
+  bool passed = false;
 
   //Check EMCAL acceptance
   if(IsoGamma.Eta()<EMcalEtaMax && IsoGamma.Eta()>EMcalEtaMin && IsoGamma.Phi()>EMcalPhiMin && IsoGamma.Phi()<EMcalPhiMax)

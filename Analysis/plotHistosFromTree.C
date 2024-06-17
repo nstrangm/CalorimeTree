@@ -4,6 +4,7 @@
 #include <filesystem>
 #include "Utilities.h"
 #include "Cuts.h"
+#include "plotHistosfromTree.h"
 
 const char* suffix = "png";
 
@@ -14,6 +15,28 @@ void createDirectory(const char* path)
     if (mkdir(path, 0755) == -1) // Directory does not exist, create it
       std::cerr << "Error creating directory: " << path << std::endl;
   }
+  return;
+}
+//Add to plot class?
+void AvoidLogYconflict(TH1* h, float logymin=1e-10)
+{
+  double min_nonzero = std::numeric_limits<double>::max();
+  for (int i = 1; i <= h->GetNbinsX(); ++i) {
+      float content = h->GetBinContent(i);
+      if (content > 1e-10 && content < min_nonzero) {
+          min_nonzero = content;
+      }
+      if (h->GetBinContent(i) == 0) {
+          h->SetBinContent(i, logymin);
+      }
+  }
+  h->SetMinimum(min_nonzero);
+  return;
+}
+
+void SetTitleAndLabels(TH1* h, const char* title)
+{
+  h->SetTitle(title);
   return;
 }
 
@@ -95,21 +118,11 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
 {
   ENTER
 
-  const char* outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
-  createDirectory(outputDir);
+  //const char* outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
+  //const char* outputDirChar = Form("%s/IsoGammas", optns.analysisDirPath.Data());
+  TString outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
 
-
-  
-  /*
-    ((TH1F*)dir->FindObject("hNIsoGammaSignal"))->Fill((int)obj.size(), eventWeight);
-    ((TH1F*)dir->FindObject("hMinMassDiffToPi0Signal"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaPxSignal"))->Fill(obj.at(i).Px, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaPySignal"))->Fill(obj.at(i).Py, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaPzSignal"))->Fill(obj.at(i).Pz, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaM02Signal"))->Fill(obj.at(i).M02, eventWeight);
-    ((TH1F*)dir->FindObject("hIsoGammaM20Signal"))->Fill(obj.at(i).M20, eventWeight);
-  */
+  createDirectory(outputDir.Data());
 
   // Plot response matrix
   Plotting1D PMinMassDiffToPi0;
@@ -165,6 +178,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralBG = hMinMassDiffToPi0Background->Integral(1, hMinMassDiffToPi0Background->GetNbinsX());
     hMinMassDiffToPi0Signal->Scale(1. / integralSignal);
     hMinMassDiffToPi0Background->Scale(1. / integralBG);
+    AvoidLogYconflict(hMinMassDiffToPi0Signal);
+    AvoidLogYconflict(hMinMassDiffToPi0Background);
     PMinMassDiffToPi0.New(hMinMassDiffToPi0Signal, "Signal");
     PMinMassDiffToPi0.New(hMinMassDiffToPi0Background, "Background");
 
@@ -175,6 +190,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralEBG = hIsoGammaEBackground->Integral(1, hIsoGammaEBackground->GetNbinsX());
     hIsoGammaESignal->Scale(1./integralESignal);
     hIsoGammaEBackground->Scale(1./integralEBG);
+    AvoidLogYconflict(hIsoGammaESignal);
+    AvoidLogYconflict(hIsoGammaEBackground);
     PIsoGammaE.New(hIsoGammaESignal,"Signal");
     PIsoGammaE.New(hIsoGammaEBackground,"Background");
 
@@ -185,6 +202,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralM02BG = hIsoGammaM02Background->Integral(1, hIsoGammaM02Background->GetNbinsX());
     hIsoGammaM02Signal->Scale(1./integralM02Signal);
     hIsoGammaM02Background->Scale(1./integralM02BG);
+    AvoidLogYconflict(hIsoGammaM02Signal);
+    AvoidLogYconflict(hIsoGammaM02Background);
     PIsoGammaM02.New(hIsoGammaM02Signal,"Signal");
     PIsoGammaM02.New(hIsoGammaM02Background,"Background");
 
@@ -195,6 +214,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralM20BG = hIsoGammaM20Background->Integral(1, hIsoGammaM20Background->GetNbinsX());
     hIsoGammaM20Signal->Scale(1./integralM20Signal);
     hIsoGammaM20Background->Scale(1./integralM20BG);
+    AvoidLogYconflict(hIsoGammaM20Signal);
+    AvoidLogYconflict(hIsoGammaM20Background);
     PIsoGammaM20.New(hIsoGammaM20Signal,"Signal");
     PIsoGammaM20.New(hIsoGammaM20Background,"Background");
 
@@ -205,6 +226,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralPxBG = hIsoGammaPxBackground->Integral(1, hIsoGammaPxBackground->GetNbinsX());
     hIsoGammaPxSignal->Scale(1./integralPxSignal);
     hIsoGammaPxBackground->Scale(1./integralPxBG);
+    AvoidLogYconflict(hIsoGammaPxSignal);
+    AvoidLogYconflict(hIsoGammaPxBackground);
     PIsoGammaPx.New(hIsoGammaPxSignal,"Signal");
     PIsoGammaPx.New(hIsoGammaPxBackground,"Background");
 
@@ -215,6 +238,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralPyBG = hIsoGammaPyBackground->Integral(1, hIsoGammaPyBackground->GetNbinsX());
     hIsoGammaPySignal->Scale(1./integralPySignal);
     hIsoGammaPyBackground->Scale(1./integralPyBG);
+    AvoidLogYconflict(hIsoGammaPySignal);
+    AvoidLogYconflict(hIsoGammaPyBackground);
     PIsoGammaPy.New(hIsoGammaPySignal,"Signal");
     PIsoGammaPy.New(hIsoGammaPyBackground,"Background");
 
@@ -225,6 +250,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralPzBG = hIsoGammaPzBackground->Integral(1, hIsoGammaPzBackground->GetNbinsX());
     hIsoGammaPzSignal->Scale(1./integralPzSignal);
     hIsoGammaPzBackground->Scale(1./integralPzBG);
+    AvoidLogYconflict(hIsoGammaPzSignal);
+    AvoidLogYconflict(hIsoGammaPzBackground);
     PIsoGammaPz.New(hIsoGammaPzSignal,"Signal");
     PIsoGammaPz.New(hIsoGammaPzBackground,"Background");
 
@@ -235,6 +262,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralIsolationBG = hIsoGammaIsoChargedBackground->Integral(1, hIsoGammaIsoChargedBackground->GetNbinsX());
     hIsoGammaIsoChargedSignal->Scale(1./integralIsolationSignal);
     hIsoGammaIsoChargedBackground->Scale(1./integralIsolationBG);
+    AvoidLogYconflict(hIsoGammaIsoChargedSignal);
+    AvoidLogYconflict(hIsoGammaIsoChargedBackground);
     PIsoGammaIsoCharged.New(hIsoGammaIsoChargedSignal,"Signal");
     PIsoGammaIsoCharged.New(hIsoGammaIsoChargedBackground,"Background");
 
@@ -245,9 +274,94 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     float integralIsolationCorrectedBG = hIsoGammaIsoChargedCorrectedBackground->Integral(1, hIsoGammaIsoChargedCorrectedBackground->GetNbinsX());
     hIsoGammaIsoChargedCorrectedSignal->Scale(1./integralIsolationSignal);
     hIsoGammaIsoChargedCorrectedBackground->Scale(1./integralIsolationBG);
+    AvoidLogYconflict(hIsoGammaIsoChargedCorrectedSignal);
+    AvoidLogYconflict(hIsoGammaIsoChargedCorrectedBackground);
     PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrectedSignal,"Signal");
     PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrectedBackground,"Background");
-    //PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedSignal,"Background");
+
+    //M02vsPt (Slicing 2D hist pr. specified pT-bins)
+    TH2F* h2M02vspT;
+    TH2F* h2M02vspTSignal;
+    TH2F* h2M02vspTBackground;
+    TH2F* h2M02vspTAllGamma;
+    TH2F* h2M02vspTPionDecayGamma;
+    TH2F* h2M02vspTEtaDecayGamma;
+    TH2F* h2M02vspTMergedPionGamma;
+
+    h2M02vspT = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pT")->Clone("hIsoGammaM02pT");
+    h2M02vspTSignal = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTSignal")->Clone("hIsoGammaM02pTSignal");
+    h2M02vspTBackground = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTBackground")->Clone("hIsoGammaM02pTBackground");
+    h2M02vspTAllGamma = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTAllGamma")->Clone("hIsoGammaM02pTAllGamma");
+    h2M02vspTPionDecayGamma = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTPionDecayGamma")->Clone("hIsoGammaM02pTPionDecayGamma");
+    h2M02vspTEtaDecayGamma = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTEtaDecayGamma")->Clone("hIsoGammaM02pTEtaDecayGamma");
+    h2M02vspTMergedPionGamma = (TH2F*)dIsoGammaQA->Get("hIsoGammaM02pTMergedPionGamma")->Clone("hIsoGammaM02pTMergedPionGamma");
+
+    int NSlicesPtBins=SlicesPt.size();
+
+    //Initiate arrays for storing Plotting1D's for loop
+    Plotting1D PM02vspTSignalBackground[NSlicesPtBins];
+    Plotting1D PM02vspTSignalContributions[NSlicesPtBins];
+
+    TH1F* hM02vspTSlice[NSlicesPtBins];
+    TH1F* hM02vspTSliceSignal[NSlicesPtBins];
+    TH1F* hM02vspTSliceBackground[NSlicesPtBins];
+    TH1F* hM02vspTSliceAllGamma[NSlicesPtBins];
+    TH1F* hM02vspTSlicePionDecayGamma[NSlicesPtBins];
+    TH1F* hM02vspTSliceEtaDecayGamma[NSlicesPtBins];
+    TH1F* hM02vspTSliceMergedPionGamma[NSlicesPtBins];
+
+
+    for(int i=0;i<NSlicesPtBins-1;i++){
+      //Plotting1D PM02vspTSignalBackground;
+      //Plotting1D PM02vspTSignalContributions;
+      //For saving slices
+      //TH1F* hM02vspTSignalBackground=new TH1F(Form("Bkg%i",i));// = 0x0;//Dummy for plotting in the end.
+      //TH1F* hM02vspTSliceSignalContributions=new TH1F(Form("Cont%i",i));;// = 0x0;
+      
+      //cout<<hM02vspTSignalBackground<<
+
+      //Project TH2F's
+      string titleM02vspTsplice = "M02:"+to_string(SlicesPt.at(i)).substr(0,4)+"GeV/c<p_{T}<"+to_string(SlicesPt.at(i+1)).substr(0,4)+"GeV/c";
+      int pTminbin=h2M02vspT->GetYaxis()->FindBin(SlicesPt.at(i));
+      int pTmaxbin=h2M02vspT->GetYaxis()->FindBin(SlicesPt.at(i+1));
+      
+      //hM02vspTSlices.push_back(h2M02vspT->ProjectionX(titleM02vspTsplice.c_str(),pTminbin,pTmaxbin));
+      hM02vspTSlice[i] = (TH1F*)h2M02vspT->ProjectionX(titleM02vspTsplice.c_str(),pTminbin,pTmaxbin);
+      hM02vspTSlice[i]->SetTitle(titleM02vspTsplice.c_str());
+      hM02vspTSliceSignal[i] = (TH1F*)h2M02vspTSignal->ProjectionX(Form("a%i",i),pTminbin,pTmaxbin);
+      hM02vspTSliceBackground[i] = (TH1F*)h2M02vspTBackground->ProjectionX(Form("b%i",i),pTminbin,pTmaxbin);
+      hM02vspTSliceAllGamma[i] = (TH1F*)h2M02vspTAllGamma->ProjectionX(Form("c%i",i),pTminbin,pTmaxbin);
+      hM02vspTSlicePionDecayGamma[i] = (TH1F*)h2M02vspTPionDecayGamma->ProjectionX(Form("d%i",i),pTminbin,pTmaxbin);
+      hM02vspTSliceEtaDecayGamma[i] = (TH1F*)h2M02vspTEtaDecayGamma->ProjectionX(Form("e%i",i),pTminbin,pTmaxbin);
+      hM02vspTSliceMergedPionGamma[i] = (TH1F*)h2M02vspTMergedPionGamma->ProjectionX(Form("f%i",i),pTminbin,pTmaxbin);
+//Unique hist name.
+//Try array.
+      AvoidLogYconflict(hM02vspTSlice[i]);
+      AvoidLogYconflict(hM02vspTSliceSignal[i]);
+      AvoidLogYconflict(hM02vspTSliceBackground[i]);
+      AvoidLogYconflict(hM02vspTSliceAllGamma[i]);
+      AvoidLogYconflict(hM02vspTSlicePionDecayGamma[i]);
+      AvoidLogYconflict(hM02vspTSliceMergedPionGamma[i]);
+
+      //Add to figure and plot:
+      //All, Signal and Background
+      PM02vspTSignalBackground[i].New(hM02vspTSlice[i],"All");
+      PM02vspTSignalBackground[i].New(hM02vspTSliceSignal[i],"Signal");
+      PM02vspTSignalBackground[i].New(hM02vspTSliceBackground[i],"Background");
+      PM02vspTSignalBackground[i].SetAxisLabel(("M02"));
+      PM02vspTSignalBackground[i].Plot(Form("%s/M02_pTmin%f_pTmax%f_SignalBackgroundSig.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
+//
+      ////All, Signal and Contributions
+      PM02vspTSignalContributions[i].New(hM02vspTSlice[i],"All");
+      PM02vspTSignalContributions[i].New(hM02vspTSliceSignal[i],"Signal");
+      PM02vspTSignalContributions[i].New(hM02vspTSlicePionDecayGamma[i],"#pi^{0}-decay");
+      PM02vspTSignalContributions[i].New(hM02vspTSliceEtaDecayGamma[i],"#eta-decay");
+      PM02vspTSignalContributions[i].New(hM02vspTSliceMergedPionGamma[i],"#pi^{0}");
+      PM02vspTSignalContributions[i].SetAxisLabel(("M02"));
+      PM02vspTSignalContributions[i].Plot(Form("%s/M02_pTmin%f_pTmax%f_SignalContributions.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
+
+    }
+    
 
 
     //
@@ -256,31 +370,33 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     PMinMassDiffToPi0.New(hMinMassDiffToPi0);
   }
   PMinMassDiffToPi0.SetAxisLabel("#bf{#Delta#it{m}_{inv} (GeV/#it{c}^{2})}");
-  PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir, suffix));
+  PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}");
-  PIsoGammaE.Plot(Form("%s/IsoGammaE.%s", outputDir, suffix));
+  PIsoGammaE.Plot(Form("%s/IsoGammaE.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaM02.SetAxisLabel("#bf{#it{M02}}");
-  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir, suffix));
+  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}");
-  PIsoGammaM20.Plot(Form("%s/IsoGammaM20.%s", outputDir, suffix));
+  PIsoGammaM20.Plot(Form("%s/IsoGammaM20.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaPx.SetAxisLabel("#bf{#it{Px}[GeV/#it{c}]}");
-  PIsoGammaPx.Plot(Form("%s/IsoGammaPx.%s", outputDir, suffix));
+  PIsoGammaPx.Plot(Form("%s/IsoGammaPx.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaPy.SetAxisLabel("#bf{#it{Py}[GeV/#it{c}]}");
-  PIsoGammaPy.Plot(Form("%s/IsoGammaPy.%s", outputDir, suffix));
-
-  PIsoGammaPz.SetAxisLabel("#bf{#it{Pz}[GeV/#it{c}]}");
-  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir, suffix));
-
-  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
-  PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir, suffix),kFALSE,kTRUE);
+  PIsoGammaPy.Plot(Form("%s/IsoGammaPy.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
 
   PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
-  PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir, suffix),kFALSE,kTRUE);
+  PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
+
+  PIsoGammaPz.SetAxisLabel("#bf{#it{Pz}[GeV/#it{c}]}");
+  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix));
+
+  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
+  PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix),kFALSE,kTRUE);
+
+  
 
   EXIT
 }

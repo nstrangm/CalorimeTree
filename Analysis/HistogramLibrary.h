@@ -51,6 +51,9 @@ TDirectory* DefineIsoGammaHistograms(TFile* f, GlobalOptions optns)
 TDirectory* DefineIsoGammaQAHistograms(TFile* f, GlobalOptions optns)
 {
 
+  float M02min=0;
+  float M02max=3;
+
   //QA plots for all IsoGammas
   TDirectory* dir = f->mkdir("IsoGammaQA");
   dir->cd();
@@ -66,6 +69,7 @@ TDirectory* DefineIsoGammaQAHistograms(TFile* f, GlobalOptions optns)
   TH1F* hIsoGammaPz = new TH1F("hIsoGammaPz", "hPz", 1000, -50., 50.);
   TH1F* hIsoGammaNLM = new TH1F("hIsoGammaNLM","hIsoGammaNLM", 6, 0, 6);
   TH2F* hIsoGammaEtaPhi = new TH2F("hIsoGammaEtaPhi", "hEtaPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+  TH2F* hIsoGammaM02pT = new TH2F("hIsoGammaM02pT","hIsoGammaM02pT", 100, M02min, M02max, 100, 0, 50);
   TH2F* hIsoGammaEBeforeAfterNL = new TH2F("hIsoGammaEBeforeAfterNL", "hIsoGammaEBeforeAfterNL;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
   TH2F* hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
 
@@ -89,6 +93,7 @@ TDirectory* DefineIsoGammaQAHistograms(TFile* f, GlobalOptions optns)
     TH1F* hIsoGammaPzSignal = new TH1F("hIsoGammaPzSignal", "hPzSignal", 1000, -50., 50.);
     TH1F* hIsoGammaNLMSignal = new TH1F("hIsoGammaNLMSignal","hIsoGammaNLMSignal", 6, 0, 6);
     TH2F* hIsoGammaEtaPhiSignal = new TH2F("hIsoGammaEtaPhiSignal", "hEtaPhiSignal", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+    TH2F* hIsoGammaM02pTSignal = new TH2F("hIsoGammaM02pTSignal","hIsoGammaM02pTSignal", 100, M02min, M02max, 100, 0, 50);
     TH2F* hIsoGammaEBeforeAfterNLSignal = new TH2F("hIsoGammaEBeforeAfterNLSignal", "hIsoGammaEBeforeAfterNLSignal;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F* hGGMinvDistSignal = new TH2F("hGGMinvDistSignal", "hGGMinvDistSignal", 100, 0, 1, 500, 0, 50);
 
@@ -104,8 +109,20 @@ TDirectory* DefineIsoGammaQAHistograms(TFile* f, GlobalOptions optns)
     TH1F* hIsoGammaPzBackground = new TH1F("hIsoGammaPzBackground", "hPzBackground", 1000, -50., 50.);
     TH1F* hIsoGammaNLMBackground = new TH1F("hIsoGammaNLMBackground","hIsoGammaNLMBackground", 6, 0, 6);
     TH2F* hIsoGammaEtaPhiBackground = new TH2F("hIsoGammaEtaPhiBackground", "hEtaPhiBackground", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+    TH2F* hIsoGammaM02pTBackground = new TH2F("hIsoGammaM02pTBackground","hIsoGammaM02pTBackground", 100, M02min, M02max, 100, 0, 50);
     TH2F* hIsoGammaEBeforeAfterNLBackground = new TH2F("hIsoGammaEBeforeAfterNLBackground", "hIsoGammaEBeforeAfterNLBackground;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F* hGGMinvDistBackground = new TH2F("hGGMinvDistBackground", "hGGMinvDistBackground", 100, 0, 1, 500, 0, 50);
+
+    //All Gammas
+    TH2F* hIsoGammaM02pTAllGamma = new TH2F("hIsoGammaM02pTAllGamma", "hM02pTAllGamma", 100, M02min, M02max, 100, 0, 50);
+    //Pion-decay Gammas
+    TH2F* hIsoGammaM02pTPionDecayGamma = new TH2F("hIsoGammaM02pTPionDecayGamma", "hM02pTPionDecayGamma", 100, M02min, M02max, 100, 0, 50);
+    //Eta-decay Gammas
+    TH2F* hIsoGammaM02pTEtaDecayGamma = new TH2F("hIsoGammaM02pTEtaDecayGamma", "hM02pTEtaDecayGamma", 100, M02min, M02max, 100, 0, 50);
+    //Merged-pion-Gammas
+    TH2F* hIsoGammaM02pTMergedPionGamma = new TH2F("hIsoGammaM02pTMergedPionGamma", "hM02pTMergedPionGamma", 100, M02min, M02max, 100, 0, 50);
+
+
 
 
   } else { // ------------------> Only in data Jet histograms
@@ -204,6 +221,7 @@ void fillQAHistograms(T obj, TDirectory* dir, float eventWeight, GlobalOptions o
       ((TH1F*)dir->FindObject("hIsoGammaM20"))->Fill(obj.at(i).M20, eventWeight);
       ((TH1F*)dir->FindObject("hIsoGammaNLM"))->Fill(obj.at(i).NLM, eventWeight);
       ((TH2F*)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      ((TH2F*)dir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       ((TH2F*)dir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
       if (optns.isMC) {
         ((TH2F*)dir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);
@@ -220,6 +238,7 @@ void fillQAHistograms(T obj, TDirectory* dir, float eventWeight, GlobalOptions o
           ((TH1F*)dir->FindObject("hIsoGammaM20Signal"))->Fill(obj.at(i).M20, eventWeight);
           ((TH1F*)dir->FindObject("hIsoGammaNLMSignal"))->Fill(obj.at(i).NLM, eventWeight);
           ((TH2F*)dir->FindObject("hIsoGammaEtaPhiSignal"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTSignal"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
           ((TH2F*)dir->FindObject("hIsoGammaEBeforeAfterNLSignal"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
         }else{
           ((TH1F*)dir->FindObject("hIsoGammaIsoChargedBackground"))->Fill(obj.at(i).IsoCharged, eventWeight);
@@ -234,7 +253,20 @@ void fillQAHistograms(T obj, TDirectory* dir, float eventWeight, GlobalOptions o
           ((TH1F*)dir->FindObject("hIsoGammaM20Background"))->Fill(obj.at(i).M20, eventWeight);
           ((TH1F*)dir->FindObject("hIsoGammaNLMBackground"))->Fill(obj.at(i).NLM, eventWeight);
           ((TH2F*)dir->FindObject("hIsoGammaEtaPhiBackground"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTBackground"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
           ((TH2F*)dir->FindObject("hIsoGammaEBeforeAfterNLBackground"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+        }
+        if(obj.at(i).isPhoton()){
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTAllGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+        }
+        if(obj.at(i).isGammaFromPion()){
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTPionDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+        }
+        if(obj.at(i).isGammaFromEta()){
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTEtaDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+        }
+        if(obj.at(i).isPion()){
+          ((TH2F*)dir->FindObject("hIsoGammaM02pTMergedPionGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
         }
       } else {
         ((TH1F*)dir->FindObject("hMinMassDiffToPi0"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
