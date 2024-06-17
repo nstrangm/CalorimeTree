@@ -6,24 +6,25 @@ doPi0: false
 GJ18D: 
   # path: /home/nico/alice/GammaJet/calorimetrees/MC_Trees.txt
   isMC: true
+  path: /alf/data/calorimetrees/GA_pp_MC_AOD/6038_20240523-1434_13TeV_GJDCal18
   label: '#gamma-Jet 18 DCal'
   trainconfigs:
     100_Charged: Standard # disabled | standard | full
     101_Charged: disabled
     102_Charged: disabled
-    100_Full: Standard # disabled | standard | full
+    100_Full: disabled # disabled | standard | full
     101_Full: disabled
     102_Full: disabled
 
 LHC18_pass2: 
-  path: /home/nico/alice/GammaJet/calorimetrees/Data_Trees.txt
+  path: /alf/data/calorimetrees/GA_pp_AOD/2708_20240527-1343_13TeV_LHC18pass2
   isMC: false
   label: 'LHC18[b-p]'
   trainconfigs:
-    100_Charged: Standard # disabled | standard | full
+    100_Charged: disabled # disabled | standard | full
     101_Charged: disabled
     102_Charged: disabled
-    100_Full: Standard # disabled | standard | full
+    100_Full: disabled # disabled | standard | full
     101_Full: disabled
     102_Full: disabled
 
@@ -31,6 +32,6 @@ JJ18D:
   isMC: true
   label: '#Jet-Jet 18 DCal'
   trainconfigs: 
-    100_Charged: Standard
+    100_Charged: disabled
     101_Charged: disabled
     102_Charged: disabled

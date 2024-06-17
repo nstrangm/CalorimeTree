@@ -6,9 +6,12 @@
 #include <TKey.h>
 #include <TChain.h>
 
-enum TreeTypes { kRun2Tree,
-                 kRun3Tree,
-                 kBerkeleyTree };
+enum TreeTypes
+{
+  kRun2Tree,
+  kRun3Tree,
+  kBerkeleyTree
+};
 
 // Small helper function for readTree
 TString GetTreeName(TString InputFileNamesFile)
@@ -18,18 +21,20 @@ TString GetTreeName(TString InputFileNamesFile)
   if (!fileRootFileList)
     FATAL(Form("File listing input files %s not found!", InputFileNamesFile.Data()));
 
-  for (TString tempLine; tempLine.ReadLine(fileRootFileList, kTRUE);) {
+  for (TString tempLine; tempLine.ReadLine(fileRootFileList, kTRUE);)
+  {
     if (tempLine.Contains("histos")) // Skip the file that contains the histograms
       continue;
     // before using check if file is health
-    TFile* f = TFile::Open(tempLine.Data());
-    if ((!f) || f->IsZombie()) {
+    TFile *f = TFile::Open(tempLine.Data());
+    if ((!f) || f->IsZombie())
+    {
       ERROR(Form("Input file %s is not healthy! Skipping this one...", tempLine.Data()))
       continue;
     }
-    TKey* key;
+    TKey *key;
     TIter next(f->GetListOfKeys());
-    key = (TKey*)next();
+    key = (TKey *)next();
     return key->GetName();
   }
 
@@ -37,38 +42,43 @@ TString GetTreeName(TString InputFileNamesFile)
 }
 
 // Function that creates a chain, adds all trees listed in "InputFileNamesFile" to the chain and returns it
-TChain* readTree(TString InputFileNamesFile)
+TChain *readTree(TString InputFileNamesFile, bool isDebugRun)
 {
   TString treeName = GetTreeName(InputFileNamesFile);
-  TChain* tree = new TChain(treeName);
+  TChain *tree = new TChain(treeName);
 
   std::ifstream fileRootFileList;
   fileRootFileList.open(InputFileNamesFile, std::ios_base::in);
   if (!fileRootFileList)
     FATAL(Form("File listing input files %s not found!", InputFileNamesFile.Data()));
 
-  for (TString tempLine; tempLine.ReadLine(fileRootFileList, kTRUE);) {
+  for (TString tempLine; tempLine.ReadLine(fileRootFileList, kTRUE);)
+  {
     if (tempLine.Contains("histos")) // Skip the file that contains the histograms
       continue;
     // before adding check if file is health
-    TFile* f = TFile::Open(tempLine.Data());
-    if ((!f) || f->IsZombie()) {
+    TFile *f = TFile::Open(tempLine.Data());
+    if ((!f) || f->IsZombie())
+    {
       ERROR(Form("Input file %s is not healthy! Skipping this one...", tempLine.Data()))
       continue;
     }
     f->Close();
     INFO(Form("Adding tree %s from %s to chain", treeName.Data(), tempLine.Data()))
     tree->Add(Form("%s", tempLine.Data()));
+    if (isDebugRun)
+      break;
   }
   return tree;
 }
 
-int listTreeBranches(TChain* tree)
+int listTreeBranches(TChain *tree)
 {
-  TObjArray* branchList = tree->GetListOfBranches();
+  TObjArray *branchList = tree->GetListOfBranches();
   TString sBranchList = "";
   bool ClustersInTree = false, JetsInTree = false, Pi0InTree = false;
-  for (Int_t b = 0; b < branchList->GetEntries(); b++) {
+  for (Int_t b = 0; b < branchList->GetEntries(); b++)
+  {
     TString branchName = branchList->At(b)->GetName();
     if (branchName.Contains("Cluster") || branchName.Contains("Gamma") || branchName.Contains("Photon"))
       ClustersInTree = true;
@@ -91,12 +101,12 @@ int listTreeBranches(TChain* tree)
 
 class TreeBuffer
 {
- private:
-  void ReadRun2TreeIntoBuffer(TChain* tree, GlobalOptions optns);
-  void ReadRun3TreeIntoBuffer(TChain* tree, GlobalOptions optns);
-  void ReadBerkeleyTreeIntoBuffer(TChain* tree, GlobalOptions optns);
+private:
+  void ReadRun2TreeIntoBuffer(TChain *tree, GlobalOptions optns);
+  void ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns);
+  void ReadBerkeleyTreeIntoBuffer(TChain *tree, GlobalOptions optns);
 
- public:
+public:
   int NEvents = 0;
 
   // #############################################
@@ -112,38 +122,38 @@ class TreeBuffer
   unsigned short Event_NotAccepted = 0;    // Can be removed
 
   // -------------- Cluster branches ---------------
-  std::vector<float>* Cluster_E = 0;                    // Essential
-  std::vector<float>* Cluster_Px = 0;                   // Essential
-  std::vector<float>* Cluster_Py = 0;                   // Essential
-  std::vector<float>* Cluster_Pz = 0;                   // Essential
-  std::vector<float>* Cluster_M02 = 0;                  // Essential
-  std::vector<float>* Cluster_M02Recalc = 0;            // Can be removed (not in light tree)
-  std::vector<float>* Cluster_M20 = 0;                  // Can be removed (not in light tree)
-  std::vector<unsigned short>* Cluster_NCells = 0;      // Essential
-  std::vector<float>* Cluster_V1SplitMass = 0;          // Can be removed (not in light tree)
-  std::vector<float>* Cluster_MinMassDiffToPi0 = 0;     // Can be removed (not in light tree)
-  std::vector<float>* Cluster_MinMassDiffToEta = 0;     // Can be removed (not in light tree)
-  std::vector<unsigned short>* Cluster_NLM = 0;                  // Essential
-  std::vector<unsigned short>* Cluster_SM = 0;          // Can be removed (not in light tree)
-  std::vector<float>* Cluster_EFrac = 0;                // Essential
-  std::vector<float>* Cluster_IsoCharged1 = 0;          // Essential R = 0.2
-  std::vector<float>* Cluster_IsoCharged2 = 0;          // Essential R = 0.3
-  std::vector<float>* Cluster_IsoCharged3 = 0;          // Essential R = 0.4 (standard)
-  std::vector<float>* Cluster_IsoBckPerp = 0;           // Essential
-  std::vector<float>* Cluster_MatchTrackdEta = 0;       // Essential
-  std::vector<float>* Cluster_MatchTrackdPhi = 0;       // Essential
-  std::vector<float>* Cluster_MatchTrackP = 0;          // Essential
-  std::vector<float>* Cluster_MatchTrackPt = 0;         // Essential
-  std::vector<bool>* Cluster_MatchTrackIsConv = 0;      // Can be removed (not in light tree)
-  std::vector<float>* Cluster_DistanceToBadChannel = 0; // Essential
+  std::vector<float> *Cluster_E = 0;                    // Essential
+  std::vector<float> *Cluster_Px = 0;                   // Essential
+  std::vector<float> *Cluster_Py = 0;                   // Essential
+  std::vector<float> *Cluster_Pz = 0;                   // Essential
+  std::vector<float> *Cluster_M02 = 0;                  // Essential
+  std::vector<float> *Cluster_M02Recalc = 0;            // Can be removed (not in light tree)
+  std::vector<float> *Cluster_M20 = 0;                  // Can be removed (not in light tree)
+  std::vector<unsigned short> *Cluster_NCells = 0;      // Essential
+  std::vector<float> *Cluster_V1SplitMass = 0;          // Can be removed (not in light tree)
+  std::vector<float> *Cluster_MinMassDiffToPi0 = 0;     // Can be removed (not in light tree)
+  std::vector<float> *Cluster_MinMassDiffToEta = 0;     // Can be removed (not in light tree)
+  std::vector<unsigned short> *Cluster_NLM = 0;         // Essential
+  std::vector<unsigned short> *Cluster_SM = 0;          // Can be removed (not in light tree)
+  std::vector<float> *Cluster_EFrac = 0;                // Essential
+  std::vector<float> *Cluster_IsoCharged1 = 0;          // Essential R = 0.2
+  std::vector<float> *Cluster_IsoCharged2 = 0;          // Essential R = 0.3
+  std::vector<float> *Cluster_IsoCharged3 = 0;          // Essential R = 0.4 (standard)
+  std::vector<float> *Cluster_IsoBckPerp = 0;           // Essential
+  std::vector<float> *Cluster_MatchTrackdEta = 0;       // Essential
+  std::vector<float> *Cluster_MatchTrackdPhi = 0;       // Essential
+  std::vector<float> *Cluster_MatchTrackP = 0;          // Essential
+  std::vector<float> *Cluster_MatchTrackPt = 0;         // Essential
+  std::vector<bool> *Cluster_MatchTrackIsConv = 0;      // Can be removed (not in light tree)
+  std::vector<float> *Cluster_DistanceToBadChannel = 0; // Essential
 
   // -------------- Cluster branches ---------------
-  std::vector<float>* Jet_Px = 0;
-  std::vector<float>* Jet_Py = 0;
-  std::vector<float>* Jet_Pz = 0;
-  std::vector<float>* Jet_Area = 0;
-  std::vector<unsigned short>* Jet_Nch = 0;
-  std::vector<unsigned short>* Jet_Nclus = 0;
+  std::vector<float> *Jet_Px = 0;
+  std::vector<float> *Jet_Py = 0;
+  std::vector<float> *Jet_Pz = 0;
+  std::vector<float> *Jet_Area = 0;
+  std::vector<unsigned short> *Jet_Nch = 0;
+  std::vector<unsigned short> *Jet_Nclus = 0;
 
   // ###########################################
   // Members that will be matched to MC branches
@@ -156,55 +166,56 @@ class TreeBuffer
   unsigned short Event_Ntrials;
 
   // ------------ Cluster branches ---------------
-  std::vector<float>* TrueCluster_E = 0;
-  std::vector<float>* TrueCluster_Px = 0;
-  std::vector<float>* TrueCluster_Py = 0;
-  std::vector<float>* TrueCluster_Pz = 0;
-  std::vector<float>* TrueCluster_LeadingEFrac = 0;
-  std::vector<float>* TrueCluster_IsoCharged1 = 0;
-  std::vector<float>* TrueCluster_IsoCharged2 = 0;
-  std::vector<float>* TrueCluster_IsoCharged3 = 0;
-  std::vector<float>* TrueCluster_IsoBckPerp = 0;
-  std::vector<int>* TrueCluster_MCTag = 0;
-  std::vector<bool>* TrueCluster_IsConv = 0;
+  std::vector<float> *TrueCluster_E = 0;
+  std::vector<float> *TrueCluster_Px = 0;
+  std::vector<float> *TrueCluster_Py = 0;
+  std::vector<float> *TrueCluster_Pz = 0;
+  std::vector<float> *TrueCluster_LeadingEFrac = 0;
+  std::vector<float> *TrueCluster_IsoCharged1 = 0;
+  std::vector<float> *TrueCluster_IsoCharged2 = 0;
+  std::vector<float> *TrueCluster_IsoCharged3 = 0;
+  std::vector<float> *TrueCluster_IsoBckPerp = 0;
+  std::vector<int> *TrueCluster_MCTag = 0;
+  std::vector<bool> *TrueCluster_IsConv = 0;
 
-  std::vector<float>* GenPhoton_E = 0;
-  std::vector<float>* GenPhoton_Px = 0;
-  std::vector<float>* GenPhoton_Py = 0;
-  std::vector<float>* GenPhoton_Pz = 0;
-  std::vector<float>* GenPhoton_IsoCharged1 = 0;
-  std::vector<float>* GenPhoton_IsoCharged2 = 0;
-  std::vector<float>* GenPhoton_IsoCharged3 = 0;
-  std::vector<float>* GenPhoton_IsoBckPerp = 0;
-  std::vector<int>* GenPhoton_MCTag = 0;
-  std::vector<bool>* GenPhoton_IsConv = 0;
+  std::vector<float> *GenPhoton_E = 0;
+  std::vector<float> *GenPhoton_Px = 0;
+  std::vector<float> *GenPhoton_Py = 0;
+  std::vector<float> *GenPhoton_Pz = 0;
+  std::vector<float> *GenPhoton_IsoCharged1 = 0;
+  std::vector<float> *GenPhoton_IsoCharged2 = 0;
+  std::vector<float> *GenPhoton_IsoCharged3 = 0;
+  std::vector<float> *GenPhoton_IsoBckPerp = 0;
+  std::vector<int> *GenPhoton_MCTag = 0;
+  std::vector<bool> *GenPhoton_IsConv = 0;
 
   // ------------ Jet branches ---------------
-  std::vector<float>* PLJet_Px = 0; // PL = Particle Level
-  std::vector<float>* PLJet_Py = 0;
-  std::vector<float>* PLJet_Pz = 0;
-  std::vector<float>* PLJet_Area = 0;
-  std::vector<unsigned short>* PLJet_NPart = 0;
+  std::vector<float> *PLJet_Px = 0; // PL = Particle Level
+  std::vector<float> *PLJet_Py = 0;
+  std::vector<float> *PLJet_Pz = 0;
+  std::vector<float> *PLJet_Area = 0;
+  std::vector<unsigned short> *PLJet_NPart = 0;
 
-  TreeBuffer(TChain* tree, GlobalOptions optns);
+  TreeBuffer(TChain *tree, GlobalOptions optns);
   ~TreeBuffer(){};
 };
 
-TreeBuffer::TreeBuffer(TChain* tree, GlobalOptions optns)
+TreeBuffer::TreeBuffer(TChain *tree, GlobalOptions optns)
 {
   NEvents = tree->GetEntries();
-  switch (optns.TreeFormat) {
-    case kRun2Tree:
-      ReadRun2TreeIntoBuffer(tree, optns);
-      break;
-    case kRun3Tree:
-    case kBerkeleyTree:
-    default:
-      FATAL(Form("Unknown treeFormat %d", optns.TreeFormat))
+  switch (optns.TreeFormat)
+  {
+  case kRun2Tree:
+    ReadRun2TreeIntoBuffer(tree, optns);
+    break;
+  case kRun3Tree:
+  case kBerkeleyTree:
+  default:
+    FATAL(Form("Unknown treeFormat %d", optns.TreeFormat))
   }
 }
 
-void TreeBuffer::ReadRun2TreeIntoBuffer(TChain* tree, GlobalOptions optns)
+void TreeBuffer::ReadRun2TreeIntoBuffer(TChain *tree, GlobalOptions optns)
 {
   tree->SetBranchAddress("Event_Rho", &Event_Rho);
   tree->SetBranchAddress("Event_NPrimaryTracks", &Event_NPrimaryTracks);
@@ -212,13 +223,15 @@ void TreeBuffer::ReadRun2TreeIntoBuffer(TChain* tree, GlobalOptions optns)
   tree->SetBranchAddress("Event_ZVertex", &Event_ZVertex);
   tree->SetBranchAddress("Event_Quality", &Event_Quality);
   tree->SetBranchAddress("Event_NotAccepted", &Event_NotAccepted);
-  if (optns.isMC) {
+  if (optns.isMC)
+  {
     tree->SetBranchAddress("Event_RhoMC", &Event_RhoMC);
     tree->SetBranchAddress("Event_Weight", &Event_Weight);
     tree->SetBranchAddress("Event_Xsection", &Event_Xsection);
     tree->SetBranchAddress("Event_Ntrials", &Event_Ntrials);
   }
-  if (optns.doIsoGamma) {
+  if (optns.doIsoGamma)
+  {
     tree->SetBranchAddress("Cluster_E", &Cluster_E);
     tree->SetBranchAddress("Cluster_Px", &Cluster_Px);
     tree->SetBranchAddress("Cluster_Py", &Cluster_Py);
@@ -243,7 +256,8 @@ void TreeBuffer::ReadRun2TreeIntoBuffer(TChain* tree, GlobalOptions optns)
     tree->SetBranchAddress("Cluster_MatchTrackPt", &Cluster_MatchTrackPt);
     tree->SetBranchAddress("Cluster_MatchTrackIsConv", &Cluster_MatchTrackIsConv);
     tree->SetBranchAddress("Cluster_DistanceToBadChannel", &Cluster_DistanceToBadChannel);
-    if (optns.isMC) {
+    if (optns.isMC)
+    {
       tree->SetBranchAddress("TrueCluster_E", &TrueCluster_E);
       tree->SetBranchAddress("TrueCluster_Px", &TrueCluster_Px);
       tree->SetBranchAddress("TrueCluster_Py", &TrueCluster_Py);
@@ -267,14 +281,16 @@ void TreeBuffer::ReadRun2TreeIntoBuffer(TChain* tree, GlobalOptions optns)
       tree->SetBranchAddress("GenPhoton_IsConv", &GenPhoton_IsConv);
     }
   }
-  if (optns.doJets) {
+  if (optns.doJets)
+  {
     tree->SetBranchAddress("Jet_Px", &Jet_Px);
     tree->SetBranchAddress("Jet_Py", &Jet_Py);
     tree->SetBranchAddress("Jet_Pz", &Jet_Pz);
     tree->SetBranchAddress("Jet_Area", &Jet_Area);
     tree->SetBranchAddress("Jet_Nch", &Jet_Nch);
     tree->SetBranchAddress("Jet_Nclus", &Jet_Nclus);
-    if (optns.isMC) {
+    if (optns.isMC)
+    {
       tree->SetBranchAddress("TrueJet_Px", &PLJet_Px);
       tree->SetBranchAddress("TrueJet_Py", &PLJet_Py);
       tree->SetBranchAddress("TrueJet_Pz", &PLJet_Pz);
