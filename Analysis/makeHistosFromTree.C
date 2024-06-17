@@ -11,20 +11,17 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   if (jobId < 0)
     FATAL("Negative jobId")
+  if(!jobId)
+    LOG("Only one input file will be used for testing since jobId 0 was given")
 
-  GlobalOptions optns(AnalysisDirectory);
+  GlobalOptions optns(AnalysisDirectory, jobId);
 
   EventCuts eventCuts(optns);
   IsoGammaCuts isoGammaCuts(optns);
   JetCuts jetCuts(optns);
   Pi0Cuts pi0Cuts(optns);
 
-  string teststring="";
-  if(jobId==0){
-    teststring="_Testing";
-  }
-
-  TFile *fOut = new TFile(Form("%s/HistosFromTree_%d%s.root", AnalysisDirectory.Data(), jobId,teststring.c_str()), "RECREATE");
+  TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
   TDirectory *hQADirEvents = optns.doQA ? DefineEventQAHistograms(fOut, optns) : nullptr;
@@ -40,12 +37,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<Pi0> Pi0s;
 
-  TChain *chain;
-  if(jobId==0){
-    chain = readTree(Form("%s/../InputFiles/InputFilesTesting_group_%d.txt", AnalysisDirectory.Data(), jobId));
-  }else{
-    chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
-  }
+  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), !jobId ? 1 : jobId), optns.isDebugRun);
   
   // TODO: Merge histograms from input files
 

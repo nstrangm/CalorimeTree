@@ -11,6 +11,8 @@
 class GlobalOptions
 {
 public:
+  bool isDebugRun = false; // Active if jobId = 0 to only run over one file for debugging
+  int jobId = 0; // Slurm jobId
   bool isMC = false;
   TString dataSet;
   TString dataSetLabel;
@@ -22,14 +24,15 @@ public:
   bool doIsoGamma = false;
   bool doJets = false;
   bool doPi0 = false;
-  GlobalOptions(TString AnalysisDirectory);
+  GlobalOptions(TString AnalysisDirectory, int jobId);
   // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
   ~GlobalOptions(){};
 };
 
 // GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
-GlobalOptions::GlobalOptions(TString AnalysisDirectory)
+GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 {
+  isDebugRun = !jobId;
   analysisDirPath = AnalysisDirectory;
   std::stringstream ss((std::string)AnalysisDirectory.Data());
   std::string word;

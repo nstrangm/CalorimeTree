@@ -4,7 +4,7 @@
 #include <filesystem>
 #include "Utilities.h"
 #include "Cuts.h"
-#include "plotHistosfromTree.h"
+#include "plotHistosFromTree.h"
 
 const char* suffix = "png";
 
@@ -310,6 +310,8 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
     TH1F* hM02vspTSliceEtaDecayGamma[NSlicesPtBins];
     TH1F* hM02vspTSliceMergedPionGamma[NSlicesPtBins];
 
+    PlottingGrid PM02Grid;
+    PM02Grid.SetAxisLabel("#bf{#it{M}_{02}}", "#bf{#it{N}}");
 
     for(int i=0;i<NSlicesPtBins-1;i++){
       //Plotting1D PM02vspTSignalBackground;
@@ -349,7 +351,7 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
       PM02vspTSignalBackground[i].New(hM02vspTSliceSignal[i],"Signal");
       PM02vspTSignalBackground[i].New(hM02vspTSliceBackground[i],"Background");
       PM02vspTSignalBackground[i].SetAxisLabel(("M02"));
-      PM02vspTSignalBackground[i].Plot(Form("%s/M02_pTmin%f_pTmax%f_SignalBackgroundSig.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
+      PM02vspTSignalBackground[i].Plot(Form("%s/M02_pTmin%.1f_pTmax%.1f_SignalBackgroundSig.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
 //
       ////All, Signal and Contributions
       PM02vspTSignalContributions[i].New(hM02vspTSlice[i],"All");
@@ -358,9 +360,14 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
       PM02vspTSignalContributions[i].New(hM02vspTSliceEtaDecayGamma[i],"#eta-decay");
       PM02vspTSignalContributions[i].New(hM02vspTSliceMergedPionGamma[i],"#pi^{0}");
       PM02vspTSignalContributions[i].SetAxisLabel(("M02"));
-      PM02vspTSignalContributions[i].Plot(Form("%s/M02_pTmin%f_pTmax%f_SignalContributions.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
+      PM02vspTSignalContributions[i].Plot(Form("%s/M02_pTmin%.1f_pTmax%.1f_SignalContributions.%s", outputDir.Data(),SlicesPt.at(i),SlicesPt.at(i+1), suffix),kFALSE,kTRUE);
 
+      PM02Grid.New(hM02vspTSlice[i],"All");
+      PM02Grid.New(hM02vspTSliceSignal[i],"Signal");
+      PM02Grid.New(hM02vspTSliceBackground[i],"Background");
+      PM02Grid.NextPad(Form("%.1f < #it{p}_{T} (GeV/c) < %.1f", SlicesPt.at(i),SlicesPt.at(i+1)));
     }
+    PM02Grid.Plot(Form("%s/M02_SignalBackgroundSig_Grid.%s", outputDir.Data(),suffix),kFALSE,kFALSE);
     
 
 
@@ -401,11 +408,11 @@ void plotIsoGammaQA(TDirectory* dIsoGammaQA, GlobalOptions optns)
   EXIT
 }
 
-void plotHistosFromTree(TString AnalysisDirectory)
+void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
 {
-  GlobalOptions optns(AnalysisDirectory);
+  GlobalOptions optns(AnalysisDirectory, isDebugRun);
 
-  TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectory.Data());
+  TString inputFilePath = Form("%s/HistosFromTree%s.root", AnalysisDirectory.Data(), isDebugRun ? "_0" : "");
 
   if (!std::filesystem::exists(inputFilePath.Data())) {
     inputFilePath = Form("%s/HistosFromTree_0.root", AnalysisDirectory.Data());
