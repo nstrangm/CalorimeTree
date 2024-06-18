@@ -102,7 +102,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns)
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
   applyNonLin = chosencut["cluster_applyNonLin"].IsDefined() ? chosencut["cluster_applyNonLin"].as<bool>() : standardcut["cluster_applyNonLin"].as<bool>();
-  cout<<"Here1"<<"\n";
+  DEBUG
   //Acceptance cut
   //EMcal
   EMcalEtaMax = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();

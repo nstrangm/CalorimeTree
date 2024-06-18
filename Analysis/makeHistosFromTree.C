@@ -12,7 +12,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   if (jobId < 0)
     FATAL("Negative jobId")
   if(!jobId)
-    LOG("Only one input file will be used for testing since jobId 0 was given")
+    LOG("This is a debug run")
 
   GlobalOptions optns(AnalysisDirectory, jobId);
 
@@ -37,9 +37,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<Pi0> Pi0s;
 
-  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), !jobId ? 1 : jobId), optns.isDebugRun);
-  
-  // TODO: Merge histograms from input files
+  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
 
   optns.TreeFormat = listTreeBranches(chain);
 

@@ -4,6 +4,11 @@
 # Do not ignore the .gitignore file itself
 !.gitignore
 
+# Do not ignore the DummyDataSet folder and its contents
+!DummyDataSet/
+!DummyDataSet/**
+DummyDataSet/DummyTrainConfig/Standard/**
+
 # Do not ignore the Analysis folder and its contents
 !Analysis/
 !Analysis/**

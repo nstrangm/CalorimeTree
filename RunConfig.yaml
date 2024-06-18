@@ -1,7 +1,15 @@
+doDebug: true
+doPlotting: false
 nParallelJobsPerVar: 10
 doIsoGamma: true
 doJets: false
 doPi0: false
+
+DummyDataSet:
+  isMC: true
+  label: '#gamma-Jet 18 DCal'
+  trainconfigs:
+    DummyTrainConfig: Standard
 
 GJ18D: 
   # path: /home/nico/alice/GammaJet/calorimetrees/MC_Trees.txt
