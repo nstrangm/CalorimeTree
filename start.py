@@ -119,8 +119,8 @@ def hadd_root_files(input_folder, output_file):
         # Delete the original ROOT files
         for root_file in root_files:
             try:
-                # os.remove(root_file)
-                log.info(f"Want to delete file: {root_file}")
+                os.remove(root_file)
+                # log.info(f"Want to delete file: {root_file}")
             except OSError as e:
                 log.error(f"Error deleting file {root_file}: {e}")
 
