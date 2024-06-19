@@ -42,7 +42,7 @@ TString GetTreeName(TString InputFileNamesFile)
 }
 
 // Function that creates a chain, adds all trees listed in "InputFileNamesFile" to the chain and returns it
-TChain *readTree(TString InputFileNamesFile, bool isDebugRun)
+TChain *readTree(TString InputFileNamesFile)
 {
   TString treeName = GetTreeName(InputFileNamesFile);
   TChain *tree = new TChain(treeName);
@@ -66,8 +66,6 @@ TChain *readTree(TString InputFileNamesFile, bool isDebugRun)
     f->Close();
     INFO(Form("Adding tree %s from %s to chain", treeName.Data(), tempLine.Data()))
     tree->Add(Form("%s", tempLine.Data()));
-    if (isDebugRun)
-      break;
   }
   return tree;
 }

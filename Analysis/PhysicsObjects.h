@@ -7,7 +7,7 @@
 
 class PhysicsObject
 {
- public:
+public:
   float Px = 0;
   float Py = 0;
   float Pz = 0;
@@ -42,12 +42,15 @@ float PhysicsObject::Eta()
 float PhysicsObject::Phi()
 {
   float Phi = -1.;
-  if (Px > 0) {
+  if (Px > 0)
+  {
     if (Py > 0)
       Phi = TMath::ATan(Py / Px);
     else
       Phi = TMath::ATan(Py / Px) + 2 * TMath::Pi();
-  } else {
+  }
+  else
+  {
     Phi = TMath::ATan(Py / Px) + TMath::Pi();
   }
   return Phi;
@@ -71,17 +74,21 @@ float calculateRelativisticAngleBetweenPhysicsObjects(T1 o1, T2 o2)
 
 class Event
 {
- public:
+public:
   Event(){};
   Event(TreeBuffer tree, GlobalOptions optns);
   ~Event(){};
 
   float Rho = 0;
   unsigned short NPrimaryTracks = 0;
-  bool IsTriggered = 0;
+  bool IsTriggered = false;
   float ZVtx = 0;
+  bool ZVtxOK = true;
   unsigned short Quality = 0;
+  bool QualityOK = true;
   unsigned short NotAccepted = 0;
+
+  bool Selected = false;
 
   // MC properties
   float weight = 1;
@@ -96,14 +103,15 @@ Event::Event(TreeBuffer tree, GlobalOptions optns)
   Quality = tree.Event_Quality;
   NotAccepted = tree.Event_NotAccepted;
 
-  if (optns.isMC) {
+  if (optns.isMC)
+  {
     weight = tree.Event_Weight;
   }
 }
 
 class TrackMatchedToIsoGamma
 {
- public:
+public:
   float P = 0;
   float Pt = 0;
   float dEta = 0;
@@ -123,7 +131,7 @@ class TrackMatchedToIsoGamma
 
 class IsoGamma : public PhysicsObject
 {
- public:
+public:
   using PhysicsObject::PhysicsObject;
   ~IsoGamma(){};
   bool isPhoton();
@@ -154,26 +162,31 @@ class IsoGamma : public PhysicsObject
 
 bool IsoGamma::isPhoton()
 {
-  if (CheckTagBit(MCTag, kMCPhoton)) {
+  if (CheckTagBit(MCTag, kMCPhoton))
+  {
     return true;
-  } 
+  }
   return false;
 }
 
 bool IsoGamma::isSignal()
 {
-  if (CheckTagBit(MCTag, kMCPhoton)) {
-    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation)){
+  if (CheckTagBit(MCTag, kMCPhoton))
+  {
+    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
+    {
       return true;
-    }  
+    }
   }
   return false;
 }
 
 bool IsoGamma::isGammaFromPion()
 {
-  if (CheckTagBit(MCTag, kMCPhoton)) {
-    if (CheckTagBit(MCTag, kMCPi0Decay)) {
+  if (CheckTagBit(MCTag, kMCPhoton))
+  {
+    if (CheckTagBit(MCTag, kMCPi0Decay))
+    {
       return true;
     }
   }
@@ -182,8 +195,10 @@ bool IsoGamma::isGammaFromPion()
 
 bool IsoGamma::isGammaFromEta()
 {
-  if (CheckTagBit(MCTag, kMCPhoton)) {
-    if (CheckTagBit(MCTag, kMCEtaDecay)){
+  if (CheckTagBit(MCTag, kMCPhoton))
+  {
+    if (CheckTagBit(MCTag, kMCEtaDecay))
+    {
       return true;
     }
   }
@@ -192,15 +207,17 @@ bool IsoGamma::isGammaFromEta()
 
 bool IsoGamma::isPion()
 {
-  if (CheckTagBit(MCTag, kMCPion)){
+  if (CheckTagBit(MCTag, kMCPion))
+  {
     return true;
   }
   return false;
 }
 
-void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma>& IsoGammas, GlobalOptions optns)
+void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGammas, GlobalOptions optns)
 {
-  for (int iCluster = 0; iCluster < (int)tree.Cluster_Px->size(); iCluster++) {
+  for (int iCluster = 0; iCluster < (int)tree.Cluster_Px->size(); iCluster++)
+  {
     IsoGamma isoGamma(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster), tree.Cluster_Pz->at(iCluster));
     isoGamma.EBeforeNL = tree.Cluster_E->at(iCluster);
     isoGamma.E = tree.Cluster_E->at(iCluster);
@@ -218,7 +235,8 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma>& IsoGa
     isoGamma.DistanceToBadChannel = tree.Cluster_DistanceToBadChannel->at(iCluster);
     isoGamma.NLM = tree.Cluster_NLM->at(iCluster);
 
-    if (optns.isMC) {
+    if (optns.isMC)
+    {
       isoGamma.MCTag = tree.TrueCluster_MCTag->at(iCluster);
     }
 
@@ -226,21 +244,25 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma>& IsoGa
   }
 }
 
-void calculateIsolation(std::vector<IsoGamma>& IsoGammas, Event& Event, bool useRhoInsteadOfPerpCone)
+void calculateIsolation(std::vector<IsoGamma> &IsoGammas, Event &Event, bool useRhoInsteadOfPerpCone)
 {
-  for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++) {
-    IsoGamma* isoGamma = &IsoGammas.at(iGamma);
-    //float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
+  for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++)
+  {
+    IsoGamma *isoGamma = &IsoGammas.at(iGamma);
+    // float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
 
-    //Calculate corrected isolation pT subtracting backperp mult by cone area.
-    float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)-isoGamma->IsoBckPerp*TMath::Pi()*0.4*0.4;
+    // Calculate corrected isolation pT subtracting backperp mult by cone area.
+    float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
 
-    if (useRhoInsteadOfPerpCone) {
-      //cout<<"WRONG!"<<"\n";
+    if (useRhoInsteadOfPerpCone)
+    {
+      // cout<<"WRONG!"<<"\n";
 
-      float IsoBckPerpAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)-Event.Rho*TMath::Pi()*0.4*0.4;
-//isoGamma->IsoBckPerp / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
-    } else {
+      float IsoBckPerpAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - Event.Rho * TMath::Pi() * 0.4 * 0.4;
+      // isoGamma->IsoBckPerp / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
+    }
+    else
+    {
     }
     isoGamma->IsoChargedCorrected = IsoChargedAcceptanceCorrected;
   }
@@ -248,7 +270,7 @@ void calculateIsolation(std::vector<IsoGamma>& IsoGammas, Event& Event, bool use
 
 class Jet : public PhysicsObject
 {
- public:
+public:
   using PhysicsObject::PhysicsObject;
   ~Jet(){};
   float Area = 0;
@@ -256,9 +278,10 @@ class Jet : public PhysicsObject
   unsigned short Nclus = 0;
 };
 
-void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet>& Jets)
+void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets)
 {
-  for (int iJet = 0; iJet < (int)tree.Jet_Px->size(); iJet++) {
+  for (int iJet = 0; iJet < (int)tree.Jet_Px->size(); iJet++)
+  {
     Jet jet(tree.Jet_Px->at(iJet), tree.Jet_Py->at(iJet), tree.Jet_Pz->at(iJet));
     jet.Area = tree.Jet_Area->at(iJet);
     jet.Nch = tree.Jet_Nch->at(iJet);
@@ -269,17 +292,18 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet>& Jets)
 
 class PLJet : public PhysicsObject
 {
- public:
+public:
   using PhysicsObject::PhysicsObject;
   ~PLJet(){};
   float Area = 0;
   unsigned short NPart = 0;
-  Jet* ClosestDLJet = nullptr;
+  Jet *ClosestDLJet = nullptr;
 };
 
-void savePLJetsFromEventInVector(TreeBuffer tree, std::vector<PLJet>& PLJets)
+void savePLJetsFromEventInVector(TreeBuffer tree, std::vector<PLJet> &PLJets)
 {
-  for (int iJet = 0; iJet < (int)tree.PLJet_Px->size(); iJet++) {
+  for (int iJet = 0; iJet < (int)tree.PLJet_Px->size(); iJet++)
+  {
     PLJet jet(tree.PLJet_Px->at(iJet), tree.PLJet_Py->at(iJet), tree.PLJet_Pz->at(iJet));
     jet.Area = tree.PLJet_Area->at(iJet);
     jet.NPart = tree.PLJet_NPart->at(iJet);
@@ -292,9 +316,11 @@ short int getClosestJetNumber(JT1 Jet, std::vector<JT2> JetGroup, float R)
 {
   float angleBetweenClosestJets = TMath::Pi();
   int closestJetNumber = -1;
-  for (int iJetFromGroup = 0; iJetFromGroup < (int)JetGroup.size(); iJetFromGroup++) {
+  for (int iJetFromGroup = 0; iJetFromGroup < (int)JetGroup.size(); iJetFromGroup++)
+  {
     float angleBetweenJets = calculateRelativisticAngleBetweenPhysicsObjects(Jet, JetGroup.at(iJetFromGroup));
-    if (angleBetweenJets < angleBetweenClosestJets) {
+    if (angleBetweenJets < angleBetweenClosestJets)
+    {
       angleBetweenClosestJets = angleBetweenJets;
       closestJetNumber = iJetFromGroup;
     }
@@ -305,17 +331,19 @@ short int getClosestJetNumber(JT1 Jet, std::vector<JT2> JetGroup, float R)
   return closestJetNumber;
 }
 
-void mapPLtoDLjets(std::vector<Jet>& DLJets, std::vector<PLJet>& PLJets, float R)
+void mapPLtoDLjets(std::vector<Jet> &DLJets, std::vector<PLJet> &PLJets, float R)
 {
   std::vector<short int> closestPLJetFromDLJetNumber;
   std::vector<short int> closestDLJetFromPLJetNumber;
   for (int iDLJet = 0; iDLJet < (int)DLJets.size(); iDLJet++)
     closestPLJetFromDLJetNumber.push_back(getClosestJetNumber(DLJets.at(iDLJet), PLJets, R));
-  for (int iPLJet = 0; iPLJet < (int)PLJets.size(); iPLJet++) {
+  for (int iPLJet = 0; iPLJet < (int)PLJets.size(); iPLJet++)
+  {
     closestDLJetFromPLJetNumber.push_back(getClosestJetNumber(PLJets.at(iPLJet), DLJets, R));
     if (closestDLJetFromPLJetNumber.at(iPLJet) == -1) // No DL jet was found for this PL jet
       continue;
-    if (closestPLJetFromDLJetNumber.at(closestDLJetFromPLJetNumber.at(iPLJet)) == iPLJet) {
+    if (closestPLJetFromDLJetNumber.at(closestDLJetFromPLJetNumber.at(iPLJet)) == iPLJet)
+    {
       PLJets.at(iPLJet).ClosestDLJet = &DLJets.at(closestDLJetFromPLJetNumber.at(iPLJet));
     }
   }
@@ -323,16 +351,18 @@ void mapPLtoDLjets(std::vector<Jet>& DLJets, std::vector<PLJet>& PLJets, float R
 
 class Pi0 : public PhysicsObject
 {
- public:
+public:
   using PhysicsObject::PhysicsObject;
   ~Pi0(){};
   float Mass;
 };
 
-void pairIsoGammasFromEventInVector(std::vector<IsoGamma>& IsoGammas, std::vector<Pi0>& Pi0s)
+void pairIsoGammasFromEventInVector(std::vector<IsoGamma> &IsoGammas, std::vector<Pi0> &Pi0s)
 {
-  for (int ig1 = 0; ig1 < (int)IsoGammas.size(); ig1++) {
-    for (int ig2 = ig1 + 1; ig2 < (int)IsoGammas.size(); ig2++) {
+  for (int ig1 = 0; ig1 < (int)IsoGammas.size(); ig1++)
+  {
+    for (int ig2 = ig1 + 1; ig2 < (int)IsoGammas.size(); ig2++)
+    {
       Pi0 pi0(IsoGammas.at(ig1).Px + IsoGammas.at(ig2).Px, IsoGammas.at(ig1).Py + IsoGammas.at(ig2).Py, IsoGammas.at(ig1).Pz + IsoGammas.at(ig2).Pz);
       pi0.Mass = TMath::Sqrt(2 * IsoGammas.at(ig1).E * IsoGammas.at(ig2).E * (1 - TMath::Cos(calculateAngleBetweenPhysicsObjects(IsoGammas.at(ig1), IsoGammas.at(ig2)))));
       Pi0s.push_back(pi0);

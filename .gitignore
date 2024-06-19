@@ -4,12 +4,19 @@
 # Do not ignore the .gitignore file itself
 !.gitignore
 
+# Do not ignore the DummyDataSet folder and its contents
+!DummyDataSet/
+!DummyDataSet/**
+DummyDataSet/DummyTrainConfig/Standard/**
+
 # Do not ignore the Analysis folder and its contents
 !Analysis/
 !Analysis/**
 Analysis/*_C.d
 Analysis/*_C.so
 Analysis/*_C_ACLiC_dict_rdict.pcm
+Analysis/*_dictUmbrella.h
+Analysis/*_dictContent.h
 
 # Do not ignore the CutStudies directory and its files, but ignore all subfolders within it
 !CutStudies/

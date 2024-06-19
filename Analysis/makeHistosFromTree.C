@@ -12,7 +12,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   if (jobId < 0)
     FATAL("Negative jobId")
   if(!jobId)
-    LOG("Only one input file will be used for testing since jobId 0 was given")
+    LOG("This is a debug run")
 
   GlobalOptions optns(AnalysisDirectory, jobId);
 
@@ -24,11 +24,11 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
-  TDirectory *hQADirEvents = optns.doQA ? DefineEventQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirEvents = DefineEventQAHistograms(fOut, optns);
   TDirectory *hDirIsoGammas = DefineIsoGammaHistograms(fOut, optns);
-  TDirectory *hQADirIsoGammas = optns.doQA ? DefineIsoGammaQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut, optns);
   TDirectory *hDirJets = DefineJetHistograms(fOut, optns);
-  TDirectory *hQADirJets = optns.doQA ? DefineJetQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
   std::vector<IsoGamma> IsoGammas;
@@ -37,9 +37,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<Pi0> Pi0s;
 
-  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), !jobId ? 1 : jobId), optns.isDebugRun);
-  
-  // TODO: Merge histograms from input files
+  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
 
   optns.TreeFormat = listTreeBranches(chain);
 

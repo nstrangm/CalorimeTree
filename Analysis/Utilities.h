@@ -32,7 +32,11 @@ public:
 // GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
 GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 {
-  isDebugRun = !jobId;
+  if(jobId == 0){
+    isDebugRun = true;
+    debugLevel = 3;
+  }
+  
   analysisDirPath = AnalysisDirectory;
   std::stringstream ss((std::string)AnalysisDirectory.Data());
   std::string word;

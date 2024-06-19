@@ -120,7 +120,7 @@ def hadd_root_files(input_folder, output_file):
         for root_file in root_files:
             try:
                 os.remove(root_file)
-                # log.info(f"Deleted file: {root_file}")
+                # log.info(f"Want to delete file: {root_file}")
             except OSError as e:
                 log.error(f"Error deleting file {root_file}: {e}")
 
@@ -146,7 +146,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=vip --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
 
@@ -325,6 +325,11 @@ def check_and_create_folder(folder_path):
     else:
         log.info(f"Folder '{folder_path}' already exists.")
 
+def run_debug(doPlotting):
+    process = subprocess.run('root -b -q -x ./Analysis/makeHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\,\\0\\)', shell=True)
+    process = subprocess.run('mv DummyDataSet/DummyTrainConfig/Standard/HistosFromTree_0.root DummyDataSet/DummyTrainConfig/Standard/HistosFromTree.root', shell=True)
+    if doPlotting:
+        process = subprocess.run('root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
 
 # Main function
 def main():
@@ -332,10 +337,18 @@ def main():
     # Ensure ROOT environment is loaded
     load_root_environment()
 
-    compile_makeHistosFromTree()
-
     analysis_config = read_yaml('RunConfig.yaml')
+
+    doDebug = analysis_config.get('doDebug')
+    doPlotting = analysis_config.get('doPlotting')
+    
+    if doDebug:
+        run_debug(doPlotting)
+        exit()
+
     cuts_config = read_yaml('Cuts.yaml')
+
+    compile_makeHistosFromTree()
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
     log.info(f"Running {nSplit} parallel jobs per variation.")
@@ -378,10 +391,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-    # if len(sys.argv) != 2:
-    #     print("Usage: python script.py <AnalysisDirectory>")
-    #     sys.exit(1)
-
-    # analysis_directory = sys.argv[1]
     main()
