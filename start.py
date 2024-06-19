@@ -244,7 +244,10 @@ def delete_existing_grouped_files(subdirectory):
                 log.info(f"Deleted file: {file_path}")
 
 def get_file_size(file_path):
-    return os.path.getsize(file_path)
+    if os.path.isfile(file_path):
+        return os.path.getsize(file_path)
+    else:
+        return 0
 
 def distribute_files_evenly(file_groups, num_output_files):
     # Sort groups by the size of the main files (excluding _histos_)
