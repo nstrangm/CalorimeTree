@@ -119,8 +119,8 @@ def hadd_root_files(input_folder, output_file):
         # Delete the original ROOT files
         for root_file in root_files:
             try:
-                os.remove(root_file)
-                # log.info(f"Deleted file: {root_file}")
+                # os.remove(root_file)
+                log.info(f"Want to delete file: {root_file}")
             except OSError as e:
                 log.error(f"Error deleting file {root_file}: {e}")
 
@@ -146,7 +146,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=vip --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
 

@@ -24,11 +24,11 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
-  TDirectory *hQADirEvents = optns.doQA ? DefineEventQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirEvents = DefineEventQAHistograms(fOut, optns);
   TDirectory *hDirIsoGammas = DefineIsoGammaHistograms(fOut, optns);
-  TDirectory *hQADirIsoGammas = optns.doQA ? DefineIsoGammaQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut, optns);
   TDirectory *hDirJets = DefineJetHistograms(fOut, optns);
-  TDirectory *hQADirJets = optns.doQA ? DefineJetQAHistograms(fOut, optns) : nullptr;
+  TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
   std::vector<IsoGamma> IsoGammas;
