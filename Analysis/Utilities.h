@@ -7,6 +7,9 @@
 #include <vector>
 #include <sstream>
 #include <yaml-cpp/yaml.h>
+#include <filesystem>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 class GlobalOptions
 {
@@ -111,6 +114,17 @@ void setExpArray(Double_t array[], int nPoints, float min, float max)
   double y = TMath::Log10(min / x);
   for (int i = 0; i < nPoints; i++)
     array[i] = x * TMath::Power(10, y * i);
+}
+
+void createDirectory(const char *path)
+{
+  struct stat info;
+  if (stat(path, &info) != 0)
+  {
+    if (mkdir(path, 0755) == -1) // Directory does not exist, create it
+      std::cerr << "Error creating directory: " << path << std::endl;
+  }
+  return;
 }
 
 #endif
