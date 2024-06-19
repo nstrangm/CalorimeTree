@@ -312,14 +312,6 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
 
     for (int i = 0; i < NSlicesPtBins - 1; i++)
     {
-      // Plotting1D PM02vspTSignalBackground;
-      // Plotting1D PM02vspTSignalContributions;
-      // For saving slices
-      // TH1F* hM02vspTSignalBackground=new TH1F(Form("Bkg%i",i));// = 0x0;//Dummy for plotting in the end.
-      // TH1F* hM02vspTSliceSignalContributions=new TH1F(Form("Cont%i",i));;// = 0x0;
-
-      // cout<<hM02vspTSignalBackground<<
-
       // Project TH2F's
       string titleM02vspTsplice = "M02:" + to_string(SlicesPt.at(i)).substr(0, 4) + "GeV/c<p_{T}<" + to_string(SlicesPt.at(i + 1)).substr(0, 4) + "GeV/c";
       int pTminbin = h2M02vspT->GetYaxis()->FindBin(SlicesPt.at(i));

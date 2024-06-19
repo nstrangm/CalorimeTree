@@ -55,6 +55,8 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
         TDirectory *dh1 = (TDirectory *)file1->Get(dir.c_str());
         TDirectory *dh2 = (TDirectory *)file2->Get(dir.c_str());
 
+        cout<<"Merging histograms from the directory:" << dir <<"\n";
+
         // Get list of keys1:
         TList *listofkeys1 = dh1->GetListOfKeys();
         TList *listofkeys2 = dh2->GetListOfKeys();
@@ -66,64 +68,71 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
 
         std::string toplotstring = "";
         std::vector<std::string> objectNames;
+        std::vector<std::string> objectClass;
         int nplots = 0;
         while ((key = (TKey *)next()))
         {
             // Get the name of the object
             std::string name = key->GetName();
+            std::string classname = key->GetClassName();
+            cout<<name<<"\n";
+            cout<<classname<<"\n";
             // cout<< key->GetClassName()<<"\n";
             // cout<< dh2->FindKey(name.c_str())<<"\n";
             //  Add the name to the vector
-            if (strcmp(key->GetClassName(), "TH1F") == 0)
+            if ((strcmp(key->GetClassName(), "TH1F") == 0)||(strcmp(key->GetClassName(), "TH2F") == 0)||(strcmp(key->GetClassName(), "THnSparseT<TArrayF>") == 0))
             {
                 nplots += 1;
                 objectNames.push_back(name);
-                cout << name << "\n";
+                objectClass.push_back(classname);
+                //cout << name << "\n";
             }
         }
         for (int i = 0; i < nplots; i++)
         {
-            TH1 *h1 = (TH1 *)dh1->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
-            TH1 *h2 = (TH1 *)dh2->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+            if(strcmp(objectClass.at(i).c_str(), "TH1F") == 0){
+                TH1F *h1 = (TH1F *)dh1->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                TH1F *h2 = (TH1F *)dh2->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                if(!h1){
+                    cout<<"h1 not loaded"<<"\n";
+                }
+                if(!h2){
+                    cout<<"h2 not loaded"<<"\n";
+                }
+                h1->Scale(w1);
+                h1->Add(h2, w2);
+                outdir->cd();
+                h1->Write();
 
-            // Apply weight to h1:
-            h1->Scale(w1);
-            h1->Add(h2, w2);
-            // h1->Draw();
-            outdir->cd();
-            h1->Write();
-            outdir->ls();
-            // if(i==nplots-1){
-            //     h1->Draw();
-            //     h2->Draw("same");
+            }
+            if(strcmp(objectClass.at(i).c_str(), "TH2F") == 0){
+                TH2F *h1 = (TH2F *)dh1->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                TH2F *h2 = (TH2F *)dh2->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                if(!h1){
+                    cout<<"h1 not loaded"<<"\n";
+                }
+                if(!h2){
+                    cout<<"h2 not loaded"<<"\n";
+                }
+                h1->Scale(w1);
+                h1->Add(h2, w2);
+                outdir->cd();
+                h1->Write();
+            }
+            if(strcmp(objectClass.at(i).c_str(), "THnSparseT<TArrayF>") == 0){
+                THnSparseT<TArrayF> *h1 = (THnSparseT<TArrayF> *)dh1->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                THnSparseT<TArrayF> *h2 = (THnSparseT<TArrayF> *)dh2->Get(objectNames.at(i).c_str())->Clone(objectNames.at(i).c_str());
+                if(!h1){
+                    cout<<"h1 not loaded"<<"\n";
+                }
+                if(!h2){
+                    cout<<"h2 not loaded"<<"\n";
+                }
+                h1->Scale(w1);
+                h1->Add(h2, w2);
+                outdir->cd();
+                h1->Write();
+            }
         }
-
-        // Loop through objects
     }
-
-    // Get directory of histograms
-    // TDirectory* dh1 = (TDirectory*)file1->Get(outdirstring.c_str());
-    // TDirectory* dh2 = (TDirectory*)file1->Get(outdirstring.c_str());
-    ////Get entries in tdirectory:
-    // TList *listofkeys1 = dh1->GetListOfKeys();
-    // TList *listofkeys2 = dh2->GetListOfKeys();
-    ////Keep only entries that are in both dh1 and dh2.
-    // string Directory = "IsoGammaQA";
-
-    // Loop over the keys and store the object names
-    // TIter next(listofkeys1);
-    // TKey *key;
-    // while ((key = (TKey*)next())) {
-    //    // Get the name of the object
-    //    std::string name = key->GetName();
-    //    cout<< key->GetClassName()<<"\n";
-    //    cout<< dh2->FindKey(name.Data())<<"\n";
-    //    // Add the name to the vector
-    //    if(strcmp(key->GetClassName(),"TH1F")==0){
-    //        nplots+=1;
-    //        objectNames.push_back(name);
-    //        cout<<name<<"\n";
-    //    }
-    //
-    //}
 }
