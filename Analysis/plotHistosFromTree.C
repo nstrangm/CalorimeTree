@@ -1,23 +1,12 @@
 #include "PlottingClass.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <filesystem>
 #include "Utilities.h"
 #include "Cuts.h"
 #include "plotHistosFromTree.h"
 
 const char *suffix = "png";
 
-void createDirectory(const char *path)
-{
-  struct stat info;
-  if (stat(path, &info) != 0)
-  {
-    if (mkdir(path, 0755) == -1) // Directory does not exist, create it
-      std::cerr << "Error creating directory: " << path << std::endl;
-  }
-  return;
-}
 // Add to plot class?
 void AvoidLogYconflict(TH1 *h, float logymin = 1e-10)
 {
