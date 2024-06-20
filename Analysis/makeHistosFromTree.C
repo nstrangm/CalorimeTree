@@ -16,11 +16,6 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   GlobalOptions optns(AnalysisDirectory, jobId);
 
-  EventCuts eventCuts(optns);
-  IsoGammaCuts isoGammaCuts(optns);
-  JetCuts jetCuts(optns);
-  Pi0Cuts pi0Cuts(optns);
-
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
@@ -29,12 +24,20 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut, optns);
   TDirectory *hDirJets = DefineJetHistograms(fOut, optns);
   TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
+  TDirectory *hDirGammaJetCorrelations = DefineGammaJetHistograms(fOut, optns);
+  TDirectory *hQADirGammaJetCorrelations = DefineGammaJetQAHistograms(fOut, optns);
+
+  EventCuts eventCuts(optns);
+  IsoGammaCuts isoGammaCuts(optns, hQADirIsoGammas); // Pass the QA dir so that the "cut passed" function can fill a "loss histogram"
+  JetCuts jetCuts(optns);
+  Pi0Cuts pi0Cuts(optns);
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
   std::vector<IsoGamma> IsoGammas;
   std::vector<Pi0> Pi0sForIsoGammaQA;
   std::vector<Jet> Jets;
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
+  std::vector<GammaJetPair> GammaJetPairs;
   std::vector<Pi0> Pi0s;
 
   TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
@@ -94,13 +97,18 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     }
     if (optns.doIsoGamma && optns.doJets)
     {
-      // TODO: Correlations
+      pairGammasWithJets(IsoGammas, Jets, GammaJetPairs);
+      // TODO: CorrelationCuts
+      fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, event.weight);
+      if (optns.doQA)
+        fillQAHistograms(GammaJetPairs, hQADirGammaJetCorrelations, event.weight, optns);
     }
     IsoGammas.clear();
     Jets.clear();
     PLJets.clear();
     Pi0s.clear();
     Pi0sForIsoGammaQA.clear();
+    GammaJetPairs.clear();
   }
 
   fOut->Write();

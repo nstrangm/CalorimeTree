@@ -447,12 +447,58 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
   PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaPz.SetAxisLabel("#bf{#it{Pz}[GeV/#it{c}]}");
-  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE,kTRUE);
+  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
   PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   EXIT
+}
+
+void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOptions optns)
+{
+  TString outputDir = Form("%s/GammaJetCorrelations", optns.analysisDirPath.Data());
+
+  createDirectory(outputDir.Data());
+
+  TH2F *hpTImbalancevsDeltaPhi = (TH2F *)dGammaJetCorrelations->Get("hpTImbalancevsDeltaPhi")->Clone("hpTImbalancevsDeltaPhi");
+
+  const int NProjections = 8;
+
+  TH1F *hpTImbalance[NProjections];
+  TH1F *hDeltaPhi[NProjections];
+  int rebinFactorspTImbalance[NProjections] = {1, 1, 1, 1, 1, 1, 1, 1};
+  int rebinFactorsDeltaPhi[NProjections] = {1, 1, 1, 1, 1, 1, 1, 1};
+
+  float imbalanceMax = hpTImbalancevsDeltaPhi->GetXaxis()->GetXmax();
+  float deltaPhiMax = TMath::Pi();
+
+  PlottingGrid PImbalanceGrid;
+  PlottingGrid PDeltaPhiGrid;
+
+  for (int iProj = 0; iProj < NProjections; iProj++)
+  {
+    float ProjFracFrom = ((float)iProj) / ((float)NProjections);
+    float ProjFracTo = ((float)iProj + 1) / ((float)NProjections);
+    int ProjBinFromX = hpTImbalancevsDeltaPhi->GetXaxis()->FindBin(ProjFracFrom * imbalanceMax);
+    int ProjBinToX = hpTImbalancevsDeltaPhi->GetXaxis()->FindBin(ProjFracTo * imbalanceMax) - 1;
+    int ProjBinFromY = hpTImbalancevsDeltaPhi->GetYaxis()->FindBin(ProjFracFrom * deltaPhiMax);
+    int ProjBinToY = hpTImbalancevsDeltaPhi->GetYaxis()->FindBin(ProjFracTo * deltaPhiMax) - 1;
+    INFO(Form("Correlation projection %d/%d: %d - %d | %d - %d", iProj, NProjections, ProjBinFromX, ProjBinToX, ProjBinFromY, ProjBinToY))
+
+    hpTImbalance[iProj] = (TH1F *)hpTImbalancevsDeltaPhi->ProjectionX(Form("hpTImbalanceProjection_%d", iProj), ProjBinFromY, ProjBinToY);
+    hpTImbalance[iProj]->Rebin(rebinFactorspTImbalance[iProj]);
+    PImbalanceGrid.New(hpTImbalance[iProj]);
+    PImbalanceGrid.NextPad(Form("%d/%d#pi < #Delta#phi < %d/%d#pi", iProj, NProjections, iProj + 1, NProjections));
+
+    hDeltaPhi[iProj] = (TH1F *)hpTImbalancevsDeltaPhi->ProjectionY(Form("hDeltaPhiProjection_%d", iProj), ProjBinFromX, ProjBinToX);
+    hDeltaPhi[iProj]->Rebin(rebinFactorsDeltaPhi[iProj]);
+    PDeltaPhiGrid.New(hDeltaPhi[iProj]);
+    PDeltaPhiGrid.NextPad(Form("%.1f < #it{p}_{T}^{jet}/#it{p}_{T}^{#gamma} < %.1f", ProjFracFrom * imbalanceMax, ProjFracTo * imbalanceMax));
+  }
+
+  PImbalanceGrid.Plot(Form("%s/pTImbalanceGrid.%s", outputDir.Data(), suffix));
+  PDeltaPhiGrid.Plot(Form("%s/deltaPhiGrid.%s", outputDir.Data(), suffix));
 }
 
 void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
@@ -499,6 +545,22 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
 
       plotIsoGammaQA(dIsoGammaQA, optns);
     }
+  }
+
+  if (optns.doIsoGamma && optns.doJets)
+  {
+    TDirectory *dGammaJetCorrelations = (TDirectory *)fIn->Get("GammaJetCorrelations");
+    if (!dGammaJetCorrelations)
+      FATAL("Dir GammaJetCorrelations not found")
+    plotIsoGammaJetCorrelations(dGammaJetCorrelations, optns);
+    // if (optns.doQA)
+    // {
+    //   TDirectory *dIsoGammaQA = (TDirectory *)fIn->Get("IsoGammaQA");
+    //   if (!dIsoGammaQA)
+    //     FATAL("Dir IsoGammaQA not found")
+
+    //   plotIsoGammaQA(dIsoGammaQA, optns);
+    // }
   }
 
   fIn->Close();
