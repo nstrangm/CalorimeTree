@@ -9,10 +9,8 @@ Standard:
   #DCal diregarding hole
   cluster_min_Dcal_eta: -0.67
   cluster_max_Dcal_eta: 0.67
-  cluster_min_Dcal_phi: 5
-  #4.57
-  cluster_max_Dcal_phi: 5.5
-  #5.70
+  cluster_min_Dcal_phi: 4.57
+  cluster_max_Dcal_phi: 5.70
 
   #DCal hole
   cluster_min_DcalHole_eta: -0.23
@@ -22,8 +20,7 @@ Standard:
 
 
   #Cluster energy
-  cluster_min_E: 20
-  #0.7
+  cluster_min_E: 0.7
   cluster_max_E: 200.
   #Cluster number of cells
   cluster_min_Nc: 2
@@ -75,7 +72,6 @@ NoCuts:
 
   #Cluster energy
   cluster_min_E: 0
-  #0.7
   cluster_max_E: 200.
   #Cluster number of cells
   cluster_min_Nc: 0

@@ -364,7 +364,66 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
   else
   {
     hMinMassDiffToPi0 = (TH1F *)dIsoGammaQA->Get("hMinMassDiffToPi0");
+    float integralDiffToPi0 = hMinMassDiffToPi0->Integral(1, hMinMassDiffToPi0->GetNbinsX());
+    hMinMassDiffToPi0->Scale(1. / integralDiffToPi0);
+    AvoidLogYconflict(hMinMassDiffToPi0);
     PMinMassDiffToPi0.New(hMinMassDiffToPi0);
+
+    // E
+    hIsoGammaE = (TH1F *)dIsoGammaQA->Get("hIsoGammaE")->Clone("hIsoGammaE");
+    float integralE = hIsoGammaE->Integral(1, hIsoGammaE->GetNbinsX());
+    hIsoGammaE->Scale(1. / integralE);
+    AvoidLogYconflict(hIsoGammaE);
+    PIsoGammaE.New(hIsoGammaE, "Data");
+
+    // M02
+    hIsoGammaM02 = (TH1F *)dIsoGammaQA->Get("hIsoGammaM02")->Clone("hIsoGammaM02");
+    float integralM02 = hIsoGammaM02->Integral(1, hIsoGammaM02->GetNbinsX());
+    hIsoGammaM02->Scale(1. / integralM02);
+    AvoidLogYconflict(hIsoGammaM02);
+    PIsoGammaM02.New(hIsoGammaM02, "Data");
+
+    // M20
+    hIsoGammaM20 = (TH1F *)dIsoGammaQA->Get("hIsoGammaM20")->Clone("hIsoGammaM20");
+    float integralM20 = hIsoGammaM20->Integral(1, hIsoGammaM20->GetNbinsX());
+    hIsoGammaM20->Scale(1. / integralM20);
+    AvoidLogYconflict(hIsoGammaM20);
+    PIsoGammaM20.New(hIsoGammaM20, "Data");
+
+    // Px
+    hIsoGammaPx = (TH1F *)dIsoGammaQA->Get("hIsoGammaPx")->Clone("hIsoGammaPx");
+    float integralPx = hIsoGammaPx->Integral(1, hIsoGammaPx->GetNbinsX());
+    hIsoGammaPx->Scale(1. / integralPx);
+    AvoidLogYconflict(hIsoGammaPx);
+    PIsoGammaPx.New(hIsoGammaPx, "Data");
+
+    // Py
+    hIsoGammaPy = (TH1F *)dIsoGammaQA->Get("hIsoGammaPy")->Clone("hIsoGammaPy");
+    float integralPy = hIsoGammaPy->Integral(1, hIsoGammaPy->GetNbinsX());
+    hIsoGammaPy->Scale(1. / integralPy);
+    AvoidLogYconflict(hIsoGammaPy);
+    PIsoGammaPy.New(hIsoGammaPy, "Data");
+
+    // Pz
+    hIsoGammaPz = (TH1F *)dIsoGammaQA->Get("hIsoGammaPz")->Clone("hIsoGammaPz");
+    float integralPz = hIsoGammaPz->Integral(1, hIsoGammaPz->GetNbinsX());
+    hIsoGammaPz->Scale(1. / integralPz);
+    AvoidLogYconflict(hIsoGammaPz);
+    PIsoGammaPz.New(hIsoGammaPz, "Data");
+
+    // IsoCharged
+    hIsoGammaIsoCharged = (TH1F *)dIsoGammaQA->Get("hIsoGammaIsoCharged")->Clone("hIsoGammaIsoCharged");
+    float integralIsoCharged = hIsoGammaIsoCharged->Integral(1, hIsoGammaIsoCharged->GetNbinsX());
+    hIsoGammaIsoCharged->Scale(1. / integralIsoCharged);
+    AvoidLogYconflict(hIsoGammaIsoCharged);
+    PIsoGammaIsoCharged.New(hIsoGammaIsoCharged, "Data");
+
+    // IsoChargedCorrected
+    hIsoGammaIsoChargedCorrected = (TH1F *)dIsoGammaQA->Get("hIsoGammaIsoChargedCorrected")->Clone("hIsoGammaIsoChargedCorrected");
+    float integralIsoChargedCorrected = hIsoGammaIsoChargedCorrected->Integral(1, hIsoGammaIsoChargedCorrected->GetNbinsX());
+    hIsoGammaIsoChargedCorrected->Scale(1. / integralIsoChargedCorrected);
+    AvoidLogYconflict(hIsoGammaIsoChargedCorrected);
+    PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrected, "Data");
   }
   PMinMassDiffToPi0.SetAxisLabel("#bf{#Delta#it{m}_{inv} (GeV/#it{c}^{2})}");
   PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
@@ -388,7 +447,7 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
   PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaPz.SetAxisLabel("#bf{#it{Pz}[GeV/#it{c}]}");
-  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix));
+  PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE,kTRUE);
 
   PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
   PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix), kFALSE, kTRUE);

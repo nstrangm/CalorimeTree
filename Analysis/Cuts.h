@@ -160,18 +160,15 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns)
 
 bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
 {
-  bool passed = false;
+  bool passed = true;
 
   // Check EMCAL acceptance
   if (IsoGamma.Eta() < EMcalEtaMax && IsoGamma.Eta() > EMcalEtaMin && IsoGamma.Phi() > EMcalPhiMin && IsoGamma.Phi() < EMcalPhiMax)
   {
-    passed = true; // True if is in EMCAL.
-  }
-  else
-  {
+    // True if is in EMCAL.
+  }else{
     if (IsoGamma.Eta() < DcalEtaMax && IsoGamma.Eta() > DcalEtaMin && IsoGamma.Phi() > DcalPhiMin && IsoGamma.Phi() < DcalPhiMax)
-    {
-      passed = true; // True if is in DCal.
+    {// True if is in DCal.
       if (IsoGamma.Eta() > DcalHoleEtaMin && IsoGamma.Eta() < DcalHoleEtaMax && IsoGamma.Phi() < DcalHolePhiMin && IsoGamma.Phi() > DcalHolePhiMax)
       {
         passed = false; // But false if is in Dcal and in Dcal hole.
@@ -184,7 +181,7 @@ bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
   }
 
   // check cluster energy
-  if (IsoGamma.E < EMin)
+  if (IsoGamma.E < EMin || IsoGamma.E > EMax)
   {
     passed = false;
   }
@@ -210,11 +207,9 @@ bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
   }
   // Check track matching
   if (IsoGamma.MatchedTrack.dEta > MatchDetaMax || IsoGamma.MatchedTrack.dEta < MatchDetaMin || IsoGamma.MatchedTrack.dPhi < MatchDphiMin || IsoGamma.MatchedTrack.dPhi > MatchDphiMax)
-  {
-    passed = false;
-    if ((IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
+  {if ((IsoGamma.E / IsoGamma.MatchedTrack.P) > MatchVetoMax)//Check veto
     {
-      passed = true;
+      passed = false;
     }
   }
   // Check Fplus
