@@ -63,6 +63,15 @@ float calculateAngleBetweenPhysicsObjects(T1 o1, T2 o2)
 }
 
 template <typename T1, typename T2>
+float calculateDeltaPhiBetweenPhysicsObjects(T1 o1, T2 o2)
+{
+  float dPhi = o1.Phi() - o2.Phi();
+  if (dPhi > TMath::Pi())
+    dPhi = fabs(dPhi - 2 * TMath::Pi());
+  return dPhi;
+}
+
+template <typename T1, typename T2>
 float calculateRelativisticAngleBetweenPhysicsObjects(T1 o1, T2 o2)
 {
   float dEta = o1.Eta() - o2.Eta();
@@ -139,6 +148,8 @@ public:
   bool isGammaFromPion();
   bool isGammaFromEta();
   bool isPion();
+  bool isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]);
+  bool isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]);
   float E = 0;
   float EBeforeNL = 0; // To monitor the application of the NL
   float M02 = 0;
@@ -156,6 +167,7 @@ public:
   TrackMatchedToIsoGamma MatchedTrack;
   float DistanceToBadChannel = 0;
   float NLM = 0;
+  float EventWeight = 1;
 
   int MCTag;
 };
@@ -214,6 +226,20 @@ bool IsoGamma::isPion()
   return false;
 }
 
+bool IsoGamma::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]){
+  return (Eta() < EMCalEtaPhiMinMax[0][1] && Eta() > EMCalEtaPhiMinMax[0][0] && Phi() > EMCalEtaPhiMinMax[1][0] && Phi() < EMCalEtaPhiMinMax[1][1]);
+}
+
+bool IsoGamma::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]){
+  if(Eta() < DCalEtaPhiMinMax[0][1] && Eta() > DCalEtaPhiMinMax[0][0] && Phi() > DCalEtaPhiMinMax[1][0] && Phi() < DCalEtaPhiMinMax[1][1]){ // In DCal
+    if(Eta() > DCalHoleEtaPhiMinMax[0][0] && Eta() < DCalHoleEtaPhiMinMax[0][1] && Phi() < DCalHoleEtaPhiMinMax[1][0] && Phi() > DCalHoleEtaPhiMinMax[1][1]) // In DCal hole
+      return false;
+    else // Not in DCal hole
+      return true;
+  }
+  return false;
+}
+
 void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGammas, GlobalOptions optns)
 {
   for (int iCluster = 0; iCluster < (int)tree.Cluster_Px->size(); iCluster++)
@@ -238,6 +264,7 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGa
     if (optns.isMC)
     {
       isoGamma.MCTag = tree.TrueCluster_MCTag->at(iCluster);
+      isoGamma.EventWeight = tree.Event_Weight;
     }
 
     IsoGammas.push_back(isoGamma);
@@ -356,6 +383,37 @@ public:
   ~Pi0(){};
   float Mass;
 };
+
+class GammaJetPair
+{
+public:
+  GammaJetPair(IsoGamma *isoGammaptr, Jet *jetptr);
+  ~GammaJetPair(){};
+  IsoGamma *isoGamma;
+  Jet *jet;
+  float DPhi = 0;
+  float pTImbalance = 1; // pTjet/pTgamma
+};
+
+GammaJetPair::GammaJetPair(IsoGamma *isoGammaptr, Jet *jetptr)
+{
+  isoGamma = isoGammaptr;
+  jet = jetptr;
+  DPhi = calculateDeltaPhiBetweenPhysicsObjects(*isoGamma, *jet);
+  pTImbalance = jet->Pt() / isoGamma->Pt();
+}
+
+void pairGammasWithJets(std::vector<IsoGamma> &IsoGammas, std::vector<Jet> &Jets, std::vector<GammaJetPair> &GammaJetPairs)
+{
+  for (int ig = 0; ig < (int)IsoGammas.size(); ig++)
+  {
+    for (int ij = 0; ij < (int)Jets.size(); ij++)
+    {
+      GammaJetPair gammaJetPair(&IsoGammas.at(ig), &Jets.at(ij));
+      GammaJetPairs.push_back(gammaJetPair);
+    }
+  }
+}
 
 void pairIsoGammasFromEventInVector(std::vector<IsoGamma> &IsoGammas, std::vector<Pi0> &Pi0s)
 {

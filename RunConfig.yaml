@@ -16,30 +16,24 @@ GJ18D:
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6038_20240523-1434_13TeV_GJDCal18
   label: '#gamma-Jet 18 DCal'
   trainconfigs:
-    100_Charged: full # disabled | standard | full
-    101_Charged: full
-    102_Charged: full
-    100_Full: disabled # disabled | standard | full
-    101_Full: disabled
-    102_Full: disabled
+    100_Charged: Standard # disabled | standard | full
+    101_Charged: Standard
+    102_Charged: Standard
 
 LHC18_pass2: 
   path: /alf/data/calorimetrees/GA_pp_AOD/2709_20240530-1618_13TeV_LHC18pass2
   isMC: false
   label: 'LHC18[b-p]'
   trainconfigs:
-    100_Charged: full # disabled | standard | full
-    101_Charged: full
-    102_Charged: full
-    100_Full: disabled # disabled | standard | full
-    101_Full: disabled
-    102_Full: disabled
+    100_Charged: Standard # disabled | standard | full
+    101_Charged: Standard
+    102_Charged: Standard
 
 JJ18D:
   isMC: true
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6039_20240527-1821_13TeV_JJDCal18
   label: '#Jet-Jet 18 DCal'
   trainconfigs: 
-    100_Charged: full
-    101_Charged: full
-    102_Charged: full
+    100_Charged: Standard
+    101_Charged: Standard
+    102_Charged: Standard
