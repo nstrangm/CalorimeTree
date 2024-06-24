@@ -135,4 +135,7 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
             }
         }
     }
+    TestOut->Close();
+    file1->Close();
+    file2->Close();
 }
