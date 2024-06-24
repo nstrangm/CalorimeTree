@@ -34,6 +34,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
   std::vector<IsoGamma> IsoGammas;
+  std::vector<GammaGen> GammaGens;
   std::vector<Pi0> Pi0sForIsoGammaQA;
   std::vector<Jet> Jets;
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
@@ -59,19 +60,24 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
     if (!eventCuts.PassedCuts(event))
       continue;
-    fillHistograms(event, hDirEvents, event.weight);
+    fillHistograms(event, hDirEvents, event.weight, optns);
     if (optns.doQA)
       fillQAHistograms(event, hQADirEvents, event.weight, optns);
 
     if (optns.doIsoGamma)
     {
       saveClustersFromEventInVector(tree, IsoGammas, optns);
+      calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
+      fillnoCutsHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
+      if(optns.isMC){
+        saveGenPhotonsFromEventInVector(tree, GammaGens, optns);
+        fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+      }
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
-      calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
-      fillHistograms(IsoGammas, hDirIsoGammas, event.weight);
+      fillHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
       if (optns.doQA)
       {
         fillQAHistograms(IsoGammas, hQADirIsoGammas, event.weight, optns);
@@ -82,7 +88,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     {
       saveJetsFromEventInVector(tree, Jets);
       // TODO: JetCuts
-      fillHistograms(Jets, hDirJets, event.weight);
+      fillHistograms(Jets, hDirJets, event.weight, optns);
       if (optns.doQA)
         fillQAHistograms(Jets, hQADirJets, event.weight, optns);
       if (optns.isMC)
@@ -90,7 +96,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         savePLJetsFromEventInVector(tree, PLJets);
         mapPLtoDLjets(Jets, PLJets, jetCuts.R);
         // TODO: Do I need PL jet cuts?
-        fillHistograms(PLJets, hDirJets, event.weight);
+        fillHistograms(PLJets, hDirJets, event.weight, optns);
         if (optns.doQA)
           fillQAHistograms(PLJets, hQADirJets, event.weight, optns);
       }
@@ -104,6 +110,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         fillQAHistograms(GammaJetPairs, hQADirGammaJetCorrelations, event.weight, optns);
     }
     IsoGammas.clear();
+    GammaGens.clear();
     Jets.clear();
     PLJets.clear();
     Pi0s.clear();
