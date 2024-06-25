@@ -60,10 +60,11 @@ void plotJets(TDirectory *dJets, GlobalOptions optns)
     TH1F *hDLJetPtVsPLJetPtProjection[NProjections];
     TGraphAsymmErrors *gRatioDLJetPtToPLJetPtProjection[NProjections];
     Plotting1D PResponseMatrixProjections;
+    float yMax = 1;
     for (int iProj = 0; iProj < NProjections; iProj++)
     {
       int binProjFrom = hDLJetPtVsPLJetPt->GetYaxis()->FindBin(projectionRanges[iProj][0] + 0.001);
-      int binProjTo = hDLJetPtVsPLJetPt->GetYaxis()->FindBin(projectionRanges[iProj][1] + 0.001);
+      int binProjTo = hDLJetPtVsPLJetPt->GetYaxis()->FindBin(projectionRanges[iProj][1] - 0.001);
       hDLJetPtVsPLJetPtProjection[iProj] = (TH1F *)hDLJetPtVsPLJetPt->ProjectionX(Form("hDLJetPtVsPLJetPtProjection_%d", iProj), binProjFrom, binProjTo);
       hDLJetPtVsPLJetPtProjection[iProj]->Rebin(rebinFactors[iProj]);
       gRatioDLJetPtToPLJetPtProjection[iProj] = new TGraphAsymmErrors();
@@ -77,9 +78,20 @@ void plotJets(TDirectory *dJets, GlobalOptions optns)
         gRatioDLJetPtToPLJetPtProjection[iProj]->SetPointError(iDLJetPtBin, 0, 0, AddBinError, AddBinError);
       }
       gRatioDLJetPtToPLJetPtProjection[iProj]->Scale(1. / gRatioDLJetPtToPLJetPtProjection[iProj]->Integral(0, hDLJetPtVsPLJetPtProjection[iProj]->GetNbinsX()));
+      // gRatioDLJetPtToPLJetPtProjection[iProj]->GetXaxis()->SetRangeUser(0.5, 1.5);
+
+      for (int iP = 0; iP < gRatioDLJetPtToPLJetPtProjection[iProj]->GetN(); iP++)
+      {
+        if (gRatioDLJetPtToPLJetPtProjection[iProj]->GetPointX(iP) > 0.6)
+        {
+          float thisYMax = gRatioDLJetPtToPLJetPtProjection[iProj]->GetPointY(iP);
+          yMax = ((thisYMax > yMax) ? thisYMax : yMax);
+          break;
+        }
+      }
       PResponseMatrixProjections.New(gRatioDLJetPtToPLJetPtProjection[iProj], Form("#it{p}_{T}^{PL} = %.0f #pm 1 GeV/#it{c}", PLJetpT));
     }
-    PResponseMatrixProjections.SetAxisRange(0, 2.5);
+    PResponseMatrixProjections.SetAxisRange(0, 2.5, 0, 1.5 * yMax);
     PResponseMatrixProjections.SetLegend(0.5, 0.9, 0.5, 0.9);
     PResponseMatrixProjections.SetAxisLabel("#bf{#it{p}_{T}^{DL}/#it{p}_{T}^{PL}} #hat{=} #bf{#it{p}_{T}^{rec}/#it{p}_{T}^{gen}}");
     PResponseMatrixProjections.Plot(Form("%s/ResponseMatrixProjections.%s", outputDir, suffix));
@@ -463,6 +475,12 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOption
 
   TH2F *hpTImbalancevsDeltaPhi = (TH2F *)dGammaJetCorrelations->Get("hpTImbalancevsDeltaPhi")->Clone("hpTImbalancevsDeltaPhi");
 
+  Plotting2D P2DC; // Plot 2D Correlation
+  P2DC.New(hpTImbalancevsDeltaPhi);
+  P2DC.SetMargins(0.15, 0.1, 0.025, 0.15);
+  P2DC.SetAxisLabel("#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}", "#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}");
+  P2DC.Plot(Form("%s/pTImbalancevsDeltaPhi.%s", outputDir.Data(), suffix));
+
   const int NProjections = 8;
 
   TH1F *hpTImbalance[NProjections];
@@ -474,7 +492,9 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOption
   float deltaPhiMax = TMath::Pi();
 
   PlottingGrid PImbalanceGrid;
+  // PImbalanceGrid.SetAxisLabel("#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}");
   PlottingGrid PDeltaPhiGrid;
+  // PDeltaPhiGrid.SetAxisLabel("#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}");
 
   for (int iProj = 0; iProj < NProjections; iProj++)
   {
@@ -505,7 +525,7 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
 {
   GlobalOptions optns(AnalysisDirectory, isDebugRun);
 
-  TString inputFilePath = Form("%s/HistosFromTree%s.root", AnalysisDirectory.Data(), isDebugRun ? "_0" : "");
+  TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectory.Data());
 
   if (!std::filesystem::exists(inputFilePath.Data()))
   {
