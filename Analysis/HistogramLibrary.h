@@ -191,6 +191,7 @@ TDirectory *DefineJetHistograms(TFile *f, GlobalOptions optns)
     TH1F *hPLJetPt = new TH1F("hPLJetPt", "hPt", 1000, 0., 100.);
 
     TH2F *hDLJetPtVsPLJetPt = new TH2F("hDLJetPtVsPLJetPt", "hPt;#it{p}_{T}^{DL Jet} (GeV/#it{c});#it{p}_{T}^{PL Jet} (GeV/#it{c})", 400, 0., 200., 400, 0., 200.);
+    TH2F *hDLSubPLDivPLJetPtVsPLJetPt = new TH2F("hDLSubPLDivPLJetPtVsPLJetPt", "hPt;(#it{p}_{T}^{DL Jet}-#it{p}_{T}^{PL Jet})/#it{p}_{T}^{PL Jet} ;#it{p}_{T}^{PL Jet} (GeV/#it{c})", 400, -1, 3., 400, 0., 200.);
   }
 
   return dir;
@@ -279,8 +280,10 @@ void fillHistograms(T obj, TDirectory *dir, float eventWeight)
     for (unsigned long i = 0; i < obj.size(); i++)
     {
       ((TH1F *)dir->FindObject("hPLJetPt"))->Fill(obj.at(i).Pt(), eventWeight);
-      if (obj.at(i).ClosestDLJet != nullptr)
+      if (obj.at(i).ClosestDLJet != nullptr){
         ((TH2F *)dir->FindObject("hDLJetPtVsPLJetPt"))->Fill(obj.at(i).ClosestDLJet->Pt(), obj.at(i).Pt(), eventWeight);
+        ((TH2F *)dir->FindObject("hDLSubPLDivPLJetPtVsPLJetPt"))->Fill((obj.at(i).ClosestDLJet->Pt()-obj.at(i).Pt())/obj.at(i).Pt(), obj.at(i).Pt(), eventWeight);
+      }
     }
   }
   if constexpr (std::is_same<T, std::vector<GammaJetPair>>::value)
