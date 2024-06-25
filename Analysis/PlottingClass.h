@@ -92,7 +92,7 @@ protected:
   double LegendBorders[2][2] = {{0.2, 0.4}, {0.7, 0.9}};   //  xlow,xup,ylow,yup in relative units (0-1)
   double Legend2Borders[2][2] = {{0.7, 0.95}, {0.7, 0.9}}; //  xlow,xup,ylow,yup in relative units (0-1)
   bool L1hollow = true, L2hollow = true, Leg2ManSet = false;
-  double CanvasMargins[2][2] = {{0.1, 0.025}, {0.12, 0.1}}; //  left,right,low,up in relative units
+  double CanvasMargins[2][2] = {{0.1, 0.025}, {0.12, 0.025}}; //  left,right,low,up in relative units
   //   int CanvasDimensions[2] = {800, 600};                 // Dimension given in pixels (Standard defined by the ALICE collaboration)
   int CanvasDimensions[2] = {2000, 1500}; // Dimension given in pixels (Same ratio as ALICE standard but twice as large for better png quality)
   double Split = 1. / 3.;
@@ -1383,6 +1383,9 @@ void PlottingGrid::Plot(TString name, bool logx, bool logy)
 
     gPad->SetTickx();
     gPad->SetTicky();
+    hists.at(iPad).at(0).GetXaxis()->SetLabelFont(43);
+    hists.at(iPad).at(0).GetXaxis()->SetLabelSize(20);
+    // hists.at(iPad).at(0).GetXaxis()->SetLabelSize(20);
     for (int ihist = 0; ihist < (int)hists.at(iPad).size(); ++ihist)
       hists.at(iPad).at(ihist).Draw(Form("same %s", ((TString)DrawOption.at(ihist)).Data()));
     for (int igraph = 0; igraph < (int)graphs.at(iPad).size(); ++igraph)
@@ -1412,8 +1415,8 @@ void PlottingGrid::New(TH1F *h, TString label, int style, double size, int color
     FATAL("NewHist was given a nullptr.");
 
   h->SetStats(0);
-  h->GetYaxis()->SetTitleSize(TitleSizeScaling * h->GetYaxis()->GetLabelSize());
   h->GetXaxis()->SetTitleSize(TitleSizeScaling * h->GetXaxis()->GetLabelSize());
+  h->GetYaxis()->SetTitleSize(TitleSizeScaling * h->GetYaxis()->GetLabelSize());
   h->GetXaxis()->SetTitle(AxisLabel[0]);
   h->GetYaxis()->SetTitle(AxisLabel[1]);
   h->GetXaxis()->SetTitleOffset(AxisLabelOffset[0]);
