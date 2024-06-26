@@ -78,6 +78,8 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
+      //Fill hists (raw clusters)
+      fillHistograms(IsoGammas, hDirIsoGammasRaw, event.weight, optns);
       //Fill hists (cluster cuts, not isolated)
       doIsoGammaClusterCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas, hDirIsoGammasClusterCuts, event.weight, optns);

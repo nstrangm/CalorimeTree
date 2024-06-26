@@ -376,6 +376,7 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
   else
   {
     hMinMassDiffToPi0 = (TH1F *)dIsoGammaQA->Get("hMinMassDiffToPi0");
+    hMinMassDiffToPi0->SetTitle("");
     float integralDiffToPi0 = hMinMassDiffToPi0->Integral(1, hMinMassDiffToPi0->GetNbinsX());
     hMinMassDiffToPi0->Scale(1. / integralDiffToPi0);
     AvoidLogYconflict(hMinMassDiffToPi0);
@@ -437,7 +438,8 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
     AvoidLogYconflict(hIsoGammaIsoChargedCorrected);
     PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrected, "Data");
   }
-  PMinMassDiffToPi0.SetAxisLabel("#bf{#Delta#it{m}_{inv} (GeV/#it{c}^{2})}");
+  PMinMassDiffToPi0.SetAxisLabel("#bf{#Delta#it{m}_{inv} (GeV/#it{c}^{2})}", "#bf{dN/d#Delta#it{m}_{inv} (GeV/#it{c}^{2})}");
+  PMinMassDiffToPi0.SetMargins(0.12, 0.1, 0.08, 0.025);
   PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}");
