@@ -81,10 +81,12 @@ private:
 public:
   IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas);
   ~IsoGammaCuts(){};
+
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
   bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
-  bool PassedCuts(IsoGamma IsoGamma);
+  bool PassedIsoGammaCuts(IsoGamma IsoGamma);
+  bool PassedClusterCuts(IsoGamma IsoGamma);
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -151,15 +153,39 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   INFO(Form("EMin = %f, EMax = %f, useRhoInsteadOfPerpCone = %s", EMin, EMax, useRhoInsteadOfPerpCone ? "true" : "false"))
 }
 
-bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
+bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
 {
   bool passed = true;
+  // check cluster long-axis
+  if (IsoGamma.M02 < M02Min || IsoGamma.M02 > M02Max)
+  {
+    passed = false;
+    if (hQADir != nullptr)
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
+  }
+  if (passed && hQADir != nullptr)
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
+  // Check ptiso (fully corrected quantity)
+  if (IsoGamma.IsoChargedCorrected > pTisoCorrectedMax)
+  {
+    passed = false;
+    if (hQADir != nullptr)
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
+  }
+  if (passed && hQADir != nullptr)
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
+  return passed;
+}
 
+bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
+{
+  bool passed = true;
+  //Check if event was loaded.
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(0., IsoGamma.Pt(), IsoGamma.EventWeight);
   if (hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(0., IsoGamma.Pt(), IsoGamma.EventWeight);
-
+  // Check cluster acceptance
   if (!IsoGamma.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !IsoGamma.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
   {
     passed = false;
@@ -205,14 +231,12 @@ bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(5., IsoGamma.Pt(), IsoGamma.EventWeight);
   // Check track matching
-  if (IsoGamma.MatchedTrack.dEta > MatchDetaMax || IsoGamma.MatchedTrack.dEta < MatchDetaMin || IsoGamma.MatchedTrack.dPhi < MatchDphiMin || IsoGamma.MatchedTrack.dPhi > MatchDphiMax)
+  if (IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
-    if ((IsoGamma.E / IsoGamma.MatchedTrack.P) > MatchVetoMax) // Check veto
-    {
-      passed = false;
-      if (hQADir != nullptr)
-        ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
-    }
+    passed = false;
+    if (hQADir != nullptr)
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
+      ((TH2F *)hQADir->FindObject("hIsoGammadEtadphiCut"))->Fill(IsoGamma.MatchedTrack.dPhi, IsoGamma.MatchedTrack.dEta, IsoGamma.EventWeight);
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
@@ -225,25 +249,27 @@ bool IsoGammaCuts::PassedCuts(IsoGamma IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(7., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // check cluster long-axis
-  if (IsoGamma.M02 < M02Min || IsoGamma.M02 > M02Max)
-  {
-    passed = false;
-    if (hQADir != nullptr)
-      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
-  }
-  if (passed && hQADir != nullptr)
-    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // Check ptiso (fully corrected quantity)
-  if (IsoGamma.IsoChargedCorrected > pTisoCorrectedMax)
-  {
-    passed = false;
-    if (hQADir != nullptr)
-      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
-  }
-  if (passed && hQADir != nullptr)
-    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
   return passed;
+}
+
+
+
+void doIsoGammaClusterCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
+{
+  std::vector<IsoGamma>::iterator iter;
+  for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
+  {
+    if (!IsoGammaCuts.PassedClusterCuts(*iter))
+    {
+      iter = IsoGammas.erase(iter);
+      // cout<<"Out"<<"\n";
+    }
+    else
+    {
+      ++iter;
+      // cout<<"Passed"<<"\n";
+    }
+  }
 }
 
 void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
@@ -251,7 +277,7 @@ void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
   std::vector<IsoGamma>::iterator iter;
   for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
   {
-    if (!IsoGammaCuts.PassedCuts(*iter))
+    if (!IsoGammaCuts.PassedIsoGammaCuts(*iter))
     {
       iter = IsoGammas.erase(iter);
       // cout<<"Out"<<"\n";
