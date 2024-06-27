@@ -26,11 +26,46 @@ std::set<std::string> getDirectories(TFile *file)
     return directories;
 }
 
-void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/Standard/", string filepath1 = "GJ18D/100_Charged/Standard/HistosFromTree.root", string filepath2 = "JJ18D/100_Charged/Standard/HistosFromTree.root", float w1 = 1, float w2 = 1)
+void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/Standard/", string filepath1 = "GJ18D/100_Charged/Standard", string filepath2 = "JJ18D/100_Charged/Standard", float w1 = 1, float w2 = 1,bool addtoRunConfig=true)
 {
+    ENTER
     // Open files
-    TFile *file1 = TFile::Open(filepath1.c_str(), "READ");
-    TFile *file2 = TFile::Open(filepath2.c_str(), "READ");
+    TFile *file1 = TFile::Open(Form("%s/HistosFromTree.root",filepath1.c_str()), "READ");
+    TFile *file2 = TFile::Open(Form("%s/HistosFromTree.root",filepath2.c_str()), "READ");
+
+    GlobalOptions optns1(filepath1.c_str(),1);
+    GlobalOptions optns2(filepath2.c_str(),1);
+
+    if(optns1.isMC!=optns2.isMC){
+        FATAL("Trying to merge MC data and non-MC data!");
+    }
+
+    //Add merge file config to RunConfig
+    if(addtoRunConfig){
+        //Load configuration file:
+        std::stringstream ss((std::string)outputDir.Data());
+        std::string word;
+        std::string words[3];
+        for (int i = 0; i < 3; i++)
+        {
+            std::getline(ss, word, '/');
+            words[i] = word;
+        }
+        YAML::Node config = YAML::LoadFile("RunConfig.yaml");
+        cout<<words[0]<<"\n";
+        YAML::Node mergeconfig = config[(words[0])];
+        //Is MC?
+        mergeconfig["isMC"]=optns1.isMC;
+        //Paths to raw datasets
+        mergeconfig["path1"]=std::string(Form("%s, %s",optns1.analysisDirPath.Data(),optns2.analysisDirPath.Data()));
+        //Labels
+        mergeconfig["label"]=Form("%s, %s",optns1.dataSet.Data(),optns2.dataSet.Data());
+        //trainconfigs
+        mergeconfig["TrainConfig1"]=optns1.trainConfig.Data();
+        mergeconfig["TrainConfig2"]=optns2.trainConfig.Data();
+        std::ofstream fout("RunConfig.yaml");
+        fout << config;
+    }
 
     createDirectory(outputDir.Data());
 
@@ -44,6 +79,8 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
         if (directories2.find(dir) != directories2.end())
         {
             commonDirectories.insert(dir);
+        }else{
+            WARN(Form("%s in directory 1, but not in directory 2.",dir.c_str()))
         }
     }
 
@@ -138,4 +175,6 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
     TestOut->Close();
     file1->Close();
     file2->Close();
+
+    EXIT
 }

@@ -6,6 +6,8 @@
 #include "Logging.h"
 #include "TFile.h"
 #include "Utilities.h"
+#include "PhysicsObjects.h"
+
 
 TDirectory *DefineEventHistograms(TFile *f, GlobalOptions optns)
 {
@@ -44,11 +46,11 @@ TDirectory *DefineEventQAHistograms(TFile *f, GlobalOptions optns)
   return dir;
 }
 
-TDirectory *DefineIsoGammaHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma)
     return nullptr;
-  TDirectory *dir = f->mkdir("IsoGammas");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
   TH1F *hIsoGammaPt = new TH1F("hIsoGammaPt", "hPt", 1000, 0., 100.);
@@ -145,6 +147,8 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
   TH2F *hIsoGammaM02pT = new TH2F("hIsoGammaM02pT", "hIsoGammaM02pT", 100, M02Range[0], M02Range[1], 100, 0, 50);
   TH2F *hIsoGammaEBeforeAfterNL = new TH2F("hIsoGammaEBeforeAfterNL", "hIsoGammaEBeforeAfterNL;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
   TH2F *hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
+  TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi","hIsoGammadEtadphi",100,-0.1,0.1,100,-0.1,0.1);
+  TH2F *hIsoGammadEtadphiCut = new TH2F("hIsoGammadEtadphiCut","hIsoGammadEtadphiCut",100,-0.1,0.1,100,-0.1,0.1);
 
   if (optns.isMC)
   { // ------------------> MC IsoGammaQA histograms
@@ -407,6 +411,8 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       ((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+      ((TH2F *)dir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
+      //TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphiCut","hIsoGammadEtadphiCut",100,-1,1,100,-1,1);
       if (optns.isMC)
       {
         ((TH2F *)dir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);

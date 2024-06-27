@@ -20,7 +20,9 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
   TDirectory *hQADirEvents = DefineEventQAHistograms(fOut, optns);
-  TDirectory *hDirIsoGammas = DefineIsoGammaHistograms(fOut, optns);
+  TDirectory *hDirIsoGammasRaw = DefineIsoGammaHistograms(fOut, "Clusters" ,optns);
+  TDirectory *hDirIsoGammasClusterCuts = DefineIsoGammaHistograms(fOut, "Gammas", optns);
+  TDirectory *hDirIsoGammas = DefineIsoGammaHistograms(fOut,"IsoGammas" , optns);
   TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut, optns);
   TDirectory *hDirJets = DefineJetHistograms(fOut, optns);
   TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
@@ -68,7 +70,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     {
       saveClustersFromEventInVector(tree, IsoGammas, optns);
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
-      fillnoCutsHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
+      //fillnoCutsHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
       if(optns.isMC){
         saveGenPhotonsFromEventInVector(tree, GammaGens, optns);
         fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
@@ -76,6 +78,12 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
+      //Fill hists (raw clusters)
+      fillHistograms(IsoGammas, hDirIsoGammasRaw, event.weight, optns);
+      //Fill hists (cluster cuts, not isolated)
+      doIsoGammaClusterCuts(IsoGammas, isoGammaCuts);
+      fillHistograms(IsoGammas, hDirIsoGammasClusterCuts, event.weight, optns);
+      //Fill hists (cluster cuts and isolated)
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
       if (optns.doQA)
@@ -105,7 +113,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     {
       pairGammasWithJets(IsoGammas, Jets, GammaJetPairs);
       // TODO: CorrelationCuts
-      fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, event.weight);
+      fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, event.weight, optns);
       if (optns.doQA)
         fillQAHistograms(GammaJetPairs, hQADirGammaJetCorrelations, event.weight, optns);
     }

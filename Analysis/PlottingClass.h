@@ -426,11 +426,11 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
     
     if(i==0){
       TH1* plot=(TH1*)PlottingObjects.at(i);
-      const char* plotTitle=plot->GetTitle();
-      cout<<plotTitle<<"\n";
+      //const char* plotTitle=plot->GetTitle();
+      //cout<<plotTitle<<"\n";
       InitializeCanvas(logx, logy, TransCanvas); //  Creating Canvas with margins
       InitializeAxis(logx, logy, TransCanvas);   //  Create the hDummy and set its axis label + ranges
-      hDummy->SetTitle(plotTitle);
+      //hDummy->SetTitle(plotTitle);
       hDummy->Draw("0");                            //  Draw the just set axis (label) on the Canvas
       InitializeLegend();                        //  Create leg and set its dimensions + format
 

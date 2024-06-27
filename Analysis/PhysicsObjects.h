@@ -4,6 +4,7 @@
 #include "TreeUtilities.h"
 #include "Logging.h"
 #include "MCUtils.h"
+//#include "analyseHistosFromTree.h"
 
 class PhysicsObject
 {
@@ -233,20 +234,6 @@ bool IsoGamma::isPion()
   if (CheckTagBit(MCTag, kMCPion))
   {
     return true;
-  }
-  return false;
-}
-
-bool IsoGamma::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]){
-  return (Eta() < EMCalEtaPhiMinMax[0][1] && Eta() > EMCalEtaPhiMinMax[0][0] && Phi() > EMCalEtaPhiMinMax[1][0] && Phi() < EMCalEtaPhiMinMax[1][1]);
-}
-
-bool IsoGamma::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]){
-  if(Eta() < DCalEtaPhiMinMax[0][1] && Eta() > DCalEtaPhiMinMax[0][0] && Phi() > DCalEtaPhiMinMax[1][0] && Phi() < DCalEtaPhiMinMax[1][1]){ // In DCal
-    if(Eta() > DCalHoleEtaPhiMinMax[0][0] && Eta() < DCalHoleEtaPhiMinMax[0][1] && Phi() < DCalHoleEtaPhiMinMax[1][0] && Phi() > DCalHoleEtaPhiMinMax[1][1]) // In DCal hole
-      return false;
-    else // Not in DCal hole
-      return true;
   }
   return false;
 }
