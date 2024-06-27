@@ -4,45 +4,38 @@ nParallelJobsPerVar: 10
 doIsoGamma: true
 doJets: true
 doPi0: false
-
 DummyDataSet:
   isMC: true
-  label: '#gamma-Jet 18 DCal'
+  label: "#gamma-Jet 18 DCal"
   trainconfigs:
     DummyTrainConfig: Standard
-
 GJ18D:
   isMC: true
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6038_20240523-1434_13TeV_GJDCal18
-  label: '#gamma-Jet 18 DCal'
+  label: "#gamma-Jet 18 DCal"
   trainconfigs:
-    100_Charged: Standard # disabled | standard | full
+    100_Charged: Standard
     101_Charged: Standard
     102_Charged: Standard
-
-LHC18_pass2: 
+LHC18_pass2:
   path: /alf/data/calorimetrees/GA_pp_AOD/2709_20240530-1618_13TeV_LHC18pass2
   isMC: false
-  label: 'LHC18[b-p]'
+  label: LHC18[b-p]
   trainconfigs:
-    100_Charged: Standard # disabled | standard | full
+    100_Charged: Standard
     101_Charged: Standard
     102_Charged: Standard
-
 JJ18D:
   isMC: true
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6039_20240527-1821_13TeV_JJDCal18
-  label: '#Jet-Jet 18 DCal'
-  trainconfigs: 
-    100_Charged: Standard
-    101_Charged: Standard
-    102_Charged: Standard
-
-#Merged datasets:
-MergedGJ18DandJJ18D:
-  isMC: true
-  label: '#Jet-Jet 18 Dcal and gamma-Jet 18 DCal'
+  label: "#Jet-Jet 18 DCal"
   trainconfigs:
     100_Charged: Standard
     101_Charged: Standard
     102_Charged: Standard
+MergedGJ18DandJJ18D:
+  isMC: true
+  path1: GJ18D/102_Charged/Standard, JJ18D/102_Charged/Standard
+  label: GJ18D, JJ18D
+  TrainConfig1: 102_Charged
+  TrainConfig2: 102_Charged

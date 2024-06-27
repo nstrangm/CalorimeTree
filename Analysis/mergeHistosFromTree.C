@@ -26,7 +26,7 @@ std::set<std::string> getDirectories(TFile *file)
     return directories;
 }
 
-void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/Standard/", string filepath1 = "GJ18D/100_Charged/Standard", string filepath2 = "JJ18D/100_Charged/Standard", float w1 = 1, float w2 = 1)
+void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/Standard/", string filepath1 = "GJ18D/100_Charged/Standard", string filepath2 = "JJ18D/100_Charged/Standard", float w1 = 1, float w2 = 1,bool addtoRunConfig=true)
 {
     ENTER
     // Open files
@@ -40,22 +40,32 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
         FATAL("Trying to merge MC data and non-MC data!");
     }
 
-    //Load configuration file:
-    YAML::Node config = YAML::LoadFile("RunConfig.yaml");
-    YAML::Node mergeconfig = config[outputDir.Data()];
-    //Is MC?
-    mergeconfig["isMC"]=optns1.isMC;
-    //Paths to raw datasets
-    mergeconfig["path1"]=std::string(Form("%s, %s",optns1.analysisDirPath.Data(),optns2.analysisDirPath.Data()));
-    //Labels
-    mergeconfig["label"]=Form("%s, %s",optns1.dataSet.Data(),optns2.dataSet.Data());
-    //trainconfigs
-    mergeconfig["TrainConfig1"]=optns1.trainConfig.Data();
-    mergeconfig["TrainConfig2"]=optns2.trainConfig.Data();
-
-
-    std::ofstream fout("UpdatedRunConfig.yaml");
-    fout << config;
+    //Add merge file config to RunConfig
+    if(addtoRunConfig){
+        //Load configuration file:
+        std::stringstream ss((std::string)outputDir.Data());
+        std::string word;
+        std::string words[3];
+        for (int i = 0; i < 3; i++)
+        {
+            std::getline(ss, word, '/');
+            words[i] = word;
+        }
+        YAML::Node config = YAML::LoadFile("RunConfig.yaml");
+        cout<<words[0]<<"\n";
+        YAML::Node mergeconfig = config[(words[0])];
+        //Is MC?
+        mergeconfig["isMC"]=optns1.isMC;
+        //Paths to raw datasets
+        mergeconfig["path1"]=std::string(Form("%s, %s",optns1.analysisDirPath.Data(),optns2.analysisDirPath.Data()));
+        //Labels
+        mergeconfig["label"]=Form("%s, %s",optns1.dataSet.Data(),optns2.dataSet.Data());
+        //trainconfigs
+        mergeconfig["TrainConfig1"]=optns1.trainConfig.Data();
+        mergeconfig["TrainConfig2"]=optns2.trainConfig.Data();
+        std::ofstream fout("RunConfig.yaml");
+        fout << config;
+    }
 
     createDirectory(outputDir.Data());
 

@@ -112,7 +112,7 @@ void plotJetQA(TDirectory *dJetQA, GlobalOptions optns)
   // Plot eta phi map of reconstructed jets (DL)
   TH2F *hDLJetEtaPhi = (TH2F *)dJetQA->Get("hJetEtaPhi");
   Plotting2D PDLEtaPhiMap;
-  PDLEtaPhiMap.SetMargins(0.12, 0.1, 0.05, 0.125);
+  PDLEtaPhiMap.SetMargins(0.12, 0.12, 0.05, 0.125);
   PDLEtaPhiMap.New(hDLJetEtaPhi);
   PDLEtaPhiMap.AddEMCalOutline();
   PDLEtaPhiMap.AddPHOSOutline();
@@ -442,28 +442,28 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
   PMinMassDiffToPi0.SetMargins(0.12, 0.1, 0.08, 0.025);
   PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}");
+  PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}","#bf{log(dN/dE GeV)}");
   PIsoGammaE.Plot(Form("%s/IsoGammaE.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaM02.SetAxisLabel("#bf{#it{M02}}");
+  PIsoGammaM02.SetAxisLabel("#bf{#it{M02}}","#bf{log(dN/dM02)}");
   PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}");
+  PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}","#bf{log(dN/dM20)}");
   PIsoGammaM20.Plot(Form("%s/IsoGammaM20.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPx.SetAxisLabel("#bf{#it{Px}[GeV/#it{c}]}");
+  PIsoGammaPx.SetAxisLabel("#bf{#it{p_x}[GeV/#it{c}]}","#bf{log(dN/Px GeV/c)}");
   PIsoGammaPx.Plot(Form("%s/IsoGammaPx.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPy.SetAxisLabel("#bf{#it{Py}[GeV/#it{c}]}");
+  PIsoGammaPy.SetAxisLabel("#bf{#it{p_y}[GeV/#it{c}]}","#bf{log(dN/Py GeV/c)}");
   PIsoGammaPy.Plot(Form("%s/IsoGammaPy.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
+  PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p^{iso, corrected}_{T}}[GeV/#it{c}]}","#bf{log(dN/p_{T, corrected}^{iso} GeV/c)}");
   PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPz.SetAxisLabel("#bf{#it{Pz}[GeV/#it{c}]}");
+  PIsoGammaPz.SetAxisLabel("#bf{#it{p_z}[GeV/#it{c}]}","#bf{log(dN/p_{z} GeV/c)}");
   PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}");
+  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}","#bf{log(dN/p_{T}^{iso} GeV/c)}");
   PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   EXIT
