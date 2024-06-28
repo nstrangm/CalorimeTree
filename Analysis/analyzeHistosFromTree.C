@@ -89,7 +89,7 @@ void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData
       }
       if(doAcceptance){
         TH1F* hIsoGammaAcceptance;
-        hIsoGammaAcceptance = (TH1F*)dIsoGammaMC->Get("hIsoGammaPtSignal")->Clone("hIsoGammaPtSignal");
+        hIsoGammaAcceptance = (TH1F*)dIsoGammaMC->Get("hGammaGenPtAcceptanceCut")->Clone("hGammaGenPt");
         hIsoGammaAcceptance->Rebin(4);
         hIsoGammaAcceptance->Divide(hGammaGenPt);
         hIsoGammaAcceptance->SetTitle("Acceptance");
