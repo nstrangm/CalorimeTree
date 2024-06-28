@@ -2,7 +2,7 @@ doDebug: false
 doPlotting: true
 nParallelJobsPerVar: 10
 doIsoGamma: true
-doJets: true
+doJets: false
 doPi0: false
 DummyDataSet:
   isMC: true

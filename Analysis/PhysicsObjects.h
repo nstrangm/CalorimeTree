@@ -148,7 +148,23 @@ public:
   float IsoCharged=0;
   float IsoBckPerp=0;
   float MCTag=0;
+  bool isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]);
+  bool isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]);
 };
+
+bool GammaGen::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]){
+  return (Eta() < EMCalEtaPhiMinMax[0][1] && Eta() > EMCalEtaPhiMinMax[0][0] && Phi() > EMCalEtaPhiMinMax[1][0] && Phi() < EMCalEtaPhiMinMax[1][1]);
+}
+
+bool GammaGen::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]){
+  if(Eta() < DCalEtaPhiMinMax[0][1] && Eta() > DCalEtaPhiMinMax[0][0] && Phi() > DCalEtaPhiMinMax[1][0] && Phi() < DCalEtaPhiMinMax[1][1]){ // In DCal
+    if(Eta() > DCalHoleEtaPhiMinMax[0][0] && Eta() < DCalHoleEtaPhiMinMax[0][1] && Phi() < DCalHoleEtaPhiMinMax[1][0] && Phi() > DCalHoleEtaPhiMinMax[1][1]) // In DCal hole
+      return false;
+    else // Not in DCal hole
+      return true;
+  }
+  return false;
+}
 
 class IsoGamma : public PhysicsObject
 {

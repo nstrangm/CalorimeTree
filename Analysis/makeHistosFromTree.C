@@ -31,6 +31,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   EventCuts eventCuts(optns);
   IsoGammaCuts isoGammaCuts(optns, hQADirIsoGammas); // Pass the QA dir so that the "cut passed" function can fill a "loss histogram"
+  GammaGenCuts GammaGenCuts(optns);
   JetCuts jetCuts(optns);
   Pi0Cuts pi0Cuts(optns);
 
@@ -74,6 +75,9 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       if(optns.isMC){
         saveGenPhotonsFromEventInVector(tree, GammaGens, optns);
         fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        //Apply acceptance cut to generated photons and fill histograms:
+        doGammaGenCuts(GammaGens, GammaGenCuts);
+        fillGammaGenAcceptanceCutHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
       }
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);

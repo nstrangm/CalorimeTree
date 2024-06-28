@@ -54,6 +54,9 @@ void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData
   TDirectory* dIsoGammaMC = (TDirectory*)fInMC->Get("IsoGammas");
   TDirectory* dIsoGammaData = (TDirectory*)fInData->Get("IsoGammas");
 
+  TDirectory* dGammaMC = (TDirectory*)fInMC->Get("Gammas");
+  TDirectory* dGammaData = (TDirectory*)fInData->Get("Gammas");
+
   if(doPurity || doEfficiency || doAcceptance || doABCD){
     //Outputdirectory:
     createDirectory(outputDir);
@@ -95,10 +98,14 @@ void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData
     }
     if(doABCD){
       std::vector<ABCD> ABCDs;
-      CalculateABCDData(ABCDs,dIsoGammaData,dIsoGammaMC,npTbinEdges-1,pTbinEdges,pTIsoABCDCuts,M02ABCDCuts);
-      TDirectory *hDirABCD = DefineABCDHistos(OutFile,npTbinEdges-1, pTbinEdges);
-      FillABCDHistos(ABCDs,hDirABCD);
+      TDirectory *dABCD = DefineABCDHistos(OutFile,npTbinEdges-1, pTbinEdges);
+      CalculateABCDData(ABCDs,dGammaData,dGammaMC,dABCD,npTbinEdges-1,pTbinEdges,pTIsoABCDCuts,M02ABCDCuts);
+      FillABCDHistos(ABCDs,dABCD);
     }
+    OutFile->Write();
+    OutFile->Close();
+    fInData->Close();
+    fInMC->Close();
   }
 } 
 
@@ -108,7 +115,7 @@ void analyzeHistosFromTree(TString AnalysisDirectory, string AnalysisDirectoryMC
 
   if (optns.doJets)
   {
-    TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectory.Data());
+    TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectoryData.c_str());
 
     TFile *fIn = new TFile(inputFilePath, "UPDATE");
     if (!fIn)

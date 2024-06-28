@@ -52,7 +52,6 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
             words[i] = word;
         }
         YAML::Node config = YAML::LoadFile("RunConfig.yaml");
-        cout<<words[0]<<"\n";
         YAML::Node mergeconfig = config[(words[0])];
         //Is MC?
         mergeconfig["isMC"]=optns1.isMC;
@@ -92,7 +91,7 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
         TDirectory *dh1 = (TDirectory *)file1->Get(dir.c_str());
         TDirectory *dh2 = (TDirectory *)file2->Get(dir.c_str());
 
-        cout<<"Merging histograms from the directory:" << dir <<"\n";
+        LOG(Form("Merging histograms from the directory: %s",dir.c_str()))
 
         // Get list of keys1:
         TList *listofkeys1 = dh1->GetListOfKeys();

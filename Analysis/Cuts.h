@@ -53,6 +53,83 @@ bool EventCuts::PassedCuts(Event &Event)
 // -----------------------------------------------------------
 // -----------------------------------------------------------
 // -----------------------------------------------------------
+// ------------------- GammaGen Cuts -------------------------
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+class GammaGenCuts
+{
+private:
+  float EMCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+  float DCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+  float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+  TDirectory *hQADir = nullptr;
+
+public:
+  GammaGenCuts(GlobalOptions optns);
+  ~GammaGenCuts(){};
+
+  bool PassedGammaGenCuts(GammaGen GammaGen);
+};
+
+GammaGenCuts::GammaGenCuts(GlobalOptions optns)
+{
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+
+  if (!ycut[(std::string)optns.cutString])
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
+  // Acceptance cut
+  // EMcal
+  EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
+  EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
+  EMCalEtaPhiMinMax[1][0] = chosencut["cluster_min_EMcal_phi"].IsDefined() ? chosencut["cluster_min_EMcal_phi"].as<float>() : standardcut["cluster_min_EMcal_phi"].as<float>();
+  EMCalEtaPhiMinMax[1][1] = chosencut["cluster_max_EMcal_phi"].IsDefined() ? chosencut["cluster_max_EMcal_phi"].as<float>() : standardcut["cluster_max_EMcal_phi"].as<float>();
+  // DCal
+  DCalEtaPhiMinMax[0][0] = chosencut["cluster_min_Dcal_eta"].IsDefined() ? chosencut["cluster_min_Dcal_eta"].as<float>() : standardcut["cluster_min_Dcal_eta"].as<float>();
+  DCalEtaPhiMinMax[0][1] = chosencut["cluster_max_Dcal_eta"].IsDefined() ? chosencut["cluster_max_Dcal_eta"].as<float>() : standardcut["cluster_max_Dcal_eta"].as<float>();
+  DCalEtaPhiMinMax[1][0] = chosencut["cluster_min_Dcal_phi"].IsDefined() ? chosencut["cluster_min_Dcal_phi"].as<float>() : standardcut["cluster_min_Dcal_phi"].as<float>();
+  DCalEtaPhiMinMax[1][1] = chosencut["cluster_max_Dcal_phi"].IsDefined() ? chosencut["cluster_max_Dcal_phi"].as<float>() : standardcut["cluster_max_Dcal_phi"].as<float>();
+  // DCal hole
+  DCalHoleEtaPhiMinMax[0][0] = chosencut["cluster_min_DcalHole_eta"].IsDefined() ? chosencut["cluster_min_DcalHole_eta"].as<float>() : standardcut["cluster_min_DcalHole_eta"].as<float>();
+  DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
+  DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
+  DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+}
+
+bool GammaGenCuts::PassedGammaGenCuts(GammaGen GammaGen)
+{
+  bool passed = true;
+  // Check GammaGen acceptance
+  if (!GammaGen.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !GammaGen.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
+  {
+    passed = false;
+  }
+  return passed;
+}
+
+void doGammaGenCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts GammaGenCuts)
+{
+  std::vector<GammaGen>::iterator iter;
+  for (iter = GammaGens.begin(); iter != GammaGens.end();)
+  {
+    if (!GammaGenCuts.PassedGammaGenCuts(*iter))
+    {
+      iter = GammaGens.erase(iter);
+    }
+    else
+    {
+      ++iter;
+    }
+  }
+}
+
+
+
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// -----------------------------------------------------------
 // ------------------- IsoGamma Cuts -------------------------
 // -----------------------------------------------------------
 // -----------------------------------------------------------
