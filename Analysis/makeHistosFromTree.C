@@ -74,10 +74,15 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       //fillnoCutsHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
       if(optns.isMC){
         saveGenPhotonsFromEventInVector(tree, GammaGens, optns);
-        fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        GammaGencalculateIsolation(GammaGens, event);
+        fillGammaGenHistograms(GammaGens, hDirIsoGammasRaw, event.weight, optns);
         //Apply acceptance cut to generated photons and fill histograms:
         doGammaGenCuts(GammaGens, GammaGenCuts);
-        fillGammaGenAcceptanceCutHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        fillGammaGenHistograms(GammaGens, hDirIsoGammasClusterCuts, event.weight, optns);
+        doGammaGenIsolationCuts(GammaGens, GammaGenCuts);
+        fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        //fillGammaGenAcceptanceCutHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        fillGammaGenQAHistograms(GammaGens, hQADirIsoGammas, event.weight, optns);
       }
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);

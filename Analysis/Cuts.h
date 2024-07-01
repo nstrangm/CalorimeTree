@@ -62,6 +62,8 @@ private:
   float EMCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
   float DCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
   float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+
+  float pTisoCorrectedMax = 0;
   TDirectory *hQADir = nullptr;
 
 public:
@@ -69,6 +71,7 @@ public:
   ~GammaGenCuts(){};
 
   bool PassedGammaGenCuts(GammaGen GammaGen);
+  bool PassedGammaGenIsolationCuts(GammaGen GammaGen);
 };
 
 GammaGenCuts::GammaGenCuts(GlobalOptions optns)
@@ -96,6 +99,9 @@ GammaGenCuts::GammaGenCuts(GlobalOptions optns)
   DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
   DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
   DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+  // Load Isolation cut
+  pTisoCorrectedMax = chosencut["cluster_max_ptiso"].IsDefined() ? chosencut["cluster_max_ptiso"].as<float>() : standardcut["cluster_max_ptiso"].as<float>();
+  //useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 }
 
 bool GammaGenCuts::PassedGammaGenCuts(GammaGen GammaGen)
@@ -115,6 +121,33 @@ void doGammaGenCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts GammaGenCuts)
   for (iter = GammaGens.begin(); iter != GammaGens.end();)
   {
     if (!GammaGenCuts.PassedGammaGenCuts(*iter))
+    {
+      iter = GammaGens.erase(iter);
+    }
+    else
+    {
+      ++iter;
+    }
+  }
+}
+
+bool GammaGenCuts::PassedGammaGenIsolationCuts(GammaGen GammaGen)
+{
+  bool passed = true;
+  // check cluster long-axis
+  if (GammaGen.IsoChargedCorrected > pTisoCorrectedMax)
+  {
+    passed = false;
+  }
+  return passed;
+}
+
+void doGammaGenIsolationCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts GammaGenCuts)
+{
+  std::vector<GammaGen>::iterator iter;
+  for(iter = GammaGens.begin();iter != GammaGens.end();)
+  {
+    if (!GammaGenCuts.PassedGammaGenIsolationCuts(*iter))
     {
       iter = GammaGens.erase(iter);
     }
@@ -307,7 +340,7 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(5., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // Check track matching
+   //Check track matching
   if (IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
     passed = false;

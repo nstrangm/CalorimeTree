@@ -32,7 +32,7 @@ void analyzeJets(TDirectory *dJets, GlobalOptions optns)
 
 void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData, const char* outputDir, bool doABCD = true, bool doPurity = true, bool doAcceptance = true, bool doEfficiency = true)
 {
-  //GlobalOptions optns(AnalysisDirectory, jobId);
+  GlobalOptions optns(AnalysisDirectoryData, 1);
 
   TString inputFilePathMC = Form("%s/HistosFromTree.root", AnalysisDirectoryMC.c_str());
   TString inputFilePathData = Form("%s/HistosFromTree.root", AnalysisDirectoryData.c_str());
@@ -66,34 +66,58 @@ void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData
     if(doPurity || doEfficiency || doAcceptance){
       TH1F* hIsoGammaPt;
       TH1F* hGammaGenPt;
+      TH1F* hIsoGammaPtSignal;
+      //Read data:
       hIsoGammaPt = (TH1F*)dIsoGammaMC->Get("hIsoGammaPt")->Clone("hIsoGammaPt");
-      hIsoGammaPt->Rebin(4);
       hGammaGenPt = (TH1F*)dIsoGammaMC->Get("hGammaGenPt")->Clone("hGammaGenPt");
-      hGammaGenPt->Rebin(4 );
+      hIsoGammaPtSignal = (TH1F*)dIsoGammaMC->Get("hIsoGammaPtSignal")->Clone("hIsoGammaPtSignal");
 
       if(doPurity){
         TH1F* hIsoGammaPurity;
-        hIsoGammaPurity = (TH1F*)dIsoGammaMC->Get("hIsoGammaPtSignal")->Clone("hIsoGammaPtSignal");
-        hIsoGammaPurity->Rebin(4);
-        hIsoGammaPurity->Divide(hIsoGammaPt);
+        TH1F* hIsoGammaPtRebinned;
+        //Rebin:
+        hIsoGammaPtRebinned = (TH1F*)hIsoGammaPt->Rebin(npTbinEdges2-1, "hIsoGammaPtRebinned",pTbinEdges2);
+        hIsoGammaPurity = (TH1F*)hIsoGammaPtSignal->Rebin(npTbinEdges2-1, "hPurity",pTbinEdges2);
+        //Calculate Purity
+        hIsoGammaPurity->Divide(hIsoGammaPtRebinned);
         hIsoGammaPurity->SetTitle("Purity");
-        hIsoGammaPurity->Write();
+        hIsoGammaPurity->SetName("Purity");
+        //hIsoGammaPurity->Write();
+
+        delete hIsoGammaPtRebinned;
       }
       if(doEfficiency){
         TH1F* hIsoGammaEfficiency;
-        hIsoGammaEfficiency = (TH1F*)dIsoGammaMC->Get("hIsoGammaPtSignal")->Clone("hIsoGammaPtSignal");
-        hIsoGammaEfficiency->Rebin(4);
-        hIsoGammaEfficiency->Divide(hGammaGenPt);
+        TH1F* hGammaGenPtRebinned;
+        //Rebin:
+        hGammaGenPtRebinned = (TH1F*)hGammaGenPt->Rebin(npTbinEdges2-1, "hGammGenPtRebinned",pTbinEdges2);
+        hIsoGammaEfficiency = (TH1F*)hIsoGammaPt->Rebin(npTbinEdges2-1, "hEfficiency", pTbinEdges2);
+        //Calculate efficiency
+        hIsoGammaEfficiency->Divide(hGammaGenPtRebinned);
         hIsoGammaEfficiency->SetTitle("Efficiency");
-        hIsoGammaEfficiency->Write();
+        hIsoGammaEfficiency->SetName("Efficiency");
+        //hIsoGammaEfficiency->Write();
+
+        delete hGammaGenPtRebinned;
       }
       if(doAcceptance){
+        //Initialise histograms
         TH1F* hIsoGammaAcceptance;
-        hIsoGammaAcceptance = (TH1F*)dIsoGammaMC->Get("hGammaGenPtAcceptanceCut")->Clone("hGammaGenPt");
-        hIsoGammaAcceptance->Rebin(4);
-        hIsoGammaAcceptance->Divide(hGammaGenPt);
+        TH1F* hGammaGenPtAcceptanceCut;
+        TH1F* hGammaGenPtRebinned;
+        //Read data:
+        hGammaGenPtAcceptanceCut = (TH1F*)dIsoGammaMC->Get("hGammaGenPtAcceptanceCut")->Clone("hGammaGenPtAcceptanceCut");
+        //Rebin:
+        hIsoGammaAcceptance = (TH1F*)hGammaGenPtAcceptanceCut->Rebin(npTbinEdges2-1,"hAcceptance",pTbinEdges2);
+        hGammaGenPtRebinned = (TH1F*)hGammaGenPt->Rebin(npTbinEdges2-1,"hGammaGenPtRebinned",pTbinEdges2);
+        //Calculate acceptance:
+        hIsoGammaAcceptance->Divide(hGammaGenPtRebinned);
         hIsoGammaAcceptance->SetTitle("Acceptance");
-        hIsoGammaAcceptance->Write();
+        hIsoGammaAcceptance->SetName("Acceptance");
+        //hIsoGammaAcceptance->Write();
+
+        delete hGammaGenPtAcceptanceCut;
+        delete hGammaGenPtRebinned;
       }
     }
     if(doABCD){

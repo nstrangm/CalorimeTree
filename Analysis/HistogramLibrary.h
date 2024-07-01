@@ -59,10 +59,17 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   //dir->Add(hIsoGammaE);
 
   if(optns.isMC){
-    TH1F *hGammaGenPt = new TH1F("hGammaGenPt", "hPt", 1000, 0., 100.);
-    TH1F *hGammaGenEAcceptanceCut = new TH1F("hGammaGenEAcceptanceCut", "hEAcceptanceCut", 1000, 0., 100.);
     TH1F *hGammaGenE = new TH1F("hGammaGenE", "hE", 1000, 0., 100.);
+    TH1F *hGammaGenPt = new TH1F("hGammaGenPt", "hPt", 1000, 0., 100.);
+    TH1F *hGammaGenESignal = new TH1F("hGammaGenESignal", "hESignal", 1000, 0., 100.);
+    TH1F *hGammaGenPtSignal = new TH1F("hGammaGenPtSignal", "hPtSignal", 1000, 0., 100.);
+    TH1F *hGammaGenEBackground = new TH1F("hGammaGenEBackground", "hEBackground", 1000, 0., 100.);
+    TH1F *hGammaGenPtBackground = new TH1F("hGammaGenPtBackground", "hPtBackground", 1000, 0., 100.);
+
+    TH1F *hGammaGenEAcceptanceCut = new TH1F("hGammaGenEAcceptanceCut", "hEAcceptanceCut", 1000, 0., 100.);
     TH1F *hGammaGenPtAcceptanceCut = new TH1F("hGammaGenPtAcceptanceCut", "hPtAcceptanceCut", 1000, 0., 100.);
+    
+
     TH1F *hIsoGammaPtSignal = new TH1F("hIsoGammaPtSignal", "hPtSignal", 1000, 0., 100.);
     TH1F *hIsoGammaESignal = new TH1F("hIsoGammaESignal", "hESignal", 1000, 0., 100.);
     TH1F *hIsoGammaPtBackground = new TH1F("hIsoGammaPtBackground", "hPtBackground", 1000, 0., 100.);
@@ -118,7 +125,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
   hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(9, "M_{02}");
   hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(10, "#it{p}_{T}^{iso}");
 
-  TH2F *hpTSpectrumLossFromIndividualCuts = new TH2F("hpTSpectrumLossFromIndividualCuts", "hpTSpectrumLossFromIndividualCuts", 10, -0.5, 8.5, 100, pTRange[0], pTRange[1]);
+  TH2F *hpTSpectrumLossFromIndividualCuts = new TH2F("hpTSpectrumLossFromIndividualCuts", "hpTSpectrumLossFromIndividualCuts", 10, -0.5, 9.5, 100, pTRange[0], pTRange[1]);
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(1, "All");
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(2, "Acceptance");
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(3, "E_{min}");
@@ -155,7 +162,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
     //Generated photons QA:
-    TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged","hGammaGenIsoCharged",100,0,200);
+    TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged","hGammaGenIsoCharged",100,-10,30);
     TH1F *hGammaGenBckPerb = new TH1F("hGammaGenBckPerb","hGammaGenBckPerb",100,0,200);
 
     // Signal IsoGammas
@@ -354,6 +361,13 @@ void fillGammaGenHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOpt
     {
       ((TH1F *)dir->FindObject("hGammaGenE"))->Fill(obj.at(i).E, eventWeight);
       ((TH1F *)dir->FindObject("hGammaGenPt"))->Fill(obj.at(i).Pt(), eventWeight);
+      if (obj.at(i).isSignal()){
+        ((TH1F *)dir->FindObject("hGammaGenESignal"))->Fill(obj.at(i).E, eventWeight);
+        ((TH1F *)dir->FindObject("hGammaGenPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
+      }else{
+        ((TH1F *)dir->FindObject("hGammaGenEBackground"))->Fill(obj.at(i).E, eventWeight);
+        ((TH1F *)dir->FindObject("hGammaGenPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
+      }
     }
   }
 }
@@ -379,7 +393,7 @@ void fillGammaGenQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalO
     for (unsigned long i = 0; i < obj.size(); i++)
     {
       ((TH1F *)dir->FindObject("hGammaGenIsoCharged"))->Fill(obj.at(i).IsoCharged,eventWeight);
-      ((TH1F *)dir->FindObject("hGammaGenBckPerb"))->Fill(obj.at(i).IsoCharged,eventWeight);
+      ((TH1F *)dir->FindObject("hGammaGenBckPerb"))->Fill(obj.at(i).IsoBckPerp,eventWeight);
     }
   }
 }
