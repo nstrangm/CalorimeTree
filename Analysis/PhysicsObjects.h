@@ -144,12 +144,12 @@ class GammaGen : public PhysicsObject
 public:
   using PhysicsObject::PhysicsObject;
   ~GammaGen(){};
-  bool isSignal();
+  //bool isSignal();
   float E =0;
   float IsoCharged=0;
   float IsoBckPerp=0;
   float IsoChargedCorrected=0;
-  int MCTag=0;
+  int MCTag;
   bool isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]);
   bool isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]);
 };
@@ -168,17 +168,19 @@ bool GammaGen::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEt
   return false;
 }
 
-bool GammaGen::isSignal()
-{
-  if (CheckTagBit(MCTag, kMCPhoton))
-  {
-    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
-    {
-      return true;
-    }
-  }
-  return false;
-}
+//bool GammaGen::isMCGenIsolated()
+
+//bool GammaGen::isSignal()
+//{
+//  if (CheckTagBit(MCTag, kMCPhoton))
+//  {
+//    if ((CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation)))// && isMCGenIsolated
+//    {
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 class IsoGamma : public PhysicsObject
 {
@@ -186,7 +188,7 @@ public:
   using PhysicsObject::PhysicsObject;
   ~IsoGamma(){};
   bool isPhoton();
-  bool isSignal();
+  //bool isSignal();
   bool isGammaFromPion();
   bool isGammaFromEta();
   bool isPion();
@@ -223,17 +225,17 @@ bool IsoGamma::isPhoton()
   return false;
 }
 
-bool IsoGamma::isSignal()
-{
-  if (CheckTagBit(MCTag, kMCPhoton))
-  {
-    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
-    {
-      return true;
-    }
-  }
-  return false;
-}
+//bool IsoGamma::isSignal()
+//{
+//  if (CheckTagBit(MCTag, kMCPhoton))
+//  {
+//    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
+//    {
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 bool IsoGamma::isGammaFromPion()
 {

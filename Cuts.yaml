@@ -1,4 +1,7 @@
 Standard:
+
+  #RapidityCut
+  cluster_max_rapidity: 0.8
   #Acceptance cuts
   #EMcal
   cluster_min_EMcal_eta: -0.67

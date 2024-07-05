@@ -2,6 +2,7 @@
 #define CUTS
 
 #include "PhysicsObjects.h"
+#include "Logging.h"
 
 // -----------------------------------------------------------
 // -----------------------------------------------------------
@@ -64,6 +65,7 @@ private:
   float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
 
   float pTisoCorrectedMax = 0;
+  float RapidityMax = 0;
   TDirectory *hQADir = nullptr;
 
 public:
@@ -71,6 +73,7 @@ public:
   ~GammaGenCuts(){};
 
   bool PassedGammaGenCuts(GammaGen GammaGen);
+  bool isSignal(GammaGen GammaGen);
   bool PassedGammaGenIsolationCuts(GammaGen GammaGen);
 };
 
@@ -101,18 +104,40 @@ GammaGenCuts::GammaGenCuts(GlobalOptions optns)
   DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
   // Load Isolation cut
   pTisoCorrectedMax = chosencut["cluster_max_ptiso"].IsDefined() ? chosencut["cluster_max_ptiso"].as<float>() : standardcut["cluster_max_ptiso"].as<float>();
+  RapidityMax = chosencut["cluster_max_rapidity"].IsDefined() ? chosencut["cluster_max_rapidity"].as<float>() : standardcut["cluster_max_rapidity"].as<float>();
   //useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 }
 
 bool GammaGenCuts::PassedGammaGenCuts(GammaGen GammaGen)
 {
   bool passed = true;
+  //Raise fatal if eta for MC is outside allowed range:
+  if(TMath::Abs(GammaGen.Eta())>RapidityMax){
+    FATAL(Form("Generated photon found with |eta|>%f  |%f|>%f",RapidityMax,GammaGen.Eta(),RapidityMax))
+  }
   // Check GammaGen acceptance
   if (!GammaGen.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !GammaGen.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
   {
     passed = false;
   }
   return passed;
+}
+
+bool GammaGenCuts::isSignal(GammaGen GammaGen)
+{
+  //cout<<"Checking MCbit"<<"\n";
+  //PrintMCTag(GammaGen.MCTag);
+  //cout<<"Check isogamma"<<"\n";
+  //cout<<GammaGen.IsoChargedCorrected<<"\n";
+
+  if (CheckTagBit(GammaGen.MCTag, kMCPhoton))
+  {
+    if ((CheckTagBit(GammaGen.MCTag, kMCPrompt) || CheckTagBit(GammaGen.MCTag, kMCFragmentation)) && GammaGen.IsoChargedCorrected < pTisoCorrectedMax)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 void doGammaGenCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts GammaGenCuts)
@@ -197,6 +222,7 @@ public:
   bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
   bool PassedIsoGammaCuts(IsoGamma IsoGamma);
   bool PassedClusterCuts(IsoGamma IsoGamma);
+  bool isSignal(IsoGamma IsoGamma);
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -341,12 +367,12 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(5., IsoGamma.Pt(), IsoGamma.EventWeight);
    //Check track matching
-  if (IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
+  if (IsoGamma.MatchedTrack.P>0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
-    passed = false;
-    if (hQADir != nullptr)
+    if (hQADir != nullptr){
       ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
       ((TH2F *)hQADir->FindObject("hIsoGammadEtadphiCut"))->Fill(IsoGamma.MatchedTrack.dPhi, IsoGamma.MatchedTrack.dEta, IsoGamma.EventWeight);
+    }
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
@@ -362,7 +388,17 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   return passed;
 }
 
-
+bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
+{
+  if (CheckTagBit(IsoGamma.MCTag, kMCPhoton))
+  {
+    if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && IsoGamma.IsoChargedCorrected < pTisoCorrectedMax)
+    {
+      return true;
+    }
+  }
+  return false;
+}
 
 void doIsoGammaClusterCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
 {

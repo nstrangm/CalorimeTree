@@ -7,6 +7,7 @@
 #include "TFile.h"
 #include "Utilities.h"
 #include "PhysicsObjects.h"
+#include "Cuts.h"
 
 
 TDirectory *DefineEventHistograms(TFile *f, GlobalOptions optns)
@@ -97,7 +98,7 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   return dir;
 }
 
-TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma || !optns.doQA)
     return nullptr;
@@ -108,7 +109,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
   const float pTRange[2] = {0, 50};
 
   // QA plots for all IsoGammas
-  TDirectory *dir = f->mkdir("IsoGammaQA");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
   TH1F *hNIsoGamma = new TH1F("hNIsoGamma", "hNIsoGamma", 21, -0.5, 20.5);
@@ -162,9 +163,14 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, GlobalOptions optns)
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
     //Generated photons QA:
-    TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged","hGammaGenIsoCharged",100,-10,30);
-    TH1F *hGammaGenBckPerb = new TH1F("hGammaGenBckPerb","hGammaGenBckPerb",100,0,200);
-
+    if(dirname!="ClusterQA"){
+      TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged","hGammaGenIsoCharged",100,-10,30);
+      TH1F *hGammaGenBckPerb = new TH1F("hGammaGenBckPerb","hGammaGenBckPerb",100,0,200);
+      TH2F *hGammaGenEtaPhi = new TH2F("hGammaGenEtaPhi","hGammaGenEtaPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+      TH2F *hGammaGenEtaPhiAcceptanceCut = new TH2F("hGammaGenEtaPhiAcceptanceCut","hGammaGenEtaPhiAcceptanceCut", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+      //((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+    }
+    
     // Signal IsoGammas
     TH1F *hNIsoGammaSignal = new TH1F("hNIsoGammaSignal", "hNIsoGammaSignal", 21, -0.5, 20.5);
     TH1F *hIsoGammaIsoChargedSignal = new TH1F("hIsoGammaIsoChargedSignal", "hIsoGammaIsoChargedSignal", 100, 0, 200);
@@ -295,7 +301,7 @@ TDirectory *DefineGammaJetQAHistograms(TFile *f, GlobalOptions optns)
 }
 
 template <typename T>
-void fillHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
+void fillHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
 {
   if constexpr (std::is_same<T, std::vector<IsoGamma>>::value)
   {
@@ -305,7 +311,7 @@ void fillHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions opt
       ((TH1F *)dir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
       ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPt"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       if(optns.isMC){
-        if(obj.at(i).isSignal()){
+        if(IsoGammaCuts.isSignal(obj.at(i))){
           ((TH1F *)dir->FindObject("hIsoGammaPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
           ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPtSignal"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
@@ -353,7 +359,7 @@ void fillHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions opt
 }
 
 template <typename T>
-void fillGammaGenHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
+void fillGammaGenHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, GammaGenCuts GammaGenCuts)
 {
   if constexpr (std::is_same<T, std::vector<GammaGen>>::value)
   {
@@ -361,32 +367,24 @@ void fillGammaGenHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOpt
     {
       ((TH1F *)dir->FindObject("hGammaGenE"))->Fill(obj.at(i).E, eventWeight);
       ((TH1F *)dir->FindObject("hGammaGenPt"))->Fill(obj.at(i).Pt(), eventWeight);
-      if (obj.at(i).isSignal()){
+      if (GammaGenCuts.isSignal(obj.at(i))){
         ((TH1F *)dir->FindObject("hGammaGenESignal"))->Fill(obj.at(i).E, eventWeight);
         ((TH1F *)dir->FindObject("hGammaGenPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
       }else{
         ((TH1F *)dir->FindObject("hGammaGenEBackground"))->Fill(obj.at(i).E, eventWeight);
         ((TH1F *)dir->FindObject("hGammaGenPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
       }
+      if(GammaGenCuts.PassedGammaGenCuts(obj.at(i))){
+        ((TH1F *)dir->FindObject("hGammaGenEAcceptanceCut"))->Fill(obj.at(i).E, eventWeight);
+        ((TH1F *)dir->FindObject("hGammaGenPtAcceptanceCut"))->Fill(obj.at(i).Pt(), eventWeight);
+      }
+      
     }
   }
 }
 
 template <typename T>
-void fillGammaGenAcceptanceCutHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
-{
-  if constexpr (std::is_same<T, std::vector<GammaGen>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH1F *)dir->FindObject("hGammaGenEAcceptanceCut"))->Fill(obj.at(i).E, eventWeight);
-      ((TH1F *)dir->FindObject("hGammaGenPtAcceptanceCut"))->Fill(obj.at(i).Pt(), eventWeight);
-    }
-  }
-}
-
-template <typename T>
-void fillGammaGenQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
+void fillGammaGenQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, GammaGenCuts GammaGenCuts)
 {
   if constexpr (std::is_same<T, std::vector<GammaGen>>::value)
   {
@@ -394,12 +392,16 @@ void fillGammaGenQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalO
     {
       ((TH1F *)dir->FindObject("hGammaGenIsoCharged"))->Fill(obj.at(i).IsoCharged,eventWeight);
       ((TH1F *)dir->FindObject("hGammaGenBckPerb"))->Fill(obj.at(i).IsoBckPerp,eventWeight);
+      ((TH2F *)dir->FindObject("hGammaGenEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      if(GammaGenCuts.PassedGammaGenCuts(obj.at(i))){
+        ((TH2F *)dir->FindObject("hGammaGenEtaPhiAcceptanceCut"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      }
     }
   }
 }
 
 template <typename T>
-void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
+void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
 {
   if constexpr (std::is_same<T, std::vector<IsoGamma>>::value)
   {
@@ -419,12 +421,14 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       ((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
-      ((TH2F *)dir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
-      //TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphiCut","hIsoGammadEtadphiCut",100,-1,1,100,-1,1);
+      if(obj.at(i).MatchedTrack.P>0){
+        ((TH2F *)dir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
+      }
+
       if (optns.isMC)
       {
         ((TH2F *)dir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);
-        if (obj.at(i).isSignal())
+        if (IsoGammaCuts.isSignal(obj.at(i)))
         {
           ((TH1F *)dir->FindObject("hIsoGammaIsoChargedSignal"))->Fill(obj.at(i).IsoCharged, eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrectedSignal"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);

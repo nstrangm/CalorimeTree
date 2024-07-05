@@ -20,10 +20,12 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
   TDirectory *hQADirEvents = DefineEventQAHistograms(fOut, optns);
-  TDirectory *hDirIsoGammasRaw = DefineIsoGammaHistograms(fOut, "Clusters" ,optns);
-  TDirectory *hDirIsoGammasClusterCuts = DefineIsoGammaHistograms(fOut, "Gammas", optns);
+  TDirectory *hDirClusters = DefineIsoGammaHistograms(fOut, "Clusters" ,optns);
+  TDirectory *hDirGammas = DefineIsoGammaHistograms(fOut, "Gammas", optns);
   TDirectory *hDirIsoGammas = DefineIsoGammaHistograms(fOut,"IsoGammas" , optns);
-  TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut, optns);
+  TDirectory *hQADirClusters = DefineIsoGammaQAHistograms(fOut, "ClusterQA", optns);
+  TDirectory *hQADirGammas = DefineIsoGammaQAHistograms(fOut,"GammaQA", optns);
+  TDirectory *hQADirIsoGammas = DefineIsoGammaQAHistograms(fOut,"IsoGammaQA", optns);
   TDirectory *hDirJets = DefineJetHistograms(fOut, optns);
   TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
   TDirectory *hDirGammaJetCorrelations = DefineGammaJetHistograms(fOut, optns);
@@ -63,68 +65,82 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
     if (!eventCuts.PassedCuts(event))
       continue;
-    fillHistograms(event, hDirEvents, event.weight, optns);
+    fillHistograms(event, hDirEvents, event.weight, optns, isoGammaCuts);
     if (optns.doQA)
-      fillQAHistograms(event, hQADirEvents, event.weight, optns);
+      fillQAHistograms(event, hQADirEvents, event.weight, optns, isoGammaCuts);
 
     if (optns.doIsoGamma)
     {
       saveClustersFromEventInVector(tree, IsoGammas, optns);
       calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
-      //fillnoCutsHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
       if(optns.isMC){
+        //Load generated photons.
         saveGenPhotonsFromEventInVector(tree, GammaGens, optns);
         GammaGencalculateIsolation(GammaGens, event);
-        fillGammaGenHistograms(GammaGens, hDirIsoGammasRaw, event.weight, optns);
-        //Apply acceptance cut to generated photons and fill histograms:
-        doGammaGenCuts(GammaGens, GammaGenCuts);
-        fillGammaGenHistograms(GammaGens, hDirIsoGammasClusterCuts, event.weight, optns);
+        
+        //All generated photons.
+        fillGammaGenHistograms(GammaGens, hDirGammas, event.weight, optns, GammaGenCuts);
+        if(optns.doQA){
+          fillGammaGenQAHistograms(GammaGens, hQADirGammas, event.weight, optns, GammaGenCuts);
+        }
+        //Isolated generated photons.
         doGammaGenIsolationCuts(GammaGens, GammaGenCuts);
-        fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
+        fillGammaGenHistograms(GammaGens, hDirIsoGammas, event.weight, optns, GammaGenCuts);
+        if(optns.doQA){
+          fillGammaGenQAHistograms(GammaGens, hQADirIsoGammas, event.weight, optns, GammaGenCuts);
+        }
         //fillGammaGenAcceptanceCutHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
-        fillGammaGenQAHistograms(GammaGens, hQADirIsoGammas, event.weight, optns);
+        
       }
       if (isoGammaCuts.applyNonLin)
         applyNonLinAndFineTuningCorrection(IsoGammas, isoGammaCuts, optns);
       pairIsoGammasFromEventInVector(IsoGammas, Pi0sForIsoGammaQA);
       //Fill hists (raw clusters)
-      fillHistograms(IsoGammas, hDirIsoGammasRaw, event.weight, optns);
-      //Fill hists (cluster cuts, not isolated)
-      doIsoGammaClusterCuts(IsoGammas, isoGammaCuts);
-      fillHistograms(IsoGammas, hDirIsoGammasClusterCuts, event.weight, optns);
-      //Fill hists (cluster cuts and isolated)
-      doIsoGammaCuts(IsoGammas, isoGammaCuts);
-      fillHistograms(IsoGammas, hDirIsoGammas, event.weight, optns);
+      fillHistograms(IsoGammas, hDirClusters, event.weight, optns, isoGammaCuts);
       if (optns.doQA)
       {
-        fillQAHistograms(IsoGammas, hQADirIsoGammas, event.weight, optns);
-        fillQAHistograms(Pi0sForIsoGammaQA, hQADirIsoGammas, event.weight, optns);
+        fillQAHistograms(IsoGammas, hQADirClusters, event.weight, optns, isoGammaCuts);
+      }
+      //Fill hists (cluster cuts, not isolated)
+      doIsoGammaClusterCuts(IsoGammas, isoGammaCuts);
+      fillHistograms(IsoGammas, hDirGammas, event.weight, optns, isoGammaCuts);
+      if (optns.doQA)
+      {
+        fillQAHistograms(IsoGammas, hQADirGammas, event.weight, optns, isoGammaCuts);
+      }
+      //Fill hists (cluster cuts and isolated)
+      doIsoGammaCuts(IsoGammas, isoGammaCuts);
+      fillHistograms(IsoGammas, hDirIsoGammas, event.weight, optns, isoGammaCuts);
+      if (optns.doQA)
+      {
+        fillQAHistograms(IsoGammas, hQADirIsoGammas, event.weight, optns, isoGammaCuts);
+        fillQAHistograms(Pi0sForIsoGammaQA, hQADirIsoGammas, event.weight, optns, isoGammaCuts);
       }
     }
     if (optns.doJets)
     {
       saveJetsFromEventInVector(tree, Jets);
       // TODO: JetCuts
-      fillHistograms(Jets, hDirJets, event.weight, optns);
+      fillHistograms(Jets, hDirJets, event.weight, optns, isoGammaCuts);
       if (optns.doQA)
-        fillQAHistograms(Jets, hQADirJets, event.weight, optns);
+        fillQAHistograms(Jets, hQADirJets, event.weight, optns, isoGammaCuts);
       if (optns.isMC)
       {
         savePLJetsFromEventInVector(tree, PLJets);
         mapPLtoDLjets(Jets, PLJets, jetCuts.R);
         // TODO: Do I need PL jet cuts?
-        fillHistograms(PLJets, hDirJets, event.weight, optns);
+        fillHistograms(PLJets, hDirJets, event.weight, optns, isoGammaCuts);
         if (optns.doQA)
-          fillQAHistograms(PLJets, hQADirJets, event.weight, optns);
+          fillQAHistograms(PLJets, hQADirJets, event.weight, optns, isoGammaCuts);
       }
     }
     if (optns.doIsoGamma && optns.doJets)
     {
       pairGammasWithJets(IsoGammas, Jets, GammaJetPairs);
       // TODO: CorrelationCuts
-      fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, event.weight, optns);
+      fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, event.weight, optns, isoGammaCuts);
       if (optns.doQA)
-        fillQAHistograms(GammaJetPairs, hQADirGammaJetCorrelations, event.weight, optns);
+        fillQAHistograms(GammaJetPairs, hQADirGammaJetCorrelations, event.weight, optns, isoGammaCuts);
     }
     IsoGammas.clear();
     GammaGens.clear();

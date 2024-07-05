@@ -1,6 +1,6 @@
 #include "PlottingClass.h"
 
-void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResults/102_Charged/Standard", bool doefficiency=true, bool dopurity=true, bool doacceptance=true, bool doABCD=true){
+void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResults/102_Charged/Standard", bool doefficiency=true, bool dopurity=true, bool doacceptance=true, bool doABCD=true, bool doPurityComp=true, bool doAllEfficiencies=true){
     TFile* file1=(TFile*)TFile::Open(Form("%s/AnlysedHistosFromTree.root",filepath1.c_str()));
 
     TString TriggerString="";
@@ -50,19 +50,21 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         effplot->Draw();
 
         //Text:
-        TLatex * efftext = new TLatex (40,0.0057,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * efftext = new TLatex (40,0.05,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         efftext->SetTextFont(43);
         efftext->SetTextSize(24);
         efftext->Draw("same");
-        TLatex * efftext2 = new TLatex (40,0.0051,Form("%s",TriggerString.Data()));
+        TLatex * efftext2 = new TLatex (40,0.08,Form("%s",TriggerString.Data()));
         efftext2->SetTextFont(43);
         efftext2->SetTextSize(24);
         efftext2->Draw("same");
 
+        ceff->SaveAs(Form("%s/Efficiency.png",filepath1.c_str()));
+
     }
     //Do acceptance plot
     if(doacceptance){
-        TH1F* accplot= (TH1F*)file1->Get("Acceptance");
+        TH1F* accplot= (TH1F*)file1->Get("Acceptance;1");
         TCanvas *cacc = new TCanvas("Acceptance","Acceptance",800,600);
         cacc->cd();
         //TPad* pad = new TPad("pad", "pad", 0., 0., 0.97, 0.97);
@@ -86,18 +88,19 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
 
         //Drawplot
         accplot->SetTitle(";#bf{#it{p}_{T}};#bf{Acceptance}");
-        accplot->GetYaxis()->SetRangeUser(0.96,1.0);
+        accplot->GetYaxis()->SetRangeUser(0.,1.0);
         accplot->Draw();
 
         //Text:
-        TLatex * acctext = new TLatex (40,0.975,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * acctext = new TLatex (40,0.8,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         acctext->SetTextFont(43);
         acctext->SetTextSize(24);
         acctext->Draw("same");
-        TLatex * acctext2 = new TLatex (40,0.972,Form("%s",TriggerString.Data()));
+        TLatex * acctext2 = new TLatex (40,0.9,Form("%s",TriggerString.Data()));
         acctext2->SetTextFont(43);
         acctext2->SetTextSize(24);
         acctext2->Draw("same");
+        cacc->SaveAs(Form("%s/acceptance.png",filepath1.c_str()));
     }
     //Do purity plot
     if(dopurity){
@@ -116,6 +119,7 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         purplot->GetYaxis()->SetLabelFont(43);
         purplot->GetYaxis()->SetTitleSize(24);
         purplot->GetYaxis()->SetLabelSize(18);
+
         //Set x-axis
         purplot->GetXaxis()->SetTitleFont(43);
         purplot->GetXaxis()->SetLabelFont(43);
@@ -128,14 +132,16 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         purplot->Draw();
 
         //Text:
-        TLatex * purtext = new TLatex (20,0.38,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * purtext = new TLatex (40,0.35,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         purtext->SetTextFont(43);
         purtext->SetTextSize(24);
         purtext->Draw("same");
-        TLatex * purtext2 = new TLatex (20,0.35,Form("%s",TriggerString.Data()));
+        TLatex * purtext2 = new TLatex (40,0.4,Form("%s",TriggerString.Data()));
         purtext2->SetTextFont(43);
         purtext2->SetTextSize(24);
         purtext2->Draw("same");
+        //Save plot
+        cpur->SaveAs(Form("%s/purity.png",filepath1.c_str()));
 
     }
     //Do ABCD plot
@@ -157,6 +163,7 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDrawplot->GetYaxis()->SetLabelFont(43);
         PABCDrawplot->GetYaxis()->SetTitleSize(24);
         PABCDrawplot->GetYaxis()->SetLabelSize(18);
+        PABCDrawplot->GetYaxis()->SetRangeUser(-0.5,1.2);
         //Set x-axis
         PABCDrawplot->GetXaxis()->SetTitleFont(43);
         PABCDrawplot->GetXaxis()->SetLabelFont(43);
@@ -169,14 +176,15 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDrawplot->Draw();
 
         //Text:
-        TLatex * PABCDrawtext = new TLatex (50,0.45,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * PABCDrawtext = new TLatex (45,0.18,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         PABCDrawtext->SetTextFont(43);
         PABCDrawtext->SetTextSize(24);
         PABCDrawtext->Draw("same");
-        TLatex * PABCDrawtext2 = new TLatex (50,0.41,Form("%s",TriggerString.Data()));
+        TLatex * PABCDrawtext2 = new TLatex (45,0.0,Form("%s",TriggerString.Data()));
         PABCDrawtext2->SetTextFont(43);
         PABCDrawtext2->SetTextSize(24);
         PABCDrawtext2->Draw("same");
+        cPABCDrawplot->SaveAs(Form("%s/ABCDraw.png",filepath1.c_str()));
 
         //alfa
         //PABCDraw plot
@@ -195,6 +203,7 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDalfaplot->GetYaxis()->SetLabelFont(43);
         PABCDalfaplot->GetYaxis()->SetTitleSize(24);
         PABCDalfaplot->GetYaxis()->SetLabelSize(18);
+        PABCDalfaplot->GetYaxis()->SetRangeUser(1,2.4);
         //Set x-axis
         PABCDalfaplot->GetXaxis()->SetTitleFont(43);
         PABCDalfaplot->GetXaxis()->SetLabelFont(43);
@@ -203,18 +212,19 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDalfaplot->GetXaxis()->SetRangeUser(10.,80.);
 
         //Drawplot
-        PABCDalfaplot->SetTitle(";#bf{#it{p}_{T}};#bf{#it{P_{ABCD,raw}}}");
+        PABCDalfaplot->SetTitle(";#bf{#it{p}_{T}};#bf{#it{#alpha}}");
         PABCDalfaplot->Draw();
 
         //Text:
-        TLatex * PABCDalfatext = new TLatex (30,2.1,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * PABCDalfatext = new TLatex (45,2.2,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         PABCDalfatext->SetTextFont(43);
         PABCDalfatext->SetTextSize(24);
         PABCDalfatext->Draw("same");
-        TLatex * PABCDalfatext2 = new TLatex (30,2.02,Form("%s",TriggerString.Data()));
+        TLatex * PABCDalfatext2 = new TLatex (45,2,Form("%s",TriggerString.Data()));
         PABCDalfatext2->SetTextFont(43);
         PABCDalfatext2->SetTextSize(24);
         PABCDalfatext2->Draw("same");
+        cPABCDalfaplot->SaveAs(Form("%s/ABCDalfa.png",filepath1.c_str()));
 
         //PABCD
         TH1F* PABCDplot= (TH1F*)ABCDdir->Get("hPABCD");
@@ -230,6 +240,7 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDplot->GetYaxis()->SetLabelFont(43);
         PABCDplot->GetYaxis()->SetTitleSize(24);
         PABCDplot->GetYaxis()->SetLabelSize(18);
+        PABCDplot->GetYaxis()->SetRangeUser(-0.5,1.2);
         //Set x-axis
         PABCDplot->GetXaxis()->SetTitleFont(43);
         PABCDplot->GetXaxis()->SetLabelFont(43);
@@ -238,18 +249,90 @@ void plotEfficiencyPurityAcceptance(string filepath1="PuritiesEfficienciesResult
         PABCDplot->GetXaxis()->SetRangeUser(10.,80.);
 
         //Drawplot
-        PABCDplot->SetTitle(";#bf{#it{p}_{T}};#bf{#it{P_{ABCD,raw}}}");
-        PABCDplot->Draw();
+        PABCDplot->SetTitle(";#bf{#it{p}_{T}};#bf{#it{P_{ABCD}}}");
+        PABCDplot->DrawCopy();
 
         //Text:
-        TLatex * PABCDtext = new TLatex (50,0.21,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        TLatex * PABCDtext = new TLatex (45,0.18,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
         PABCDtext->SetTextFont(43);
         PABCDtext->SetTextSize(24);
         PABCDtext->Draw("same");
-        TLatex * PABCDtext2 = new TLatex (50,0.18,Form("%s",TriggerString.Data()));
+        TLatex * PABCDtext2 = new TLatex (45,0,Form("%s",TriggerString.Data()));
         PABCDtext2->SetTextFont(43);
         PABCDtext2->SetTextSize(24);
         PABCDtext2->Draw("same");
+        cPABCDplot->SaveAs(Form("%s/ABCD.png",filepath1.c_str()));
+    }
+
+    if(doABCD && dopurity && doPurityComp){
+        TH1F* purplot= (TH1F*)file1->Get("Purity");
+
+        purplot->SetMarkerColor(TColor::GetColor(ColorString.Data()));
+        purplot->SetLineColor(TColor::GetColor(ColorString.Data()));
+        purplot->SetMarkerStyle(kFullSquare);
+        purplot->SetMarkerSize(2);
+        //Set y-axis
+        purplot->GetYaxis()->SetTitleFont(43);
+        purplot->GetYaxis()->SetLabelFont(43);
+        purplot->GetYaxis()->SetTitleSize(24);
+        purplot->GetYaxis()->SetLabelSize(18);
+
+        //Set x-axis
+        purplot->GetXaxis()->SetTitleFont(43);
+        purplot->GetXaxis()->SetLabelFont(43);
+        purplot->GetXaxis()->SetTitleSize(24);
+        purplot->GetXaxis()->SetLabelSize(18);
+        purplot->GetXaxis()->SetRangeUser(10.,80.);
+
+        //Drawplot
+        purplot->SetTitle(";#bf{#it{p}_{T}};#bf{Purity}");
+
+        TDirectory* ABCDdir=(TDirectory*)file1->Get("ABCD");
+        TH1F* PABCDplot= (TH1F*)ABCDdir->Get("hPABCD");
+        
+        PABCDplot->SetMarkerColor(TColor::GetColor(ColorString.Data()));
+        PABCDplot->SetLineColor(TColor::GetColor(ColorString.Data()));
+        PABCDplot->SetMarkerStyle(kOpenSquare);
+        PABCDplot->SetMarkerSize(2);
+        //Set y-axis
+        PABCDplot->GetYaxis()->SetTitleFont(43);
+        PABCDplot->GetYaxis()->SetLabelFont(43);
+        PABCDplot->GetYaxis()->SetTitleSize(24);
+        PABCDplot->GetYaxis()->SetLabelSize(18);
+        PABCDplot->GetYaxis()->SetRangeUser(-0.5,1.2);
+        //Set x-axis
+        PABCDplot->GetXaxis()->SetTitleFont(43);
+        PABCDplot->GetXaxis()->SetLabelFont(43);
+        PABCDplot->GetXaxis()->SetTitleSize(24);
+        PABCDplot->GetXaxis()->SetLabelSize(18);
+        PABCDplot->GetXaxis()->SetRangeUser(10.,80.);
+
+        TLegend *purcompleg=new TLegend();
+        purcompleg->SetTextFont(43);
+        purcompleg->SetBorderSize(0);
+        purcompleg->SetTextSize(24);
+        purcompleg->AddEntry(PABCDplot,"#it{P_{abcd}}","flp");
+        purcompleg->AddEntry(purplot,"#it{Purity(MC)}","flp");
+
+
+
+        TCanvas *cpuritycomp = new TCanvas("PurityComparison","PurityComparison",800,600);
+        cpuritycomp->cd();
+        PABCDplot->DrawCopy();
+        purplot->DrawCopy("same");
+        purcompleg->Draw();
+
+        TLatex * purcomplegtext = new TLatex (45,0.18,"MC, #it{pp} #sqrt{#it{s}_{NN}} = 13 TeV");
+        purcomplegtext->SetTextFont(43);
+        purcomplegtext->SetTextSize(24);
+        purcomplegtext->Draw("same");
+        TLatex * purcomplegtext2 = new TLatex (45,0,Form("%s",TriggerString.Data()));
+        purcompleg->SetTextFont(43);
+        purcompleg->SetTextSize(24);
+        purcompleg->Draw("same");
+
+        cpuritycomp->SaveAs(Form("%s/PurityComparison.png",filepath1.c_str()));
+
     }
 
 
