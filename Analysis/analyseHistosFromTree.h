@@ -75,22 +75,6 @@ void CalculateABCDData(std::vector<ABCD> &ABCDs ,TDirectory* dGammaData, TDirect
         ABCDtemp.BMC=h2M02vsPtprojectionMC->IntegralAndError(M02MinBin2,M02MaxBin2-1,pTIsoMinBin1,pTIsoMaxBin1-1,ABCDtemp.BMCErr,"");
         ABCDtemp.CMC=h2M02vsPtprojectionMC->IntegralAndError(M02MinBin1,M02MaxBin1-1,pTIsoMinBin2,pTIsoMaxBin2-1,ABCDtemp.CMCErr,"");
         ABCDtemp.DMC=h2M02vsPtprojectionMC->IntegralAndError(M02MinBin2,M02MaxBin2-1,pTIsoMinBin2,pTIsoMaxBin2-1,ABCDtemp.DMCErr,"");
-        cout<<"MC:"<<"\n";
-        cout<<"Integrateing MC background in M02: from "<<h2M02vsPtprojectionMCBackground->GetXaxis()->GetBinLowEdge(M02MinBin1)<<" To "<<h2M02vsPtprojectionMCBackground->GetXaxis()->GetBinUpEdge(M02MaxBin1-1)<<"\n";
-        cout<<"Integrateing MC background in pTiso: from "<<h2M02vsPtprojectionMCBackground->GetYaxis()->GetBinLowEdge(pTIsoMinBin1)<<" To "<<h2M02vsPtprojectionMCBackground->GetYaxis()->GetBinUpEdge(pTIsoMaxBin1-1)<<"\n";
-        cout<<"Yielded AMC="<<ABCDtemp.AMC<<"\n";
-
-        cout<<"Integrateing MC in M02: from "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinLowEdge(M02MinBin2)<<" To "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinUpEdge(M02MaxBin2-1)<<"\n";
-        cout<<"Integrateing MC in pTiso: from "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinLowEdge(pTIsoMinBin1)<<" To "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinUpEdge(pTIsoMaxBin1-1)<<"\n";
-        cout<<"Yielded BMC="<<ABCDtemp.BMC<<"\n";
-
-        cout<<"Integrateing MC in M02: from "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinLowEdge(M02MinBin1)<<" To "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinUpEdge(M02MaxBin1-1)<<"\n";
-        cout<<"Integrateing MC in pTiso: from "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinLowEdge(pTIsoMinBin2)<<" To "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinUpEdge(pTIsoMaxBin2-1)<<"\n";
-        cout<<"Yielded CMC="<<ABCDtemp.CMC<<"\n";
-
-        cout<<"Integrateing MC in M02: from "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinLowEdge(M02MinBin2)<<" To "<<h2M02vsPtprojectionMC->GetXaxis()->GetBinUpEdge(M02MaxBin2-1)<<"\n";
-        cout<<"Integrateing MC in pTiso: from "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinLowEdge(pTIsoMinBin2)<<" To "<<h2M02vsPtprojectionMC->GetYaxis()->GetBinUpEdge(pTIsoMaxBin2-1)<<"\n";
-        cout<<"Yielded DMC="<<ABCDtemp.DMC<<"\n";
 
 
         ABCDdir->cd();
@@ -122,23 +106,6 @@ void CalculateABCDData(std::vector<ABCD> &ABCDs ,TDirectory* dGammaData, TDirect
         ABCDtemp.BData=h2M02vsPtprojectionData->IntegralAndError(M02MinBin2,M02MaxBin2-1,pTIsoMinBin1,pTIsoMaxBin1-1,ABCDtemp.BDataErr,"");
         ABCDtemp.CData=h2M02vsPtprojectionData->IntegralAndError(M02MinBin1,M02MaxBin1-1,pTIsoMinBin2,pTIsoMaxBin2-1,ABCDtemp.CDataErr,"");
         ABCDtemp.DData=h2M02vsPtprojectionData->IntegralAndError(M02MinBin2,M02MaxBin2-1,pTIsoMinBin2,pTIsoMaxBin2-1,ABCDtemp.DDataErr,"");
-        
-        cout<<"Data:"<<"\n";
-        cout<<"Integrateing Data in M02: from "<<h2M02vsPtprojectionData->GetXaxis()->GetBinLowEdge(M02MinBin1)<<" To "<<h2M02vsPtprojectionData->GetXaxis()->GetBinUpEdge(M02MaxBin1-1)<<"\n";
-        cout<<"Integrateing Data in pTiso: from "<<h2M02vsPtprojectionData->GetYaxis()->GetBinLowEdge(pTIsoMinBin1)<<" To "<<h2M02vsPtprojectionData->GetYaxis()->GetBinUpEdge(pTIsoMaxBin1-1)<<"\n";
-        cout<<"Yielded AData="<<ABCDtemp.AData<<"\n";
-
-        cout<<"Integrateing Data in M02: from "<<h2M02vsPtprojectionData->GetXaxis()->GetBinLowEdge(M02MinBin2)<<" To "<<h2M02vsPtprojectionData->GetXaxis()->GetBinUpEdge(M02MaxBin2-1)<<"\n";
-        cout<<"Integrateing Data in pTiso: from "<<h2M02vsPtprojectionData->GetYaxis()->GetBinLowEdge(pTIsoMinBin1)<<" To "<<h2M02vsPtprojectionData->GetYaxis()->GetBinUpEdge(pTIsoMaxBin1-1)<<"\n";
-        cout<<"Yielded BData="<<ABCDtemp.BData<<"\n";
-
-        cout<<"Integrateing Data in M02: from "<<h2M02vsPtprojectionData->GetXaxis()->GetBinLowEdge(M02MinBin1)<<" To "<<h2M02vsPtprojectionData->GetXaxis()->GetBinUpEdge(M02MaxBin1-1)<<"\n";
-        cout<<"Integrateing Data in pTiso: from "<<h2M02vsPtprojectionData->GetYaxis()->GetBinLowEdge(pTIsoMinBin2)<<" To "<<h2M02vsPtprojectionData->GetYaxis()->GetBinUpEdge(pTIsoMaxBin2-1)<<"\n";
-        cout<<"Yielded CData="<<ABCDtemp.CData<<"\n";
-
-        cout<<"Integrateing Data in M02: from "<<h2M02vsPtprojectionData->GetXaxis()->GetBinLowEdge(M02MinBin2)<<" To "<<h2M02vsPtprojectionData->GetXaxis()->GetBinUpEdge(M02MaxBin2-1)<<"\n";
-        cout<<"Integrateing Data in pTiso: from "<<h2M02vsPtprojectionData->GetYaxis()->GetBinLowEdge(pTIsoMinBin2)<<" To "<<h2M02vsPtprojectionData->GetYaxis()->GetBinUpEdge(pTIsoMaxBin2-1)<<"\n";
-        cout<<"Yielded DData="<<ABCDtemp.DData<<"\n";
         
         
         //Freeing memory:

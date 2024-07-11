@@ -153,6 +153,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
   TH2F *hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
   TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi","hIsoGammadEtadphi",100,-0.1,0.1,100,-0.1,0.1);
   TH2F *hIsoGammadEtadphiCut = new TH2F("hIsoGammadEtadphiCut","hIsoGammadEtadphiCut",100,-0.1,0.1,100,-0.1,0.1);
+  TH2F *hDistanceToBadChannelvsPt = new TH2F("hDistanceToBadChannelvsPt", "hDistanceToBadChannelvsPt", 12, 0.5, 12.5, 100, 0,100);
 
   if (optns.isMC)
   { // ------------------> MC IsoGammaQA histograms
@@ -186,6 +187,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH2F *hIsoGammaM02pTSignal = new TH2F("hIsoGammaM02pTSignal", "hIsoGammaM02pTSignal", 100, M02Range[0], M02Range[1], 100, 0, 50);
     TH2F *hIsoGammaEBeforeAfterNLSignal = new TH2F("hIsoGammaEBeforeAfterNLSignal", "hIsoGammaEBeforeAfterNLSignal;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F *hGGMinvDistSignal = new TH2F("hGGMinvDistSignal", "hGGMinvDistSignal", 100, 0, 1, 500, 0, 50);
+    TH2F *hDistanceToBadChannelvsPtSignal = new TH2F("hDistanceToBadChannelvsPtSignal", "hDistanceToBadChannelvsPtSignal", 12, 0.5, 12.5, 100, 0,100);
 
     // NonSignal IsGammas
     TH1F *hNIsoGammaBackground = new TH1F("hNIsoGammaBackground", "hNIsoGammaBackground", 21, -0.5, 20.5);
@@ -202,6 +204,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH2F *hIsoGammaM02pTBackground = new TH2F("hIsoGammaM02pTBackground", "hIsoGammaM02pTBackground", 100, M02Range[0], M02Range[1], 100, 0, 50);
     TH2F *hIsoGammaEBeforeAfterNLBackground = new TH2F("hIsoGammaEBeforeAfterNLBackground", "hIsoGammaEBeforeAfterNLBackground;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F *hGGMinvDistBackground = new TH2F("hGGMinvDistBackground", "hGGMinvDistBackground", 100, 0, 1, 500, 0, 50);
+    TH2F *hDistanceToBadChannelvsPtBackground = new TH2F("hDistanceToBadChannelvsPtBackground", "hDistanceToBadChannelvsPtBackground", 12, 0.5, 12.5, 100, 0,100);
 
     // All Gammas
     TH2F *hIsoGammaM02pTAllGamma = new TH2F("hIsoGammaM02pTAllGamma", "hM02pTAllGamma", 100, M02Range[0], M02Range[1], 100, 0, 50);
@@ -421,6 +424,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       ((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+      ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPt"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
       if(obj.at(i).MatchedTrack.P>0){
         ((TH2F *)dir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
       }
@@ -444,6 +448,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
           ((TH2F *)dir->FindObject("hIsoGammaEtaPhiSignal"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
           ((TH2F *)dir->FindObject("hIsoGammaM02pTSignal"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
           ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNLSignal"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+          ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPtSignal"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
         }
         else
         {
@@ -461,6 +466,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
           ((TH2F *)dir->FindObject("hIsoGammaEtaPhiBackground"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
           ((TH2F *)dir->FindObject("hIsoGammaM02pTBackground"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
           ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNLBackground"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+          ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPtBackground"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
         }
         if (obj.at(i).isPhoton())
         {
