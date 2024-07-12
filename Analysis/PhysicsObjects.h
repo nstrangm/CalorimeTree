@@ -144,11 +144,43 @@ class GammaGen : public PhysicsObject
 public:
   using PhysicsObject::PhysicsObject;
   ~GammaGen(){};
+  //bool isSignal();
   float E =0;
   float IsoCharged=0;
   float IsoBckPerp=0;
-  float MCTag=0;
+  float IsoChargedCorrected=0;
+  int MCTag;
+  bool isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]);
+  bool isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]);
 };
+
+bool GammaGen::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]){
+  return (Eta() < EMCalEtaPhiMinMax[0][1] && Eta() > EMCalEtaPhiMinMax[0][0] && Phi() > EMCalEtaPhiMinMax[1][0] && Phi() < EMCalEtaPhiMinMax[1][1]);
+}
+
+bool GammaGen::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]){
+  if(Eta() < DCalEtaPhiMinMax[0][1] && Eta() > DCalEtaPhiMinMax[0][0] && Phi() > DCalEtaPhiMinMax[1][0] && Phi() < DCalEtaPhiMinMax[1][1]){ // In DCal
+    if(Eta() > DCalHoleEtaPhiMinMax[0][0] && Eta() < DCalHoleEtaPhiMinMax[0][1] && Phi() < DCalHoleEtaPhiMinMax[1][0] && Phi() > DCalHoleEtaPhiMinMax[1][1]) // In DCal hole
+      return false;
+    else // Not in DCal hole
+      return true;
+  }
+  return false;
+}
+
+//bool GammaGen::isMCGenIsolated()
+
+//bool GammaGen::isSignal()
+//{
+//  if (CheckTagBit(MCTag, kMCPhoton))
+//  {
+//    if ((CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation)))// && isMCGenIsolated
+//    {
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 class IsoGamma : public PhysicsObject
 {
@@ -156,7 +188,7 @@ public:
   using PhysicsObject::PhysicsObject;
   ~IsoGamma(){};
   bool isPhoton();
-  bool isSignal();
+  //bool isSignal();
   bool isGammaFromPion();
   bool isGammaFromEta();
   bool isPion();
@@ -193,17 +225,17 @@ bool IsoGamma::isPhoton()
   return false;
 }
 
-bool IsoGamma::isSignal()
-{
-  if (CheckTagBit(MCTag, kMCPhoton))
-  {
-    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
-    {
-      return true;
-    }
-  }
-  return false;
-}
+//bool IsoGamma::isSignal()
+//{
+//  if (CheckTagBit(MCTag, kMCPhoton))
+//  {
+//    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
+//    {
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 bool IsoGamma::isGammaFromPion()
 {
@@ -262,6 +294,7 @@ void saveGenPhotonsFromEventInVector(TreeBuffer tree, std::vector<GammaGen> &Gam
       gammaGen.E = tree.GenPhoton_E->at(iGammaGen);
       gammaGen.IsoCharged = tree.GenPhoton_IsoCharged3->at(iGammaGen);
       gammaGen.IsoBckPerp = tree.GenPhoton_IsoBckPerp->at(iGammaGen);
+      gammaGen.MCTag = tree.GenPhoton_MCTag->at(iGammaGen);
       GammaGens.push_back(gammaGen);
     }
     
@@ -320,6 +353,16 @@ void calculateIsolation(std::vector<IsoGamma> &IsoGammas, Event &Event, bool use
     {
     }
     isoGamma->IsoChargedCorrected = IsoChargedAcceptanceCorrected;
+  }
+}
+
+void GammaGencalculateIsolation(std::vector<GammaGen> &GammaGens, Event &Event)
+{
+  for (int iGamma = 0; iGamma < (int)GammaGens.size(); iGamma++)
+  {
+    GammaGen *GammaGen = &GammaGens.at(iGamma);
+    float IsoChargedCorrected = GammaGen->IsoCharged - GammaGen->IsoBckPerp;// * TMath::Pi() * 0.4 * 0.4;
+    GammaGen->IsoChargedCorrected = IsoChargedCorrected;
   }
 }
 
