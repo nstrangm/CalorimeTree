@@ -55,9 +55,7 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   dir->cd();
 
   TH1F *hIsoGammaPt = new TH1F("hIsoGammaPt", "hPt", 1000, 0., 100.);
-  //dir->Add(hIsoGammaPt);
   TH1F *hIsoGammaE = new TH1F("hIsoGammaE", "hE", 1000, 0., 100.);
-  //dir->Add(hIsoGammaE);
 
   if(optns.isMC){
     TH1F *hGammaGenE = new TH1F("hGammaGenE", "hE", 1000, 0., 100.);

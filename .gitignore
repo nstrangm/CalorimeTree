@@ -17,6 +17,7 @@ Analysis/*_C.so
 Analysis/*_C_ACLiC_dict_rdict.pcm
 Analysis/*_dictUmbrella.h
 Analysis/*_dictContent.h
+RunConfig.yaml
 
 # Do not ignore the CutStudies directory and its files, but ignore all subfolders within it
 !CutStudies/

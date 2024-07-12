@@ -90,7 +90,7 @@ def clear_logs():
     # Delete all existing log files before starting new jobs
     for root, dirs, files in os.walk("./"):
         for file in files:
-            if file.endswith(".log"):
+            if file.endswith("CutsAnalysis.log"):
                 os.remove(os.path.join(root, file))
 
 def hadd_root_files(input_folder, output_file):
@@ -131,7 +131,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
             for iJob, process in processes:
-                log_file = f"{dataset}/{setting}/{cut}/log_{iJob}.log"
+                log_file = f"{dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log"
                 if os.path.exists(log_file):
                     with open(log_file, 'r') as f:
                         lines = f.readlines()
@@ -146,7 +146,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
 
@@ -164,7 +164,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
 
     hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
     
-    command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+    command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
         log.error(result.stderr)

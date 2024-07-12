@@ -126,8 +126,6 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
 {
   ENTER
 
-  // const char* outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
-  // const char* outputDirChar = Form("%s/IsoGammas", optns.analysisDirPath.Data());
   TString outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
 
   createDirectory(outputDir.Data());
@@ -329,7 +327,6 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
       int pTminbin = h2M02vspT->GetYaxis()->FindBin(SlicesPt.at(i));
       int pTmaxbin = h2M02vspT->GetYaxis()->FindBin(SlicesPt.at(i + 1));
 
-      // hM02vspTSlices.push_back(h2M02vspT->ProjectionX(titleM02vspTsplice.c_str(),pTminbin,pTmaxbin));
       hM02vspTSlice[i] = (TH1F *)h2M02vspT->ProjectionX(titleM02vspTsplice.c_str(), pTminbin, pTmaxbin);
       hM02vspTSlice[i]->SetTitle(titleM02vspTsplice.c_str());
       hM02vspTSliceSignal[i] = (TH1F *)h2M02vspTSignal->ProjectionX(Form("a%i", i), pTminbin, pTmaxbin);
@@ -494,9 +491,7 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOption
   float deltaPhiMax = TMath::Pi();
 
   PlottingGrid PImbalanceGrid;
-  // PImbalanceGrid.SetAxisLabel("#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}");
   PlottingGrid PDeltaPhiGrid;
-  // PDeltaPhiGrid.SetAxisLabel("#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}");
 
   for (int iProj = 0; iProj < NProjections; iProj++)
   {
@@ -575,14 +570,6 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     if (!dGammaJetCorrelations)
       FATAL("Dir GammaJetCorrelations not found")
     plotIsoGammaJetCorrelations(dGammaJetCorrelations, optns);
-    // if (optns.doQA)
-    // {
-    //   TDirectory *dIsoGammaQA = (TDirectory *)fIn->Get("IsoGammaQA");
-    //   if (!dIsoGammaQA)
-    //     FATAL("Dir IsoGammaQA not found")
-
-    //   plotIsoGammaQA(dIsoGammaQA, optns);
-    // }
   }
 
   fIn->Close();

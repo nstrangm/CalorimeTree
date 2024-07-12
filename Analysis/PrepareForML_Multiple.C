@@ -29,7 +29,6 @@ void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID){
     string line;
     cout<<"File content:"<< endl;
     while (getline(inputFileNames,line)){
-        //cout<<line<<endl;
         RestructureTreeForML_TreeUtils(AnalysisDirectory,TString(line.c_str()),optns);
     }
 
@@ -37,16 +36,13 @@ void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID){
 
     INFO(Form("Done with %s",Form("%s/%s/InputFiles/InputFiles_group_%i.txt",optns.dataSet.Data(),optns.trainConfig.Data(),GroupID)))
     EXIT
-    //
 }
 
 void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns){
 //Input:
     //Read data:
-    //TString tempLine=Form("%s/GammaIsoTree_%s.root",inputdir.Data(),triggerstring.Data());
     TFile* inputfile=TFile::Open(inputfilename.Data(),"READ");
     //Put input tree in tchain
-    //TString treeName = GetTreeName(tempLine.Data());
     TChain *chain = new TChain("CaloTree_V1");
     if ((!inputfile) || inputfile->IsZombie()){
       ERROR(Form("Input file %s is not healthy! Skipping this one...", inputfilename.Data()))

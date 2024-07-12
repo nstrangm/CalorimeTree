@@ -8,7 +8,7 @@
 /*
 This script reads two root files containing histograms.
 It then reads the contents of both and merges the contents
-of those files that appear in both files.
+of the directories that appear in both files.
 */
 
 std::set<std::string> getDirectories(TFile *file)
@@ -113,15 +113,12 @@ void mergeHistosFromTree(TString outputDir = "MergedGJ18DandJJ18D/100_Charged/St
             std::string classname = key->GetClassName();
             cout<<name<<"\n";
             cout<<classname<<"\n";
-            // cout<< key->GetClassName()<<"\n";
-            // cout<< dh2->FindKey(name.c_str())<<"\n";
             //  Add the name to the vector
             if ((strcmp(key->GetClassName(), "TH1F") == 0)||(strcmp(key->GetClassName(), "TH2F") == 0)||(strcmp(key->GetClassName(), "THnSparseT<TArrayF>") == 0))
             {
                 nplots += 1;
                 objectNames.push_back(name);
                 objectClass.push_back(classname);
-                //cout << name << "\n";
             }
         }
         for (int i = 0; i < nplots; i++)
