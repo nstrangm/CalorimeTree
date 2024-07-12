@@ -22,7 +22,6 @@ double applyNonLin(double clusE, int NLFunction)
   double energy = clusE;
   switch (NLFunction) {
     case kTestBeamShaper: {
-      // cout << "Applying kTestBeamShaper" << endl;
       fNonLinearityParams[0] = 1.91897;
       fNonLinearityParams[1] = 0.0264988;
       fNonLinearityParams[2] = 0.965663;
@@ -32,7 +31,6 @@ double applyNonLin(double clusE, int NLFunction)
       break;
     }
     case kTestBeamShaperWoScale: {
-      // cout << "Applying kTestBeamShaperWoScale" << endl;
       fNonLinearityParams[0] = 1.91897;
       fNonLinearityParams[1] = 0.0264988;
       fNonLinearityParams[2] = 0.965663;
@@ -42,7 +40,6 @@ double applyNonLin(double clusE, int NLFunction)
       break;
     }
     case kTestBeamFinalMC: {
-      // cout << "Applying kTestBeamFinalMC" << endl;
       fNonLinearityParams[0] = 1.09357;
       fNonLinearityParams[1] = 0.0192266;
       fNonLinearityParams[2] = 0.291993;

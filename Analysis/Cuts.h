@@ -24,9 +24,7 @@ public:
 
 EventCuts::EventCuts(GlobalOptions optns)
 {
-  // if(EventCutString.Contains("minbias")){
 
-  // }
 }
 
 bool EventCuts::PassedCuts(Event &Event)
@@ -125,10 +123,6 @@ bool GammaGenCuts::PassedGammaGenCuts(GammaGen GammaGen)
 
 bool GammaGenCuts::isSignal(GammaGen GammaGen)
 {
-  //cout<<"Checking MCbit"<<"\n";
-  //PrintMCTag(GammaGen.MCTag);
-  //cout<<"Check isogamma"<<"\n";
-  //cout<<GammaGen.IsoChargedCorrected<<"\n";
 
   if (CheckTagBit(GammaGen.MCTag, kMCPhoton))
   {
@@ -408,12 +402,10 @@ void doIsoGammaClusterCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGam
     if (!IsoGammaCuts.PassedClusterCuts(*iter))
     {
       iter = IsoGammas.erase(iter);
-      // cout<<"Out"<<"\n";
     }
     else
     {
       ++iter;
-      // cout<<"Passed"<<"\n";
     }
   }
 }
@@ -426,12 +418,10 @@ void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
     if (!IsoGammaCuts.PassedIsoGammaCuts(*iter))
     {
       iter = IsoGammas.erase(iter);
-      // cout<<"Out"<<"\n";
     }
     else
     {
-      ++iter;
-      // cout<<"Passed"<<"\n";
+      ++iter; 
     }
   }
 }
@@ -456,10 +446,7 @@ public:
 
 JetCuts::JetCuts(GlobalOptions optns)
 {
-  // if (JetCutString.Contains("Pt700"))
-  // {
-  //   PtMin = 0.7;
-  // }
+
 }
 
 bool JetCuts::PassedCuts(Jet Jet)
@@ -492,10 +479,7 @@ public:
 
 Pi0Cuts::Pi0Cuts(GlobalOptions optns)
 {
-  // if (Pi0CutString.Contains("Pt700"))
-  // {
-  //   PtMin = 0.7;
-  // }
+
 }
 
 bool Pi0Cuts::PassedCuts(Pi0 Pi0)

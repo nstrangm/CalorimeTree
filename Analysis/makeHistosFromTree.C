@@ -89,7 +89,6 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         if(optns.doQA){
           fillGammaGenQAHistograms(GammaGens, hQADirIsoGammas, event.weight, optns, GammaGenCuts);
         }
-        //fillGammaGenAcceptanceCutHistograms(GammaGens, hDirIsoGammas, event.weight, optns);
         
       }
       if (isoGammaCuts.applyNonLin)

@@ -168,20 +168,6 @@ bool GammaGen::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEt
   return false;
 }
 
-//bool GammaGen::isMCGenIsolated()
-
-//bool GammaGen::isSignal()
-//{
-//  if (CheckTagBit(MCTag, kMCPhoton))
-//  {
-//    if ((CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation)))// && isMCGenIsolated
-//    {
-//      return true;
-//    }
-//  }
-//  return false;
-//}
-
 class IsoGamma : public PhysicsObject
 {
 public:
@@ -224,18 +210,6 @@ bool IsoGamma::isPhoton()
   }
   return false;
 }
-
-//bool IsoGamma::isSignal()
-//{
-//  if (CheckTagBit(MCTag, kMCPhoton))
-//  {
-//    if (CheckTagBit(MCTag, kMCPrompt) || CheckTagBit(MCTag, kMCFragmentation))
-//    {
-//      return true;
-//    }
-//  }
-//  return false;
-//}
 
 bool IsoGamma::isGammaFromPion()
 {
@@ -337,17 +311,13 @@ void calculateIsolation(std::vector<IsoGamma> &IsoGammas, Event &Event, bool use
   for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++)
   {
     IsoGamma *isoGamma = &IsoGammas.at(iGamma);
-    // float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
 
     // Calculate corrected isolation pT subtracting backperp mult by cone area.
     float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
 
     if (useRhoInsteadOfPerpCone)
     {
-      // cout<<"WRONG!"<<"\n";
-
       float IsoBckPerpAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - Event.Rho * TMath::Pi() * 0.4 * 0.4;
-      // isoGamma->IsoBckPerp / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4);
     }
     else
     {
@@ -361,7 +331,7 @@ void GammaGencalculateIsolation(std::vector<GammaGen> &GammaGens, Event &Event)
   for (int iGamma = 0; iGamma < (int)GammaGens.size(); iGamma++)
   {
     GammaGen *GammaGen = &GammaGens.at(iGamma);
-    float IsoChargedCorrected = GammaGen->IsoCharged - GammaGen->IsoBckPerp;// * TMath::Pi() * 0.4 * 0.4;
+    float IsoChargedCorrected = GammaGen->IsoCharged - GammaGen->IsoBckPerp;
     GammaGen->IsoChargedCorrected = IsoChargedCorrected;
   }
 }
