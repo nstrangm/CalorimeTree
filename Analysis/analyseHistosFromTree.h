@@ -5,8 +5,6 @@
 #include "HistogramLibrary.h"
 #include "PlottingClass.h"
 
-const char* suffix="png";
-
 class ABCD
 {
 public:
