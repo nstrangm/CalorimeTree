@@ -181,10 +181,19 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
             Cluster_MinMassDiffToEta=clusters.at(icluster).MinMassDiffToEta;
             Cluster_EFrac=clusters.at(icluster).EFrac;
             Cluster_IsoGammaCorrected=clusters.at(icluster).IsoChargedCorrected;
-            Cluster_MatchTrackdEta=clusters.at(icluster).MatchedTrack.dEta;
-            Cluster_MatchTrackdPhi=clusters.at(icluster).MatchedTrack.dPhi;
-            Cluster_MatchTrackP=clusters.at(icluster).MatchedTrack.P;
-            Cluster_MatchTrackPt=clusters.at(icluster).MatchedTrack.Pt;
+            
+            if(clusters.at(icluster).MatchedTrack.P>0){
+                Cluster_MatchTrackdEta=TMath::Abs(clusters.at(icluster).MatchedTrack.dEta);
+                Cluster_MatchTrackdPhi=TMath::Abs(clusters.at(icluster).MatchedTrack.dPhi);
+                Cluster_MatchTrackP=clusters.at(icluster).MatchedTrack.P;
+                Cluster_MatchTrackPt=clusters.at(icluster).MatchedTrack.Pt;
+            }else{
+                Cluster_MatchTrackdEta=10;
+                Cluster_MatchTrackdPhi=10;
+                Cluster_MatchTrackP=10;
+                Cluster_MatchTrackPt=10;
+            }
+            
             Cluster_DistanceToBadChannel=clusters.at(icluster).DistanceToBadChannel;
             Cluster_NLM=clusters.at(icluster).NLM;
             Cluster_NCells=clusters.at(icluster).NCells;

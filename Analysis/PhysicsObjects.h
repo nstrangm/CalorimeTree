@@ -194,6 +194,8 @@ public:
   float IsoCharged = 0;
   float IsoChargedCorrected = 0;
   float IsoBckPerp = 0;
+  float TrueClusterIsoCharged = 0;
+  float TrueClusterIsoBckPerp = 0;
   TrackMatchedToIsoGamma MatchedTrack;
   float DistanceToBadChannel = 0;
   float NLM = 0;
@@ -300,6 +302,8 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGa
     {
       isoGamma.MCTag = tree.TrueCluster_MCTag->at(iCluster);
       isoGamma.EventWeight = tree.Event_Weight;
+      isoGamma.TrueClusterIsoCharged = tree.TrueCluster_IsoCharged3->at(iCluster);
+      isoGamma.TrueClusterIsoBckPerp = tree.TrueCluster_IsoBckPerp->at(iCluster);
     }
 
     IsoGammas.push_back(isoGamma);
