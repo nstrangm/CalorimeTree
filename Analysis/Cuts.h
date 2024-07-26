@@ -217,7 +217,7 @@ public:
   bool PassedIsoGammaCuts(IsoGamma IsoGamma);
   bool PassedClusterCuts(IsoGamma IsoGamma);
   bool isSignal(IsoGamma IsoGamma);
-  bool isSignalOld(IsoGamma IsoGamma);
+  bool isSignalClusterLevelIso(IsoGamma IsoGamma);//For troubleshooting, use "isSignal" for actual signal def.
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -397,7 +397,7 @@ bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
   return false;
 }
 
-bool IsoGammaCuts::isSignalOld(IsoGamma IsoGamma)
+bool IsoGammaCuts::isSignalClusterLevelIso(IsoGamma IsoGamma)//For troubleshooting, use "isSignal" for actual signal def.
 {
   //Calculate generator level isolation:
   float pTisoGen= IsoGamma.IsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.IsoBckPerp * TMath::Pi() * 0.4 * 0.4;

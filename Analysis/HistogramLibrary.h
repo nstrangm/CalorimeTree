@@ -437,7 +437,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       {
         double isSigOld=0;
         double isSigNew=0;
-        if(IsoGammaCuts.isSignalOld(obj.at(i))){
+        if(IsoGammaCuts.isSignalClusterLevelIso(obj.at(i))){
           isSigOld=1;
         }
         if(IsoGammaCuts.isSignal(obj.at(i))){

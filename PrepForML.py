@@ -95,7 +95,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_prepML.log root -b -q -l ./Analysis/PrepareForML_Multiple.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_prepML.log root -b -q -l ./ML/PrepareForML_Multiple.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         processes.append((iJob, process))
 
@@ -259,7 +259,7 @@ def distribute_files(analysisdirectory, inputdatapath, trainconfig, num_output_f
 
 def compile_PrepareForML_Multiple():
     log.info("Here")
-    command = 'root -q -b -x ./Analysis/PrepareForML_Multiple.C+\(\\"\\"\,\-1\)'
+    command = 'root -q -b -x ./ML/PrepareForML_Multiple.C+\(\\"\\"\,\-1\)'
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)#subprocess.PIPE
     if result.returncode != 0:
         raise RuntimeError("Compilation failed")
