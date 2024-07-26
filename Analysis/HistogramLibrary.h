@@ -158,6 +158,12 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH1F *hMinMassDiffToPi0Signal = new TH1F("hMinMassDiffToPi0Signal", "hMinMassDiffToPi0Signal", 50, 0., 0.1);
     TH1F *hMinMassDiffToPi0Background = new TH1F("hMinMassDiffToPi0Background", "hMinMassDiffToPi0Background", 50, 0., 0.1);
 
+    TH2F *hNewVsOldSignalDef = new TH2F("hNewVsOldSignalDef","hNewVsOldSignalDef",2,-0.5,1.5,2,-0.5,1.5);
+    hNewVsOldSignalDef->GetXaxis()->SetBinLabel(2, "Signal Old");
+    hNewVsOldSignalDef->GetXaxis()->SetBinLabel(1, "Background Old");
+    hNewVsOldSignalDef->GetYaxis()->SetBinLabel(2, "Signal New");
+    hNewVsOldSignalDef->GetYaxis()->SetBinLabel(1, "Background New");
+
     TH1F *hTrueIsoGammaMCTag = new TH1F("hTrueIsoGammaMCTag", "hMCTag", 20, 0.5, 20.5);
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
@@ -429,6 +435,15 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
 
       if (optns.isMC)
       {
+        double isSigOld=0;
+        double isSigNew=0;
+        if(IsoGammaCuts.isSignalOld(obj.at(i))){
+          isSigOld=1;
+        }
+        if(IsoGammaCuts.isSignal(obj.at(i))){
+          isSigNew=1;
+        }
+        ((TH2F *)dir->FindObject("hNewVsOldSignalDef"))->Fill(isSigOld,isSigNew);
         ((TH2F *)dir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);
         if (IsoGammaCuts.isSignal(obj.at(i)))
         {

@@ -217,6 +217,7 @@ public:
   bool PassedIsoGammaCuts(IsoGamma IsoGamma);
   bool PassedClusterCuts(IsoGamma IsoGamma);
   bool isSignal(IsoGamma IsoGamma);
+  bool isSignalOld(IsoGamma IsoGamma);
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -384,9 +385,25 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
 
 bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
 {
+  //Calculate generator level isolation:
+  float pTisoGen= IsoGamma.TrueClusterIsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.TrueClusterIsoBckPerp * TMath::Pi() * 0.4 * 0.4;
   if (CheckTagBit(IsoGamma.MCTag, kMCPhoton))
   {
-    if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && IsoGamma.IsoChargedCorrected < pTisoCorrectedMax)
+    if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && pTisoGen < pTisoCorrectedMax)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsoGammaCuts::isSignalOld(IsoGamma IsoGamma)
+{
+  //Calculate generator level isolation:
+  float pTisoGen= IsoGamma.IsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
+  if (CheckTagBit(IsoGamma.MCTag, kMCPhoton))
+  {
+    if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && pTisoGen < pTisoCorrectedMax)
     {
       return true;
     }
