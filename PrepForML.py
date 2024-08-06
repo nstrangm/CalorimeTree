@@ -259,7 +259,7 @@ def distribute_files(analysisdirectory, inputdatapath, trainconfig, num_output_f
 
 def compile_PrepareForML_Multiple():
     log.info("Here")
-    command = 'root -q -b -x ./ML/PrepareForML_Multiple.C+\(\\"\\"\,\-1\)'
+    command = 'root -q -b -x ML/PrepareForML_Multiple.C+\'(\"\",-1)\''
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)#subprocess.PIPE
     if result.returncode != 0:
         raise RuntimeError("Compilation failed")
