@@ -1,9 +1,10 @@
-#include "Utilities.h"
-#include "Cuts.h"
-#include "PhysicsObjects.h"
-#include "TreeUtilities.h"
-#include "HistogramLibrary.h"
-#include "ClusterECorrections.h"
+#include "../Analysis/Utilities.h"
+#include "../Analysis/Cuts.h"
+#include "../Analysis/PhysicsObjects.h"
+#include "../Analysis/TreeUtilities.h"
+#include "../Analysis/HistogramLibrary.h"
+#include "../Analysis/ClusterECorrections.h"
+#include "TRandom.h"
 
 void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns);
 
@@ -123,7 +124,8 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     float Cluster_MatchTrackdPhi = 0;
     float Cluster_MatchTrackP = 0;
     float Cluster_MatchTrackPt = 0;
-    float Cluster_DistanceToBadChannel = 0; 
+    float Cluster_DistanceToBadChannel = 0;
+    float Cluster_SplitFloat = 0;
     unsigned short Cluster_NLM = 0;
     unsigned short Cluster_SM = 0;
     unsigned short Cluster_NCells = 0;
@@ -149,6 +151,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     caloclustertree->Branch("Cluster_SM",&Cluster_SM);
     caloclustertree->Branch("Cluster_NCells",&Cluster_NCells);
     caloclustertree->Branch("Cluster_MatchTrackIsConv",&Cluster_MatchTrackIsConv);
+    caloclustertree->Branch("Cluster_SplitFloat",&Cluster_SplitFloat);
 
     bool Cluster_isSignal = 0;
     caloclustertree->Branch("Cluster_isSignal",&Cluster_isSignal);
@@ -156,6 +159,10 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
 //Load isogamma cuts, necessary to determine if cluster issignal:
     TDirectory* dummy= new TDirectory();
     IsoGammaCuts cuts= IsoGammaCuts(optns, dummy);
+
+    //For generating random numbers for splitting into training and hyper param training:
+    TRandom randGen;
+    randGen.SetSeed(42);
 
 //Loop over evets:
     for (int iEvent = 0; iEvent < tree.NEvents; iEvent++){
@@ -181,6 +188,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
             Cluster_MinMassDiffToEta=clusters.at(icluster).MinMassDiffToEta;
             Cluster_EFrac=clusters.at(icluster).EFrac;
             Cluster_IsoGammaCorrected=clusters.at(icluster).IsoChargedCorrected;
+            Cluster_SplitFloat=randGen.Uniform(0, 1);
             
             if(clusters.at(icluster).MatchedTrack.P>0){
                 Cluster_MatchTrackdEta=TMath::Abs(clusters.at(icluster).MatchedTrack.dEta);
