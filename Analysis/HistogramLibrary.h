@@ -255,6 +255,7 @@ TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
   const float pxyzRange[2] = {-50, 50};
   TDirectory *dir = f->mkdir("JetQA");
   dir->cd();
+  TH1F *hNDLJets = new TH1F("hNDLJets", "hNDLJets", 21, -0.5, 20.5);
   TH1F *hJetPx = new TH1F("hJetPx", "hPx", 1000, pxyzRange[0], pxyzRange[1]);
   TH1F *hJetPy = new TH1F("hJetPy", "hPy", 1000, pxyzRange[0], pxyzRange[1]);
   TH1F *hJetPz = new TH1F("hJetPz", "hPz", 1000, pxyzRange[0], pxyzRange[1]);
@@ -266,6 +267,7 @@ TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
   // ------------------> MC Jet QA histograms
   if (optns.isMC)
   {
+    TH1F *hNPLJets = new TH1F("hNPLJets", "hNPLJets", 21, -0.5, 20.5);
     TH1F *hPLJetPx = new TH1F("hPLJetPx", "hPx", 1000, pxyzRange[0], pxyzRange[1]);
     TH1F *hPLJetPy = new TH1F("hPLJetPy", "hPy", 1000, pxyzRange[0], pxyzRange[1]);
     TH1F *hPLJetPz = new TH1F("hPLJetPz", "hPz", 1000, pxyzRange[0], pxyzRange[1]);
@@ -300,6 +302,9 @@ TDirectory *DefineGammaJetQAHistograms(TFile *f, GlobalOptions optns)
   dir->cd();
 
   TH2F *hNIsoGammaJets = new TH2F("hNIsoGammaJets", "hNIsoGammaJets;#bf{N_{#gamma}};#bf{N_{jet}}", 11, -0.5, 10.5, 11, -0.5, 10.5);
+  TH2F *hDeltaEtavsDeltaPhi = new TH2F("hDeltaEtavsDeltaPhi", "hDeltaEtavsDeltaPhi;#bf{#Delta#eta = |#eta_{#gamma}-#eta_{jet}|};#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 100, 0., 2., 314, 0, TMath::Pi());
+  TH2F *hIsoGammaFromCorrelationEtaPhiMap = new TH2F("hIsoGammaFromCorrelationEtaPhiMap", "hIsoGammaFromCorrelationEtaPhiMap;#bf{#eta_{iso #gamma}};#bf{#phi_{iso #gamma}}", 100, -1, 1., 628, 0, 2*TMath::Pi());
+  TH2F *hJetFromCorrelationEtaPhiMap = new TH2F("hJetFromCorrelationEtaPhiMap", "hJetFromCorrelationEtaPhiMap;#bf{#eta_{Jet}};#bf{#phi_{Jet}}", 100, -1, 1., 628, 0, 2*TMath::Pi());
 
   TH1F *hpTImbalance = new TH1F("hpTImbalance", "hpTImbalance;#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}", 100, 0., 2.);
   TH1F *hDeltaPhi = new TH1F("hDeltaPhi", "hDeltaPhi;#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 314, 0, TMath::Pi());
@@ -418,9 +423,9 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       //
       ((TH1F *)dir->FindObject("hIsoGammaIsoCharged"))->Fill(obj.at(i).IsoCharged, eventWeight);
       ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrected"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPx"))->Fill(obj.at(i).Px, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPy"))->Fill(obj.at(i).Py, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPz"))->Fill(obj.at(i).Pz, eventWeight);
+      ((TH1F *)dir->FindObject("hIsoGammaPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)dir->FindObject("hIsoGammaPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)dir->FindObject("hIsoGammaPz"))->Fill(obj.at(i).Pz(), eventWeight);
       ((TH1F *)dir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
       ((TH1F *)dir->FindObject("hIsoGammaM02"))->Fill(obj.at(i).M02, eventWeight);
       ((TH1F *)dir->FindObject("hIsoGammaM20"))->Fill(obj.at(i).M20, eventWeight);
@@ -451,9 +456,9 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
           ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrectedSignal"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
           ((TH1F *)dir->FindObject("hNIsoGammaSignal"))->Fill((int)obj.size(), eventWeight);
           ((TH1F *)dir->FindObject("hMinMassDiffToPi0Signal"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPxSignal"))->Fill(obj.at(i).Px, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPySignal"))->Fill(obj.at(i).Py, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPzSignal"))->Fill(obj.at(i).Pz, eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPxSignal"))->Fill(obj.at(i).Px(), eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPySignal"))->Fill(obj.at(i).Py(), eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPzSignal"))->Fill(obj.at(i).Pz(), eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaM02Signal"))->Fill(obj.at(i).M02, eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaM20Signal"))->Fill(obj.at(i).M20, eventWeight);
@@ -469,9 +474,9 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
           ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrectedBackground"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
           ((TH1F *)dir->FindObject("hNIsoGammaBackground"))->Fill((int)obj.size(), eventWeight);
           ((TH1F *)dir->FindObject("hMinMassDiffToPi0Background"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPxBackground"))->Fill(obj.at(i).Px, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPyBackground"))->Fill(obj.at(i).Py, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPzBackground"))->Fill(obj.at(i).Pz, eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPxBackground"))->Fill(obj.at(i).Px(), eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPyBackground"))->Fill(obj.at(i).Py(), eventWeight);
+          ((TH1F *)dir->FindObject("hIsoGammaPzBackground"))->Fill(obj.at(i).Pz(), eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaEBackground"))->Fill(obj.at(i).E, eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaM02Background"))->Fill(obj.at(i).M02, eventWeight);
           ((TH1F *)dir->FindObject("hIsoGammaM20Background"))->Fill(obj.at(i).M20, eventWeight);
@@ -516,11 +521,12 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
   }
   if constexpr (std::is_same<T, std::vector<Jet>>::value)
   {
+    ((TH1F *)dir->FindObject("hNDLJets"))->Fill(obj.size(), eventWeight);
     for (unsigned long i = 0; i < obj.size(); i++)
     {
-      ((TH1F *)dir->FindObject("hJetPx"))->Fill(obj.at(i).Px, eventWeight);
-      ((TH1F *)dir->FindObject("hJetPy"))->Fill(obj.at(i).Py, eventWeight);
-      ((TH1F *)dir->FindObject("hJetPz"))->Fill(obj.at(i).Pz, eventWeight);
+      ((TH1F *)dir->FindObject("hJetPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)dir->FindObject("hJetPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)dir->FindObject("hJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
       ((TH1F *)dir->FindObject("hJetArea"))->Fill(obj.at(i).Area, eventWeight);
       ((TH1F *)dir->FindObject("hJetNch"))->Fill(obj.at(i).Nch, eventWeight);
       ((TH1F *)dir->FindObject("hJetNclus"))->Fill(obj.at(i).Nclus, eventWeight);
@@ -529,19 +535,20 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
   }
   if constexpr (std::is_same<T, std::vector<PLJet>>::value)
   {
+    ((TH1F *)dir->FindObject("hNPLJets"))->Fill(obj.size(), eventWeight);
     for (unsigned long i = 0; i < obj.size(); i++)
     {
-      ((TH1F *)dir->FindObject("hPLJetPx"))->Fill(obj.at(i).Px, eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetPy"))->Fill(obj.at(i).Py, eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetPz"))->Fill(obj.at(i).Pz, eventWeight);
+      ((TH1F *)dir->FindObject("hPLJetPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)dir->FindObject("hPLJetPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)dir->FindObject("hPLJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
       ((TH1F *)dir->FindObject("hPLJetArea"))->Fill(obj.at(i).Area, eventWeight);
       ((TH1F *)dir->FindObject("hPLJetNPart"))->Fill(obj.at(i).NPart, eventWeight);
       ((TH2F *)dir->FindObject("hPLJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
       if (obj.at(i).ClosestDLJet != nullptr)
       {
         ((TH2F *)dir->FindObject("hDLJetPVsPLJetP"))->Fill(obj.at(i).ClosestDLJet->P(), obj.at(i).P(), eventWeight);
-        ((TH2F *)dir->FindObject("hDLJetPxVsPLJetPx"))->Fill(fabs(obj.at(i).ClosestDLJet->Px), fabs(obj.at(i).Px), eventWeight);
-        ((TH2F *)dir->FindObject("hDLJetPyVsPLJetPy"))->Fill(fabs(obj.at(i).ClosestDLJet->Py), fabs(obj.at(i).Py), eventWeight);
+        ((TH2F *)dir->FindObject("hDLJetPxVsPLJetPx"))->Fill(fabs(obj.at(i).ClosestDLJet->Px()), fabs(obj.at(i).Px()), eventWeight);
+        ((TH2F *)dir->FindObject("hDLJetPyVsPLJetPy"))->Fill(fabs(obj.at(i).ClosestDLJet->Py()), fabs(obj.at(i).Py()), eventWeight);
       }
     }
   }
@@ -549,6 +556,9 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
   {
     for (unsigned long i = 0; i < obj.size(); i++)
     {
+      ((TH2F *)dir->FindObject("hDeltaEtavsDeltaPhi"))->Fill(obj.at(i).DEta, obj.at(i).DPhi, eventWeight);
+      ((TH2F *)dir->FindObject("hIsoGammaFromCorrelationEtaPhiMap"))->Fill(obj.at(i).isoGamma->Eta(), obj.at(i).isoGamma->Phi(), eventWeight);
+      ((TH2F *)dir->FindObject("hJetFromCorrelationEtaPhiMap"))->Fill(obj.at(i).jet->Eta(), obj.at(i).jet->Phi(), eventWeight);
       ((TH1F *)dir->FindObject("hpTImbalance"))->Fill(obj.at(i).pTImbalance, eventWeight);
       ((TH1F *)dir->FindObject("hDeltaPhi"))->Fill(obj.at(i).DPhi, eventWeight);
     }
@@ -556,10 +566,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
   if constexpr (std::is_same<T, Event>::value)
   {
     ((TH1F *)dir->FindObject("hZVtx"))->Fill(obj.ZVtx, eventWeight);
-    if (dir->FindObject("hWeights"))
-    {
-      ((TH1F *)dir->FindObject("hWeights"))->Fill(obj.weight);
-    }
+    ((TH1F *)dir->FindObject("hWeights"))->Fill(obj.weight);
     ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill((int)0, 1);
     ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(1, (int)(obj.IsTriggered));
     ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(2, (int)(obj.ZVtxOK));

@@ -463,6 +463,15 @@ public:
 
 JetCuts::JetCuts(GlobalOptions optns)
 {
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+
+  if (!ycut[(std::string)optns.cutString])
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
+
+  PtMin = chosencut["jetMinPt"].IsDefined() ? chosencut["jetMinPt"].as<float>() : standardcut["jetMinPt"].as<float>();
 
 }
 
@@ -475,6 +484,22 @@ bool JetCuts::PassedCuts(Jet Jet)
   }
 
   return passed;
+}
+
+void doJetCuts(std::vector<Jet> &Jets, JetCuts JetCuts)
+{
+  std::vector<Jet>::iterator iter;
+  for (iter = Jets.begin(); iter != Jets.end();)
+  {
+    if (!JetCuts.PassedCuts(*iter))
+    {
+      iter = Jets.erase(iter);
+    }
+    else
+    {
+      ++iter; 
+    }
+  }
 }
 
 // -----------------------------------------------------------

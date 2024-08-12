@@ -279,9 +279,9 @@ void applyNonLinAndFineTuningCorrection(std::vector<IsoGamma>& IsoGammas, IsoGam
       }
     }
     float clusterECorrection = clusterECorrected / IsoGammas.at(iCluster).E;
-    IsoGammas.at(iCluster).Px *= clusterECorrection;
-    IsoGammas.at(iCluster).Py *= clusterECorrection;
-    IsoGammas.at(iCluster).Pz *= clusterECorrection;
+    IsoGammas.at(iCluster).px *= clusterECorrection;
+    IsoGammas.at(iCluster).py *= clusterECorrection;
+    IsoGammas.at(iCluster).pz *= clusterECorrection;
     IsoGammas.at(iCluster).E *= clusterECorrection;
   }
 }
