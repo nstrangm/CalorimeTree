@@ -118,14 +118,14 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     }
     if (optns.doJets)
     {
-      saveJetsFromEventInVector(tree, Jets);
-      // TODO: JetCuts
+      saveJetsFromEventInVector(tree, Jets, optns);
+      doJetCuts(Jets, jetCuts);
       fillHistograms(Jets, hDirJets, event.weight, optns, isoGammaCuts);
       if (optns.doQA)
         fillQAHistograms(Jets, hQADirJets, event.weight, optns, isoGammaCuts);
       if (optns.isMC)
       {
-        savePLJetsFromEventInVector(tree, PLJets);
+        savePLJetsFromEventInVector(tree, PLJets, optns);
         mapPLtoDLjets(Jets, PLJets, jetCuts.R);
         // TODO: Do I need PL jet cuts?
         fillHistograms(PLJets, hDirJets, event.weight, optns, isoGammaCuts);

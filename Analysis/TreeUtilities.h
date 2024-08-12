@@ -89,7 +89,7 @@ int listTreeBranches(TChain *tree)
   INFO(Form("Your tree %s contains the following %d branches:\n%s\n\n", tree->GetName(), branchList->GetEntries(), sBranchList.Data()))
   if (sBranchList.Contains(", Event_NPrimaryTracks, Event_IsTriggered, Event_ZVertex, Event_Quality, Event_NotAccepted, "))
     return kRun2Tree;
-  else if (sBranchList.Contains("MyRun3")) // Add Run3 tree specific branches here
+  else if (sBranchList.Contains("event_multiplicity, event_centrality, event_rho, event_eventselection, event_alias")) // Add Run3 tree specific branches here
     return kRun3Tree;
   else if (sBranchList.Contains("Berkely")) // Add Berkely tree specific branches here
     return kBerkeleyTree;
@@ -112,46 +112,60 @@ public:
   // #############################################
 
   // -------------- Event branches ---------------
-  float Event_Rho = 0;                     // Essential
-  unsigned short Event_NPrimaryTracks = 0; // Nice to have
-  bool Event_IsTriggered = 0;              // Essential
-  float Event_ZVertex = 0;                 // Essential
-  unsigned short Event_Quality = 0;        // Can be removed
-  unsigned short Event_NotAccepted = 0;    // Can be removed
+  float Event_Rho = 0;                     // Run 2 + 3
+  unsigned short Event_NPrimaryTracks = 0; // Run 2
+  bool Event_IsTriggered = 0;              // Run 2
+  float Event_ZVertex = 0;                 // Run 2
+  unsigned short Event_Quality = 0;        // Run 2
+  unsigned short Event_NotAccepted = 0;    // Run 2
+  int Event_Multiplicity = 0;              // Run     3
+  float Event_Centrality = 0;              // Run     3
+  uint16_t Event_Selection = 0;            // Run     3
+  uint32_t Event_Alias = 0;                // Run     3
 
   // -------------- Cluster branches ---------------
-  std::vector<float> *Cluster_E = 0;                    // Essential
-  std::vector<float> *Cluster_Px = 0;                   // Essential
-  std::vector<float> *Cluster_Py = 0;                   // Essential
-  std::vector<float> *Cluster_Pz = 0;                   // Essential
-  std::vector<float> *Cluster_M02 = 0;                  // Essential
-  std::vector<float> *Cluster_M02Recalc = 0;            // Can be removed (not in light tree)
-  std::vector<float> *Cluster_M20 = 0;                  // Can be removed (not in light tree)
-  std::vector<unsigned short> *Cluster_NCells = 0;      // Essential
-  std::vector<float> *Cluster_V1SplitMass = 0;          // Can be removed (not in light tree)
-  std::vector<float> *Cluster_MinMassDiffToPi0 = 0;     // Can be removed (not in light tree)
-  std::vector<float> *Cluster_MinMassDiffToEta = 0;     // Can be removed (not in light tree)
-  std::vector<unsigned short> *Cluster_NLM = 0;         // Essential
-  std::vector<unsigned short> *Cluster_SM = 0;          // Can be removed (not in light tree)
-  std::vector<float> *Cluster_EFrac = 0;                // Essential
-  std::vector<float> *Cluster_IsoCharged1 = 0;          // Essential R = 0.2
-  std::vector<float> *Cluster_IsoCharged2 = 0;          // Essential R = 0.3
-  std::vector<float> *Cluster_IsoCharged3 = 0;          // Essential R = 0.4 (standard)
-  std::vector<float> *Cluster_IsoBckPerp = 0;           // Essential
-  std::vector<float> *Cluster_MatchTrackdEta = 0;       // Essential
-  std::vector<float> *Cluster_MatchTrackdPhi = 0;       // Essential
-  std::vector<float> *Cluster_MatchTrackP = 0;          // Essential
-  std::vector<float> *Cluster_MatchTrackPt = 0;         // Essential
-  std::vector<bool> *Cluster_MatchTrackIsConv = 0;      // Can be removed (not in light tree)
-  std::vector<float> *Cluster_DistanceToBadChannel = 0; // Essential
+  std::vector<float> *Cluster_E = 0;                    // Run 2 + 3
+  std::vector<float> *Cluster_Px = 0;                   // Run 2
+  std::vector<float> *Cluster_Py = 0;                   // Run 2
+  std::vector<float> *Cluster_Pz = 0;                   // Run 2
+  std::vector<float> *Cluster_Eta = 0;                  // Run     3
+  std::vector<float> *Cluster_Phi = 0;                  // Run     3
+  std::vector<float> *Cluster_M02 = 0;                  // Run 2 + 3
+  std::vector<float> *Cluster_M02Recalc = 0;            // Run 2
+  std::vector<float> *Cluster_M20 = 0;                  // Run 2 + 3
+  std::vector<unsigned short> *Cluster_NCells = 0;      // Run 2 + 3
+  std::vector<float> *Cluster_V1SplitMass = 0;          // Run 2
+  std::vector<float> *Cluster_Time = 0;                 // Run     3
+  std::vector<float> *Cluster_MinMassDiffToPi0 = 0;     // Run 2
+  std::vector<float> *Cluster_MinMassDiffToEta = 0;     // Run 2
+  std::vector<unsigned short> *Cluster_NLM = 0;         // Run 2 + 3
+  std::vector<unsigned short> *Cluster_SM = 0;          // Run 2
+  std::vector<float> *Cluster_EFrac = 0;                // Run 2
+  std::vector<float> *Cluster_IsoCharged1 = 0;          // Run 2     R = 0.2
+  std::vector<float> *Cluster_IsoCharged2 = 0;          // Run 2     R = 0.3
+  std::vector<float> *Cluster_IsoCharged3 = 0;          // Run 2 + 3 R = 0.4 (standard)
+  std::vector<float> *Cluster_IsoBckPerp = 0;           // Run 2 + 3 In run2 raw, in run3 corrected
+  std::vector<float> *Cluster_MatchTrackdEta = 0;       // Run 2
+  std::vector<float> *Cluster_MatchTrackdPhi = 0;       // Run 2
+  std::vector<float> *Cluster_MatchTrackP = 0;          // Run 2
+  std::vector<float> *Cluster_MatchTrackPt = 0;         // Run 2
+  std::vector<bool> *Cluster_MatchTrackIsConv = 0;      // Run 2
+  std::vector<bool> *Cluster_IsExotic = 0;              // Run     3
+  std::vector<float> *Cluster_DistanceToBadChannel = 0; // Run 2 Also available in run3 but as ushort and not used currently -> Omitted for now
 
-  // -------------- Cluster branches ---------------
-  std::vector<float> *Jet_Px = 0;
-  std::vector<float> *Jet_Py = 0;
-  std::vector<float> *Jet_Pz = 0;
-  std::vector<float> *Jet_Area = 0;
-  std::vector<unsigned short> *Jet_Nch = 0;
-  std::vector<unsigned short> *Jet_Nclus = 0;
+  // -------------- Jet branches ---------------
+  std::vector<float> *Jet_Pt = 0;                // Run     3
+  std::vector<float> *Jet_E = 0;                 // Run     3
+  std::vector<float> *Jet_M = 0;                 // Run     3
+  std::vector<float> *Jet_Px = 0;                // Run 2
+  std::vector<float> *Jet_Py = 0;                // Run 2
+  std::vector<float> *Jet_Pz = 0;                // Run 2
+  std::vector<float> *Jet_Eta = 0;               // Run     3
+  std::vector<float> *Jet_Phi = 0;               // Run     3
+  std::vector<float> *Jet_Area = 0;              // Run 2 + 3
+  std::vector<unsigned short> *Jet_Nch = 0;      // Run 2
+  std::vector<unsigned short> *Jet_Nclus = 0;    // Run 2
+  std::vector<unsigned short> *Jet_Constits = 0; // Run     3
 
   // ###########################################
   // Members that will be matched to MC branches
@@ -195,7 +209,7 @@ public:
   std::vector<unsigned short> *PLJet_NPart = 0;
 
   TreeBuffer(TChain *tree, GlobalOptions optns);
-  ~TreeBuffer(){};
+  ~TreeBuffer() {};
 };
 
 TreeBuffer::TreeBuffer(TChain *tree, GlobalOptions optns)
@@ -207,6 +221,8 @@ TreeBuffer::TreeBuffer(TChain *tree, GlobalOptions optns)
     ReadRun2TreeIntoBuffer(tree, optns);
     break;
   case kRun3Tree:
+    ReadRun3TreeIntoBuffer(tree, optns);
+    break;
   case kBerkeleyTree:
   default:
     FATAL(Form("Unknown treeFormat %d", optns.TreeFormat))
@@ -295,6 +311,43 @@ void TreeBuffer::ReadRun2TreeIntoBuffer(TChain *tree, GlobalOptions optns)
       tree->SetBranchAddress("TrueJet_Area", &PLJet_Area);
       tree->SetBranchAddress("TrueJet_NPart", &PLJet_NPart);
     }
+  }
+}
+
+void TreeBuffer::ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns)
+{
+  if (optns.isMC)
+  {
+    FATAL("The branches of run3 MC trees are not yet implemented. Please do so here!") // TODO: MC run3 tree branches
+  }
+  tree->SetBranchAddress("event_multiplicity", &Event_Multiplicity);
+  tree->SetBranchAddress("event_centrality", &Event_Centrality);
+  tree->SetBranchAddress("event_rho", &Event_Rho);
+  tree->SetBranchAddress("event_eventselection", &Event_Selection);
+  tree->SetBranchAddress("event_alias", &Event_Alias);
+  if (optns.doIsoGamma)
+  {
+    tree->SetBranchAddress("cluster_data_energy", &Cluster_E);
+    tree->SetBranchAddress("cluster_data_eta", &Cluster_Eta);
+    tree->SetBranchAddress("cluster_data_phi", &Cluster_Phi);
+    tree->SetBranchAddress("cluster_data_m02", &Cluster_M02);
+    tree->SetBranchAddress("cluster_data_m20", &Cluster_M20);
+    tree->SetBranchAddress("cluster_data_ncells", &Cluster_NCells);
+    tree->SetBranchAddress("cluster_data_time", &Cluster_Time);
+    tree->SetBranchAddress("cluster_data_nlm", &Cluster_NLM);
+    tree->SetBranchAddress("cluster_data_isoraw", &Cluster_IsoCharged3);
+    tree->SetBranchAddress("cluster_data_isexotic", &Cluster_IsExotic);
+    tree->SetBranchAddress("cluster_data_perpconerho", &Cluster_IsoBckPerp);
+  }
+  if (optns.doJets)
+  {
+    tree->SetBranchAddress("jet_data_pt", &Jet_Pt);
+    tree->SetBranchAddress("jet_data_eta", &Jet_Eta);
+    tree->SetBranchAddress("jet_data_phi", &Jet_Phi);
+    tree->SetBranchAddress("jet_data_energy", &Jet_E);
+    tree->SetBranchAddress("jet_data_mass", &Jet_M);
+    tree->SetBranchAddress("jet_data_area", &Jet_Area);
+    tree->SetBranchAddress("jet_data_nconstituents", &Jet_Constits);
   }
 }
 
