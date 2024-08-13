@@ -195,7 +195,7 @@ private:
   float EMax = 0.;
   unsigned short NcellsMin = 0;
   unsigned short NLMMax = 0;
-  float DistanceToBadChannelMin = 0;
+  int DistanceToBadChannelMin = 0;
   float M02Min = 0.;
   float M02Max = 0.;
   float MatchDetaMin = 0;
@@ -232,8 +232,8 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
   applyNonLin = chosencut["cluster_applyNonLin"].IsDefined() ? chosencut["cluster_applyNonLin"].as<bool>() : standardcut["cluster_applyNonLin"].as<bool>();
-  DEBUG
-  // Acceptance cut
+
+  // Acceptance cuts
   // EMcal
   EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
   EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
@@ -281,7 +281,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
 
   useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 
-  INFO(Form("EMin = %f, EMax = %f, useRhoInsteadOfPerpCone = %s", EMin, EMax, useRhoInsteadOfPerpCone ? "true" : "false"))
+  LOG(Form("%s IsoGammaCuts: applyNonLin = %s, %.1f < E < %.1f, NCells >= %d, NLM <= %d, DistToBadChannel >= %d, %.1f < M02 < %.1f, F+ <= %.1f, pTIso < %.1f GeV/c, useRhoInsteadOfPerpCone = %s", optns.cutString.Data(), applyNonLin ? "true" : "false", EMin, EMax, NcellsMin, NLMMax, DistanceToBadChannelMin, M02Min, M02Max, FplusMax, pTisoCorrectedMax, useRhoInsteadOfPerpCone ? "true" : "false"))
 }
 
 bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
@@ -364,6 +364,7 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
    //Check track matching
   if (IsoGamma.MatchedTrack.P>0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
+    passed = false;
     if (hQADir != nullptr){
       ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
       ((TH2F *)hQADir->FindObject("hIsoGammadEtadphiCut"))->Fill(IsoGamma.MatchedTrack.dPhi, IsoGamma.MatchedTrack.dEta, IsoGamma.EventWeight);
