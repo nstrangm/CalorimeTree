@@ -9,11 +9,6 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 {
   ENTER
 
-  if (jobId < 0)
-    FATAL("Negative jobId")
-  if(!jobId)
-    LOG("This is a debug run")
-
   GlobalOptions optns(AnalysisDirectory, jobId);
 
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
@@ -46,7 +41,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<GammaJetPair> GammaJetPairs;
   std::vector<Pi0> Pi0s;
 
-  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
+  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), !jobId ? 1 : jobId), optns);
 
   optns.TreeFormat = listTreeBranches(chain);
 

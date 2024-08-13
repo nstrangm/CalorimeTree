@@ -400,6 +400,8 @@ public:
   float Area = 0;
   unsigned short Nch = 0;
   unsigned short Nclus = 0;
+  unsigned short Nconstits = 0;
+  float M =0;
 };
 
 void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets, GlobalOptions optns)
@@ -420,9 +422,9 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets, GlobalOp
     else if (optns.TreeFormat == kRun3Tree)
     {
       Jet jet(tree.Jet_Pt->at(iJet), tree.Jet_Eta->at(iJet), tree.Jet_Phi->at(iJet));
-      // jet.Area = tree.Jet_Area->at(iJet);
-      // jet.Nch = tree.Jet_Nch->at(iJet);
-      // jet.Nclus = tree.Jet_Nclus->at(iJet);
+      jet.Area = tree.Jet_Area->at(iJet);
+      jet.M = tree.Jet_M->at(iJet);
+      jet.Nconstits = tree.Jet_Nconstits->at(iJet);
       Jets.push_back(jet);
     }
     else
