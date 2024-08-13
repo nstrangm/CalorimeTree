@@ -6,10 +6,14 @@
 #include "../Analysis/ClusterECorrections.h"
 #include "TRandom.h"
 
-void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns);
+void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns, bool bDoClusterCuts);
+void DoClusterCuts(std::vector<IsoGamma> &IsoGammas, GlobalOptions optns);
+bool PassedClusterCuts(IsoGamma IsoGamma, float EMCalEtaPhiMinMax[2][2], float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2], 
+        float EMin, float EMax, unsigned short NcellsMin, unsigned short NLMMax, float DistanceToBadChannelMin, float MatchDetaMin, float MatchDetaMax, 
+        float MatchDphiMin, float MatchDphiMax, float MatchVetoMax, float FplusMax);
 
 
-void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID){
+void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID, bool bDoClusterCuts){
     ENTER
     INFO("started PrepareForML_Multiple")
     if (GroupID < 0){
@@ -19,18 +23,18 @@ void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID){
 
     GlobalOptions optns(AnalysisDirectory, 1);
 
-    //Open InputFile names:
+//Open InputFile names:
     ifstream inputFileNames(Form("%s/%s/InputFiles/InputFiles_group_%i.txt",optns.dataSet.Data(),optns.trainConfig.Data(),GroupID));//
 
     if(!inputFileNames.is_open()){
         FATAL(Form("Specified inputFilenamesFile=%s does not exist. Either analysis directory or GroupID is wrong!",Form("%s/%s/InputFiles/InputFiles_group_%i.txt",optns.dataSet.Data(),optns.trainConfig.Data(),GroupID)));
         return;
     }
-    //Read Inputfilenamesfile:
+//Read Inputfilenamesfile:
     string line;
     cout<<"File content:"<< endl;
     while (getline(inputFileNames,line)){
-        RestructureTreeForML_TreeUtils(AnalysisDirectory,TString(line.c_str()),optns);
+        RestructureTreeForML_TreeUtils(AnalysisDirectory,TString(line.c_str()),optns, bDoClusterCuts);
     }
 
     inputFileNames.close();
@@ -39,7 +43,7 @@ void PrepareForML_Multiple(TString AnalysisDirectory,int GroupID){
     EXIT
 }
 
-void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns){
+void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilename,GlobalOptions optns,bool bDoClusterCuts){
 //Input:
     //Read data:
     TFile* inputfile=TFile::Open(inputfilename.Data(),"READ");
@@ -87,7 +91,16 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     
     //createDirectory(outputdir);
     std::filesystem::create_directories(outputdir.Data());
-    TFile* outputfile=TFile::Open(Form("%s/GammaIsoTree_%s.root",outputdir.Data(),optns.trainConfig.Data()),"RECREATE");
+
+    TString OutName;
+    if(bDoClusterCuts){
+        OutName=Form("%s/GammaIsoTree_%s_ClusterCuts.root",outputdir.Data(),optns.trainConfig.Data());
+    }else{
+        OutName=Form("%s/GammaIsoTree_%s.root",outputdir.Data(),optns.trainConfig.Data());
+    }
+
+    TFile* outputfile=TFile::Open(OutName,"RECREATE");
+    INFO(Form("Created:%s",OutName.Data()));
     if ((!outputfile) || outputfile->IsZombie()){
       ERROR(Form("Input file %s is not healthy! Skipping this one...", inputfilename.Data()))
       inputfile->Close();
@@ -126,10 +139,10 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     float Cluster_MatchTrackPt = 0;
     float Cluster_DistanceToBadChannel = 0;
     float Cluster_SplitFloat = 0;
-    unsigned short Cluster_NLM = 0;
-    unsigned short Cluster_SM = 0;
-    unsigned short Cluster_NCells = 0;
-    bool Cluster_MatchTrackIsConv = 0;
+    float Cluster_NLM = 0;                  //unsigned short
+    float Cluster_SM = 0;                   //unsigned short
+    float Cluster_NCells = 0;               //unsigned short
+    float Cluster_MatchTrackIsConv = 0;      //bool
 
     caloclustertree->Branch("Cluster_E",&Cluster_E);
     caloclustertree->Branch("Cluster_Pt",&Cluster_Pt);
@@ -145,9 +158,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     caloclustertree->Branch("Cluster_MatchTrackP",&Cluster_MatchTrackP);
     caloclustertree->Branch("Cluster_MatchTrackPt",&Cluster_MatchTrackPt);
     caloclustertree->Branch("Cluster_DistanceToBadChannel",&Cluster_DistanceToBadChannel);
-    caloclustertree->Branch("Cluster_Cluster_NLM",&Cluster_NLM);
-    caloclustertree->Branch("Cluster_Cluster_SM",&Cluster_SM);
-    caloclustertree->Branch("Cluster_NCells",&Cluster_NCells);
+    caloclustertree->Branch("Cluster_NLM",&Cluster_NLM);
     caloclustertree->Branch("Cluster_SM",&Cluster_SM);
     caloclustertree->Branch("Cluster_NCells",&Cluster_NCells);
     caloclustertree->Branch("Cluster_MatchTrackIsConv",&Cluster_MatchTrackIsConv);
@@ -173,6 +184,12 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
         std::vector<IsoGamma> clusters;
         saveClustersFromEventInVector(tree, clusters, optns);
         calculateIsolation(clusters, event, false);//HARDCODE!!!!
+
+        //INFO(Form("Before Cluster cuts: %i", clusters.size()))
+        if(bDoClusterCuts){
+            DoClusterCuts(clusters, optns);
+        }
+        //INFO(Form("After Cluster cuts: %i", clusters.size()))
         for (unsigned long icluster=0; icluster<clusters.size(); icluster++){
             //Fill event attributes:
             Event_Rho=event.Rho;
@@ -222,4 +239,116 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     outputfile->Close();
     delete chain;
     delete dummy;
+}
+
+void DoClusterCuts(std::vector<IsoGamma> &IsoGammas, GlobalOptions optns){
+//Load cuts
+    YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+
+    if (!ycut[(std::string)optns.cutString])
+        FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+
+    YAML::Node standardcut = ycut["Standard"];
+    YAML::Node chosencut = ycut[(std::string)optns.cutString];
+
+    // Acceptance cut
+    float EMCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+    float DCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+    float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
+    // EMcal
+    EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
+    EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
+    EMCalEtaPhiMinMax[1][0] = chosencut["cluster_min_EMcal_phi"].IsDefined() ? chosencut["cluster_min_EMcal_phi"].as<float>() : standardcut["cluster_min_EMcal_phi"].as<float>();
+    EMCalEtaPhiMinMax[1][1] = chosencut["cluster_max_EMcal_phi"].IsDefined() ? chosencut["cluster_max_EMcal_phi"].as<float>() : standardcut["cluster_max_EMcal_phi"].as<float>();
+    // DCal
+    DCalEtaPhiMinMax[0][0] = chosencut["cluster_min_Dcal_eta"].IsDefined() ? chosencut["cluster_min_Dcal_eta"].as<float>() : standardcut["cluster_min_Dcal_eta"].as<float>();
+    DCalEtaPhiMinMax[0][1] = chosencut["cluster_max_Dcal_eta"].IsDefined() ? chosencut["cluster_max_Dcal_eta"].as<float>() : standardcut["cluster_max_Dcal_eta"].as<float>();
+    DCalEtaPhiMinMax[1][0] = chosencut["cluster_min_Dcal_phi"].IsDefined() ? chosencut["cluster_min_Dcal_phi"].as<float>() : standardcut["cluster_min_Dcal_phi"].as<float>();
+    DCalEtaPhiMinMax[1][1] = chosencut["cluster_max_Dcal_phi"].IsDefined() ? chosencut["cluster_max_Dcal_phi"].as<float>() : standardcut["cluster_max_Dcal_phi"].as<float>();
+    // DCal hole
+    DCalHoleEtaPhiMinMax[0][0] = chosencut["cluster_min_DcalHole_eta"].IsDefined() ? chosencut["cluster_min_DcalHole_eta"].as<float>() : standardcut["cluster_min_DcalHole_eta"].as<float>();
+    DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
+    DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
+    DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+    // Load E cut
+    float EMin = chosencut["cluster_min_E"].IsDefined() ? chosencut["cluster_min_E"].as<float>() : standardcut["cluster_min_E"].as<float>();
+    float EMax = chosencut["cluster_max_E"].IsDefined() ? chosencut["cluster_max_E"].as<float>() : standardcut["cluster_max_E"].as<float>();
+
+    // Load min Ncells
+    unsigned short NcellsMin = chosencut["cluster_min_Nc"].IsDefined() ? chosencut["cluster_min_Nc"].as<unsigned short>() : standardcut["cluster_min_Nc"].as<unsigned short>();
+
+    // Load NLM cut
+    unsigned short NLMMax = chosencut["cluster_max_NLM"].IsDefined() ? chosencut["cluster_max_NLM"].as<unsigned short>() : standardcut["cluster_max_NLM"].as<unsigned short>();
+
+    // Load min dist to bad channel cut
+    float DistanceToBadChannelMin = chosencut["cluster_min_distbadch"].IsDefined() ? chosencut["cluster_min_distbadch"].as<float>() : standardcut["cluster_min_distbadch"].as<float>();
+
+    // Load track matching cut
+    float MatchDetaMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
+    float MatchDetaMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
+    float MatchDphiMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
+    float MatchDphiMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
+    float MatchVetoMax = chosencut["cluster_max_MatchVeto"].IsDefined() ? chosencut["cluster_max_MatchVeto"].as<float>() : standardcut["cluster_max_MatchVeto"].as<float>();
+
+    // Load FM+
+    float FplusMax = chosencut["cluster_max_Fplus"].IsDefined() ? chosencut["cluster_max_Fplus"].as<float>() : standardcut["cluster_max_Fplus"].as<float>();
+
+//Apply cuts:
+    std::vector<IsoGamma>::iterator iter;
+    for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
+    {
+        if (!PassedClusterCuts(*iter,EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax, 
+        EMin, EMax, NcellsMin, NLMMax, DistanceToBadChannelMin, MatchDetaMin, MatchDetaMax, 
+        MatchDphiMin, MatchDphiMax, MatchVetoMax, FplusMax))
+        {
+            iter = IsoGammas.erase(iter);
+        }
+        else
+        {
+            ++iter;
+        }
+    }
+}
+
+bool PassedClusterCuts(IsoGamma IsoGamma, float EMCalEtaPhiMinMax[2][2], float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2], 
+        float EMin, float EMax, unsigned short NcellsMin, unsigned short NLMMax, float DistanceToBadChannelMin, float MatchDetaMin, float MatchDetaMax, 
+        float MatchDphiMin, float MatchDphiMax, float MatchVetoMax, float FplusMax)
+{
+  bool passed = true;
+  // Check cluster acceptance
+  if (!IsoGamma.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !IsoGamma.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
+  {
+    passed = false;
+  }
+  // check cluster energy
+  if (IsoGamma.E < EMin || IsoGamma.E > EMax)
+  {
+    passed = false;
+  }
+  // check cells pr. cluster
+  //if (IsoGamma.NCells < NcellsMin)
+  //{
+  //  passed = false;
+  //}
+  // Check number of local maxima
+  //if (IsoGamma.NLM > NLMMax)
+  //{
+  //  passed = false;
+  //}
+  // Check distance to bad channel
+  //if (IsoGamma.DistanceToBadChannel < DistanceToBadChannelMin)
+  //{
+  //  passed = false;
+  //}
+   //Check track matching
+  if (IsoGamma.MatchedTrack.P>0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
+  {
+    passed = false;
+  }
+  // Check Fplus
+  //if (IsoGamma.EFrac > FplusMax)
+  //{
+  //  passed = false;
+  //}
+  return passed;
 }

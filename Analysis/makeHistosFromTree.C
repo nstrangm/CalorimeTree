@@ -7,17 +7,18 @@
 
 void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 {
+//General:
   ENTER
 
   if (jobId < 0)
     FATAL("Negative jobId")
   if(!jobId)
     LOG("This is a debug run")
-
+  //Set global options
   GlobalOptions optns(AnalysisDirectory, jobId);
-
+  //Create output file
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
-
+  //Set up directories for output
   TDirectory *hDirEvents = DefineEventHistograms(fOut, optns);
   TDirectory *hQADirEvents = DefineEventQAHistograms(fOut, optns);
   TDirectory *hDirClusters = DefineIsoGammaHistograms(fOut, "Clusters" ,optns);
@@ -30,7 +31,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TDirectory *hQADirJets = DefineJetQAHistograms(fOut, optns);
   TDirectory *hDirGammaJetCorrelations = DefineGammaJetHistograms(fOut, optns);
   TDirectory *hQADirGammaJetCorrelations = DefineGammaJetQAHistograms(fOut, optns);
-
+  //Supply the cuts:
   EventCuts eventCuts(optns);
   IsoGammaCuts isoGammaCuts(optns, hQADirIsoGammas); // Pass the QA dir so that the "cut passed" function can fill a "loss histogram"
   GammaGenCuts GammaGenCuts(optns);
@@ -45,30 +46,31 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<GammaJetPair> GammaJetPairs;
   std::vector<Pi0> Pi0s;
-
+  //Load input data into TChain.
   TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
 
   optns.TreeFormat = listTreeBranches(chain);
 
   TreeBuffer tree(chain, optns);
-
+//Start Event loop
   for (int iEvent = 0; iEvent < tree.NEvents; iEvent++)
   {
+    //Get event attributes from TChain:
     chain->GetEntry(iEvent);
 
     if (jobId == 0)
       PrintProgress(iEvent, tree.NEvents);
     else
       PrintProgressNumber(iEvent, tree.NEvents, 1000);
-
+    
     Event event(tree, optns);
-
+    //Apply event cuts and fill output hists:
     if (!eventCuts.PassedCuts(event))
       continue;
     fillHistograms(event, hDirEvents, event.weight, optns, isoGammaCuts);
     if (optns.doQA)
       fillQAHistograms(event, hQADirEvents, event.weight, optns, isoGammaCuts);
-
+//If do Isogammas, calculate the relevant output.
     if (optns.doIsoGamma)
     {
       saveClustersFromEventInVector(tree, IsoGammas, optns);
@@ -116,6 +118,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         fillQAHistograms(Pi0sForIsoGammaQA, hQADirIsoGammas, event.weight, optns, isoGammaCuts);
       }
     }
+//Do jets:
     if (optns.doJets)
     {
       saveJetsFromEventInVector(tree, Jets, optns);
@@ -149,7 +152,8 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     Pi0sForIsoGammaQA.clear();
     GammaJetPairs.clear();
   }
-
+//End event loop:
+//Write output
   fOut->Write();
 
   EXIT

@@ -25,6 +25,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("rich")
 
+#Source root environment
 def source_environment(script_path):
     """Source the script and return the updated environment variables."""
     command = f"source {script_path} && env"
@@ -73,10 +74,9 @@ def clear_logs():
 
 
 
-def run_macro(dataset, setting, cut, nSplit, task_id, progress):
+def run_macro(dataset, setting, cut, nSplit, task_id, progress, DoClusterCuts):
     processes = []
     progress_values = [0] * nSplit  # Initialize progress list for all jobs
-
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
             for iJob, process in processes:
@@ -95,7 +95,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_prepML.log root -b -q -l ./ML/PrepareForML_Multiple.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_prepML.log root -b -q -l ./ML/PrepareForML_Multiple.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\,\{DoClusterCuts}\)'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         processes.append((iJob, process))
 
@@ -115,7 +115,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
     #    log.error(result.stderr)
     #    raise RuntimeError("plotHistosFromTree.C failed")
 
-def run_multiple_macros(jobs):
+def run_multiple_macros(jobs,DoClusterCuts):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
     trainconfig_colors = {}
 
@@ -155,7 +155,7 @@ def run_multiple_macros(jobs):
             task_id = progress.add_task(f"{trainconfig_colors[trainconfig]}{description}[/]", total=100)
             tasks[description] = task_id
 
-            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress))
+            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress, DoClusterCuts))
             threads.append(thread)
             thread.start()
 
@@ -259,7 +259,7 @@ def distribute_files(analysisdirectory, inputdatapath, trainconfig, num_output_f
 
 def compile_PrepareForML_Multiple():
     log.info("Here")
-    command = 'root -q -b -x ML/PrepareForML_Multiple.C+\'(\"\",-1)\''
+    command = 'root -q -b -x ML/PrepareForML_Multiple.C+\'(\"\",-1,false)\''
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)#subprocess.PIPE
     if result.returncode != 0:
         raise RuntimeError("Compilation failed")
@@ -276,7 +276,7 @@ def check_and_create_folder(folder_path):
         log.info(f"Folder '{folder_path}' already exists.")
 
 # Main function
-def main():
+def main(DoClusterCuts):
 
     # Ensure ROOT environment is loaded
     load_root_environment()
@@ -323,8 +323,14 @@ def main():
                     check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                     jobs.append((dataset, trainconfig, cut_name, nSplit))
     
-    run_multiple_macros(jobs)
+    run_multiple_macros(jobs,DoClusterCuts)
 
 
 if __name__ == "__main__":
-    main()
+    if(sys.argv[1]=="True"):
+        DoClusterCuts="true"
+    elif(sys.argv[1]=="False"):
+        DoClusterCuts="false"
+    else:
+        print("Wrong 1st argument!")
+    main(DoClusterCuts)
