@@ -15,7 +15,7 @@ class GlobalOptions
 {
 public:
   bool isDebugRun = false; // Active if jobId = 0 to only run over one file for debugging
-  int jobId = 0; // Slurm jobId
+  // int jobId = 0; // Slurm jobId
   bool isMC = false;
   TString dataSet;
   TString dataSetLabel;
@@ -29,17 +29,23 @@ public:
   bool doPi0 = false;
   GlobalOptions(TString AnalysisDirectory, int jobId);
   // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
-  ~GlobalOptions(){};
+  ~GlobalOptions() {};
 };
 
 // GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
 GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 {
-  if(jobId == 0){
+  if (jobId < 0)
+    FATAL("Negative jobId")
+  if (!jobId)
+    LOG("This is a debug run")
+
+  if (jobId == 0)
+  {
     isDebugRun = true;
     debugLevel = 3;
   }
-  
+
   analysisDirPath = AnalysisDirectory;
   std::stringstream ss((std::string)AnalysisDirectory.Data());
   std::string word;
@@ -81,7 +87,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
           _______\/////////___\////////\//__\/////////_____\/////_____\///__________\///__\///___\///___\///____\//////////________\///________\///____________\//////////____\//////////__
         )" << '\n';
 
-  LOG(Form("Analyzing %s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doPi0 ? " + Pi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
+  INFO(Form("Analyzing %s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doPi0 ? " + Pi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
 }
 
 // Returns the fraction of a cone at Eta = cEta and radius r that lies within the acceptance of a detector covering +-maxEta

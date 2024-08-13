@@ -9,12 +9,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 {
 //General:
   ENTER
-
-  if (jobId < 0)
-    FATAL("Negative jobId")
-  if(!jobId)
-    LOG("This is a debug run")
-  //Set global options
+    
   GlobalOptions optns(AnalysisDirectory, jobId);
   //Create output file
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
@@ -46,8 +41,8 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<GammaJetPair> GammaJetPairs;
   std::vector<Pi0> Pi0s;
-  //Load input data into TChain.
-  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), jobId));
+
+  TChain *chain = readTree(Form("%s/../InputFiles/InputFiles_group_%d.txt", AnalysisDirectory.Data(), !jobId ? 1 : jobId), optns);
 
   optns.TreeFormat = listTreeBranches(chain);
 

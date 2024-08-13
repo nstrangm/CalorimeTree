@@ -262,6 +262,7 @@ TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
   TH1F *hJetArea = new TH1F("hJetArea", "hArea", 100, 0., 1.);
   TH1F *hJetNch = new TH1F("hJetNch", "hNch", 51, -0.5, 50.5);
   TH1F *hJetNclus = new TH1F("hJetNclus", "hNclus", 51, -0.5, 50.5);
+  TH1F *hJetNconstits = new TH1F("hJetNconstits", "hNconstits", 51, -0.5, 50.5);
   TH2F *hJetEtaPhi = new TH2F("hJetEtaPhi", "hJetPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
 
   // ------------------> MC Jet QA histograms
@@ -530,6 +531,7 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       ((TH1F *)dir->FindObject("hJetArea"))->Fill(obj.at(i).Area, eventWeight);
       ((TH1F *)dir->FindObject("hJetNch"))->Fill(obj.at(i).Nch, eventWeight);
       ((TH1F *)dir->FindObject("hJetNclus"))->Fill(obj.at(i).Nclus, eventWeight);
+      ((TH1F *)dir->FindObject("hJetNconstits"))->Fill(obj.at(i).Nconstits, eventWeight);
       ((TH2F *)dir->FindObject("hJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
     }
   }

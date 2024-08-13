@@ -42,7 +42,7 @@ TString GetTreeName(TString InputFileNamesFile)
 }
 
 // Function that creates a chain, adds all trees listed in "InputFileNamesFile" to the chain and returns it
-TChain *readTree(TString InputFileNamesFile)
+TChain *readTree(TString InputFileNamesFile, GlobalOptions optns)
 {
   TString treeName = GetTreeName(InputFileNamesFile);
   TChain *tree = new TChain(treeName);
@@ -66,6 +66,8 @@ TChain *readTree(TString InputFileNamesFile)
     f->Close();
     INFO(Form("Adding tree %s from %s to chain", treeName.Data(), tempLine.Data()))
     tree->Add(Form("%s", tempLine.Data()));
+    if (optns.isDebugRun)
+      break;
   }
   return tree;
 }
@@ -86,7 +88,7 @@ int listTreeBranches(TChain *tree)
     if (b < branchList->GetEntries() - 1)
       sBranchList += ", ";
   }
-  INFO(Form("Your tree %s contains the following %d branches:\n%s\n\n", tree->GetName(), branchList->GetEntries(), sBranchList.Data()))
+  INFO(Form("Your tree %s contains the following %d branches:%s\n", tree->GetName(), branchList->GetEntries(), sBranchList.Data()))
   if (sBranchList.Contains(", Event_NPrimaryTracks, Event_IsTriggered, Event_ZVertex, Event_Quality, Event_NotAccepted, "))
     return kRun2Tree;
   else if (sBranchList.Contains("event_multiplicity, event_centrality, event_rho, event_eventselection, event_alias")) // Add Run3 tree specific branches here
@@ -154,18 +156,18 @@ public:
   std::vector<float> *Cluster_DistanceToBadChannel = 0; // Run 2 Also available in run3 but as ushort and not used currently -> Omitted for now
 
   // -------------- Jet branches ---------------
-  std::vector<float> *Jet_Pt = 0;                // Run     3
-  std::vector<float> *Jet_E = 0;                 // Run     3
-  std::vector<float> *Jet_M = 0;                 // Run     3
-  std::vector<float> *Jet_Px = 0;                // Run 2
-  std::vector<float> *Jet_Py = 0;                // Run 2
-  std::vector<float> *Jet_Pz = 0;                // Run 2
-  std::vector<float> *Jet_Eta = 0;               // Run     3
-  std::vector<float> *Jet_Phi = 0;               // Run     3
-  std::vector<float> *Jet_Area = 0;              // Run 2 + 3
-  std::vector<unsigned short> *Jet_Nch = 0;      // Run 2
-  std::vector<unsigned short> *Jet_Nclus = 0;    // Run 2
-  std::vector<unsigned short> *Jet_Constits = 0; // Run     3
+  std::vector<float> *Jet_Pt = 0;                 // Run     3
+  std::vector<float> *Jet_E = 0;                  // Run     3
+  std::vector<float> *Jet_M = 0;                  // Run     3
+  std::vector<float> *Jet_Px = 0;                 // Run 2
+  std::vector<float> *Jet_Py = 0;                 // Run 2
+  std::vector<float> *Jet_Pz = 0;                 // Run 2
+  std::vector<float> *Jet_Eta = 0;                // Run     3
+  std::vector<float> *Jet_Phi = 0;                // Run     3
+  std::vector<float> *Jet_Area = 0;               // Run 2 + 3
+  std::vector<unsigned short> *Jet_Nch = 0;       // Run 2
+  std::vector<unsigned short> *Jet_Nclus = 0;     // Run 2
+  std::vector<unsigned short> *Jet_Nconstits = 0; // Run     3
 
   // ###########################################
   // Members that will be matched to MC branches
@@ -347,7 +349,7 @@ void TreeBuffer::ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns)
     tree->SetBranchAddress("jet_data_energy", &Jet_E);
     tree->SetBranchAddress("jet_data_mass", &Jet_M);
     tree->SetBranchAddress("jet_data_area", &Jet_Area);
-    tree->SetBranchAddress("jet_data_nconstituents", &Jet_Constits);
+    tree->SetBranchAddress("jet_data_nconstituents", &Jet_Nconstits);
   }
 }
 
