@@ -1,105 +1,80 @@
+# Standard Cut - all other cuts inherit from this one in case they dont have the respective setting
+###################################################################################################
 Standard:
 
+  # ----------------------------> Cluster Cuts
   #RapidityCut
   cluster_max_rapidity: 0.8
-  #Acceptance cuts
-  #EMcal
-  cluster_min_EMcal_eta: -0.67
-  cluster_max_EMcal_eta: 0.67
-  cluster_min_EMcal_phi: 1.4
-  cluster_max_EMcal_phi: 3.28
 
-  #DCal diregarding hole
-  cluster_min_Dcal_eta: -0.67
-  cluster_max_Dcal_eta: 0.67
-  cluster_min_Dcal_phi: 4.57
-  cluster_max_Dcal_phi: 5.70
-
-  #DCal hole
-  cluster_min_DcalHole_eta: -0.23
-  cluster_max_DcalHole_eta: 0.23
-  cluster_min_DcalHole_phi: 5.58
-  cluster_max_DcalHole_phi: 5.70
-
+  # Acceptance cuts
+  cluster_Acceptance: EMC
 
   #Cluster energy
-  cluster_min_E: 0.7
+  cluster_min_E: 12.
   cluster_max_E: 200.
-  #Cluster number of cells
-  cluster_min_Nc: 2
-  #Cluster number of local maxima
-  cluster_max_NLM: 2
-  #Cluster distance to bad channel
-  cluster_min_distbadch: 2.
+
+  cluster_min_Nc: 2 #Cluster number of cells
+  cluster_max_NLM: 2 #Cluster number of local maxima
+  cluster_min_distbadch: 1. #Cluster distance to bad channel
+
   #Cluster long axis
   cluster_min_M02: 0.1
   cluster_max_M02: 0.3
+
   #Cluster-track matching
   cluster_min_MatchDeta: -0.05
   cluster_max_MatchDeta: 0.05
   cluster_min_MatchDphi: -0.05
   cluster_max_MatchDphi: 0.05
-
   cluster_max_MatchVeto: 1.75
-  #Cluster exotic removal
-  cluster_max_Fplus: 0.97
-  #Closter isolation
-  cluster_max_ptiso: 1.5
 
-  
+  cluster_max_Fplus: 0.97 #Cluster exotic removal
+  cluster_max_ptiso: 1.5 #Cluster isolation
+
   cluster_applyNonLin: false
   useRhoInsteadOfPerpCone: false
 
+  # ----------------------------> Jet Cuts
+  jetMinPt: 8.
+  jet_Acceptance: TPC_Fiducial
+
+# No Cuts - all cuts fully open
+###################################################################################################
 NoCuts:
-  #Acceptance cuts
-  #EMcal
-  cluster_min_EMcal_eta: -100
-  cluster_max_EMcal_eta: 100
-  cluster_min_EMcal_phi: 0
-  cluster_max_EMcal_phi: 6.3
 
-  #DCal diregarding hole
-  cluster_min_Dcal_eta: -100
-  cluster_max_Dcal_eta: 100
-  cluster_min_Dcal_phi: 0
-  #4.57
-  cluster_max_Dcal_phi: 6.3
-  #5.70
+  # ----------------------------> Cluster Cuts
+  #RapidityCut
+  cluster_max_rapidity: 100
 
-  #DCal hole
-  cluster_min_DcalHole_eta: 0
-  cluster_max_DcalHole_eta: 0
-  cluster_min_DcalHole_phi: 0
-  cluster_max_DcalHole_phi: 0
-
+  # Acceptance cuts
+  cluster_Acceptance: NoCut
 
   #Cluster energy
   cluster_min_E: 0
   cluster_max_E: 200.
-  #Cluster number of cells
-  cluster_min_Nc: 0
-  #Cluster number of local maxima
-  cluster_max_NLM: 10
-  #Cluster distance to bad channel
-  cluster_min_distbadch: 0
+
+  cluster_min_Nc: 0 #Cluster number of cells
+  cluster_max_NLM: 10 #Cluster number of local maxima
+  cluster_min_distbadch: 0 #Cluster distance to bad channel
+
   #Cluster long axis
-  cluster_min_M02: 0
+  cluster_min_M02: 0 
   cluster_max_M02: 100
+
   #Cluster-track matching
   cluster_min_MatchDeta: -100
   cluster_max_MatchDeta: 100
   cluster_min_MatchDphi: -100
   cluster_max_MatchDphi: 100
-
   cluster_max_MatchVeto: 0
-  #Cluster exotic removal
-  cluster_max_Fplus: 1
-  #Closter isolation
-  cluster_max_ptiso: 100
 
-  
-  cluster_applyNonLin: false
-  useRhoInsteadOfPerpCone: false
+  cluster_max_Fplus: 1 #Cluster exotic removal
+  cluster_max_ptiso: 100 #Closter isolation
+
+  # ----------------------------> Jet Cuts
+  jetMinPt: 0.
+  jet_Acceptance: NoCut
+
 
 Cluster_E_max_increased:
   cluster_max_E: 220.

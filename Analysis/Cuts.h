@@ -18,13 +18,12 @@ private:
 
 public:
   EventCuts(GlobalOptions optns);
-  ~EventCuts(){};
+  ~EventCuts() {};
   bool PassedCuts(Event &Event);
 };
 
 EventCuts::EventCuts(GlobalOptions optns)
 {
-
 }
 
 bool EventCuts::PassedCuts(Event &Event)
@@ -68,7 +67,7 @@ private:
 
 public:
   GammaGenCuts(GlobalOptions optns);
-  ~GammaGenCuts(){};
+  ~GammaGenCuts() {};
 
   bool PassedGammaGenCuts(GammaGen GammaGen);
   bool isSignal(GammaGen GammaGen);
@@ -85,33 +84,22 @@ GammaGenCuts::GammaGenCuts(GlobalOptions optns)
   YAML::Node standardcut = ycut["Standard"];
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
   // Acceptance cut
-  // EMcal
-  EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
-  EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
-  EMCalEtaPhiMinMax[1][0] = chosencut["cluster_min_EMcal_phi"].IsDefined() ? chosencut["cluster_min_EMcal_phi"].as<float>() : standardcut["cluster_min_EMcal_phi"].as<float>();
-  EMCalEtaPhiMinMax[1][1] = chosencut["cluster_max_EMcal_phi"].IsDefined() ? chosencut["cluster_max_EMcal_phi"].as<float>() : standardcut["cluster_max_EMcal_phi"].as<float>();
-  // DCal
-  DCalEtaPhiMinMax[0][0] = chosencut["cluster_min_Dcal_eta"].IsDefined() ? chosencut["cluster_min_Dcal_eta"].as<float>() : standardcut["cluster_min_Dcal_eta"].as<float>();
-  DCalEtaPhiMinMax[0][1] = chosencut["cluster_max_Dcal_eta"].IsDefined() ? chosencut["cluster_max_Dcal_eta"].as<float>() : standardcut["cluster_max_Dcal_eta"].as<float>();
-  DCalEtaPhiMinMax[1][0] = chosencut["cluster_min_Dcal_phi"].IsDefined() ? chosencut["cluster_min_Dcal_phi"].as<float>() : standardcut["cluster_min_Dcal_phi"].as<float>();
-  DCalEtaPhiMinMax[1][1] = chosencut["cluster_max_Dcal_phi"].IsDefined() ? chosencut["cluster_max_Dcal_phi"].as<float>() : standardcut["cluster_max_Dcal_phi"].as<float>();
-  // DCal hole
-  DCalHoleEtaPhiMinMax[0][0] = chosencut["cluster_min_DcalHole_eta"].IsDefined() ? chosencut["cluster_min_DcalHole_eta"].as<float>() : standardcut["cluster_min_DcalHole_eta"].as<float>();
-  DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
-  DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
-  DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+  TString ClusterAcceptance = (TString)(chosencut["cluster_Acceptance"].IsDefined() ? chosencut["cluster_Acceptance"].as<std::string>() : standardcut["cluster_Acceptance"].as<std::string>()).c_str();
+  SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
   // Load Isolation cut
   pTisoCorrectedMax = chosencut["cluster_max_ptiso"].IsDefined() ? chosencut["cluster_max_ptiso"].as<float>() : standardcut["cluster_max_ptiso"].as<float>();
   RapidityMax = chosencut["cluster_max_rapidity"].IsDefined() ? chosencut["cluster_max_rapidity"].as<float>() : standardcut["cluster_max_rapidity"].as<float>();
-  //useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
+  
+  LOG(Form("Gen Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
 }
 
 bool GammaGenCuts::PassedGammaGenCuts(GammaGen GammaGen)
 {
   bool passed = true;
-  //Raise fatal if eta for MC is outside allowed range:
-  if(TMath::Abs(GammaGen.Eta())>RapidityMax){
-    FATAL(Form("Generated photon found with |eta|>%f  |%f|>%f",RapidityMax,GammaGen.Eta(),RapidityMax))
+  // Raise fatal if eta for MC is outside allowed range:
+  if (TMath::Abs(GammaGen.Eta()) > RapidityMax)
+  {
+    FATAL(Form("Generated photon found with |eta|>%f  |%f|>%f", RapidityMax, GammaGen.Eta(), RapidityMax))
   }
   // Check GammaGen acceptance
   if (!GammaGen.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !GammaGen.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
@@ -164,7 +152,7 @@ bool GammaGenCuts::PassedGammaGenIsolationCuts(GammaGen GammaGen)
 void doGammaGenIsolationCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts GammaGenCuts)
 {
   std::vector<GammaGen>::iterator iter;
-  for(iter = GammaGens.begin();iter != GammaGens.end();)
+  for (iter = GammaGens.begin(); iter != GammaGens.end();)
   {
     if (!GammaGenCuts.PassedGammaGenIsolationCuts(*iter))
     {
@@ -176,8 +164,6 @@ void doGammaGenIsolationCuts(std::vector<GammaGen> &GammaGens, GammaGenCuts Gamm
     }
   }
 }
-
-
 
 // -----------------------------------------------------------
 // -----------------------------------------------------------
@@ -195,7 +181,7 @@ private:
   float EMax = 0.;
   unsigned short NcellsMin = 0;
   unsigned short NLMMax = 0;
-  int DistanceToBadChannelMin = 0;
+  float DistanceToBadChannelMin = 0;
   float M02Min = 0.;
   float M02Max = 0.;
   float MatchDetaMin = 0;
@@ -209,7 +195,7 @@ private:
 
 public:
   IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas);
-  ~IsoGammaCuts(){};
+  ~IsoGammaCuts() {};
 
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
@@ -217,7 +203,7 @@ public:
   bool PassedIsoGammaCuts(IsoGamma IsoGamma);
   bool PassedClusterCuts(IsoGamma IsoGamma);
   bool isSignal(IsoGamma IsoGamma);
-  bool isSignalClusterLevelIso(IsoGamma IsoGamma);//For troubleshooting, use "isSignal" for actual signal def.
+  bool isSignalClusterLevelIso(IsoGamma IsoGamma); // For troubleshooting, use "isSignal" for actual signal def.
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -234,21 +220,9 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   applyNonLin = chosencut["cluster_applyNonLin"].IsDefined() ? chosencut["cluster_applyNonLin"].as<bool>() : standardcut["cluster_applyNonLin"].as<bool>();
 
   // Acceptance cuts
-  // EMcal
-  EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
-  EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
-  EMCalEtaPhiMinMax[1][0] = chosencut["cluster_min_EMcal_phi"].IsDefined() ? chosencut["cluster_min_EMcal_phi"].as<float>() : standardcut["cluster_min_EMcal_phi"].as<float>();
-  EMCalEtaPhiMinMax[1][1] = chosencut["cluster_max_EMcal_phi"].IsDefined() ? chosencut["cluster_max_EMcal_phi"].as<float>() : standardcut["cluster_max_EMcal_phi"].as<float>();
-  // DCal
-  DCalEtaPhiMinMax[0][0] = chosencut["cluster_min_Dcal_eta"].IsDefined() ? chosencut["cluster_min_Dcal_eta"].as<float>() : standardcut["cluster_min_Dcal_eta"].as<float>();
-  DCalEtaPhiMinMax[0][1] = chosencut["cluster_max_Dcal_eta"].IsDefined() ? chosencut["cluster_max_Dcal_eta"].as<float>() : standardcut["cluster_max_Dcal_eta"].as<float>();
-  DCalEtaPhiMinMax[1][0] = chosencut["cluster_min_Dcal_phi"].IsDefined() ? chosencut["cluster_min_Dcal_phi"].as<float>() : standardcut["cluster_min_Dcal_phi"].as<float>();
-  DCalEtaPhiMinMax[1][1] = chosencut["cluster_max_Dcal_phi"].IsDefined() ? chosencut["cluster_max_Dcal_phi"].as<float>() : standardcut["cluster_max_Dcal_phi"].as<float>();
-  // DCal hole
-  DCalHoleEtaPhiMinMax[0][0] = chosencut["cluster_min_DcalHole_eta"].IsDefined() ? chosencut["cluster_min_DcalHole_eta"].as<float>() : standardcut["cluster_min_DcalHole_eta"].as<float>();
-  DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
-  DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
-  DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+  TString ClusterAcceptance = (TString)(chosencut["cluster_Acceptance"].IsDefined() ? chosencut["cluster_Acceptance"].as<std::string>() : standardcut["cluster_Acceptance"].as<std::string>()).c_str();
+  SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
+
   // Load E cut
   EMin = chosencut["cluster_min_E"].IsDefined() ? chosencut["cluster_min_E"].as<float>() : standardcut["cluster_min_E"].as<float>();
   EMax = chosencut["cluster_max_E"].IsDefined() ? chosencut["cluster_max_E"].as<float>() : standardcut["cluster_max_E"].as<float>();
@@ -281,7 +255,8 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
 
   useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 
-  LOG(Form("%s IsoGammaCuts: applyNonLin = %s, %.1f < E < %.1f, NCells >= %d, NLM <= %d, DistToBadChannel >= %d, %.1f < M02 < %.1f, F+ <= %.1f, pTIso < %.1f GeV/c, useRhoInsteadOfPerpCone = %s", optns.cutString.Data(), applyNonLin ? "true" : "false", EMin, EMax, NcellsMin, NLMMax, DistanceToBadChannelMin, M02Min, M02Max, FplusMax, pTisoCorrectedMax, useRhoInsteadOfPerpCone ? "true" : "false"))
+  LOG(Form("%s IsoGammaCuts: applyNonLin = %s, %.1f < E < %.1f, NCells >= %d, NLM <= %d, DistToBadChannel >= %.1f, %.1f < M02 < %.1f, F+ <= %.1f, pTIso < %.1f GeV/c, useRhoInsteadOfPerpCone = %s", optns.cutString.Data(), applyNonLin ? "true" : "false", EMin, EMax, NcellsMin, NLMMax, DistanceToBadChannelMin, M02Min, M02Max, FplusMax, pTisoCorrectedMax, useRhoInsteadOfPerpCone ? "true" : "false"))
+  LOG(Form("Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
 }
 
 bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
@@ -311,7 +286,7 @@ bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
 bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
 {
   bool passed = true;
-  //Check if event was loaded.
+  // Check if event was loaded.
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(0., IsoGamma.Pt(), IsoGamma.EventWeight);
   if (hQADir != nullptr)
@@ -361,11 +336,12 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(5., IsoGamma.Pt(), IsoGamma.EventWeight);
-   //Check track matching
-  if (IsoGamma.MatchedTrack.P>0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
+  // Check track matching
+  if (IsoGamma.MatchedTrack.P > 0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
     passed = false;
-    if (hQADir != nullptr){
+    if (hQADir != nullptr)
+    {
       ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
       ((TH2F *)hQADir->FindObject("hIsoGammadEtadphiCut"))->Fill(IsoGamma.MatchedTrack.dPhi, IsoGamma.MatchedTrack.dEta, IsoGamma.EventWeight);
     }
@@ -386,8 +362,8 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
 
 bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
 {
-  //Calculate generator level isolation:
-  float pTisoGen= IsoGamma.TrueClusterIsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.TrueClusterIsoBckPerp * TMath::Pi() * 0.4 * 0.4;
+  // Calculate generator level isolation:
+  float pTisoGen = IsoGamma.TrueClusterIsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.TrueClusterIsoBckPerp * TMath::Pi() * 0.4 * 0.4;
   if (CheckTagBit(IsoGamma.MCTag, kMCPhoton))
   {
     if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && pTisoGen < pTisoCorrectedMax)
@@ -398,10 +374,10 @@ bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
   return false;
 }
 
-bool IsoGammaCuts::isSignalClusterLevelIso(IsoGamma IsoGamma)//For troubleshooting, use "isSignal" for actual signal def.
+bool IsoGammaCuts::isSignalClusterLevelIso(IsoGamma IsoGamma) // For troubleshooting, use "isSignal" for actual signal def.
 {
-  //Calculate generator level isolation:
-  float pTisoGen= IsoGamma.IsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
+  // Calculate generator level isolation:
+  float pTisoGen = IsoGamma.IsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
   if (CheckTagBit(IsoGamma.MCTag, kMCPhoton))
   {
     if (CheckTagBit(IsoGamma.MCTag, kMCPrompt) || CheckTagBit(IsoGamma.MCTag, kMCFragmentation) && pTisoGen < pTisoCorrectedMax)
@@ -439,7 +415,7 @@ void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
     }
     else
     {
-      ++iter; 
+      ++iter;
     }
   }
 }
@@ -457,9 +433,10 @@ private:
 
 public:
   JetCuts(GlobalOptions optns);
-  ~JetCuts(){};
+  ~JetCuts() {};
   bool PassedCuts(Jet Jet);
   float R = 0.4;
+  float JetEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
 };
 
 JetCuts::JetCuts(GlobalOptions optns)
@@ -472,8 +449,14 @@ JetCuts::JetCuts(GlobalOptions optns)
   YAML::Node standardcut = ycut["Standard"];
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
+  // Acceptance cuts
+  TString JetAcceptance = (TString)(chosencut["jet_Acceptance"].IsDefined() ? chosencut["jet_Acceptance"].as<std::string>() : standardcut["jet_Acceptance"].as<std::string>()).c_str();
+  SetAcceptance(JetAcceptance, JetEtaPhiMinMax, R);
+
   PtMin = chosencut["jetMinPt"].IsDefined() ? chosencut["jetMinPt"].as<float>() : standardcut["jetMinPt"].as<float>();
 
+  LOG(Form("%s JetCuts: pT > %.1f GeV/c", optns.cutString.Data(), PtMin))
+  LOG(Form("Jet %s Acceptance: %.2f < Jet_Eta < %.2f | %.2f < Jet_Phi < %.2f", JetAcceptance.Data(), JetEtaPhiMinMax[0][0], JetEtaPhiMinMax[0][1], JetEtaPhiMinMax[1][0], JetEtaPhiMinMax[1][1]))
 }
 
 bool JetCuts::PassedCuts(Jet Jet)
@@ -498,7 +481,7 @@ void doJetCuts(std::vector<Jet> &Jets, JetCuts JetCuts)
     }
     else
     {
-      ++iter; 
+      ++iter;
     }
   }
 }
@@ -516,13 +499,12 @@ private:
 
 public:
   Pi0Cuts(GlobalOptions optns);
-  ~Pi0Cuts(){};
+  ~Pi0Cuts() {};
   bool PassedCuts(Pi0 Pi0);
 };
 
 Pi0Cuts::Pi0Cuts(GlobalOptions optns)
 {
-
 }
 
 bool Pi0Cuts::PassedCuts(Pi0 Pi0)

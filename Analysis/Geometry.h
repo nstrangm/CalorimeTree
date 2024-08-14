@@ -45,3 +45,77 @@ float PyFromPtPhi(float Pt, float Phi){
 float PzFromPtEta(float Pt, float Eta){
     return Pt*TMath::Tan(ThetaFromEta(Eta));
 }
+
+
+
+
+void SetAcceptance(TString ClusterAcceptance, float EMCalEtaPhiMinMax[2][2], float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2], float FiducialSpace = 0.){
+  if(ClusterAcceptance == "NoCut"){
+  // EMCal
+  EMCalEtaPhiMinMax[0][0] = -1E3;
+  EMCalEtaPhiMinMax[0][1] = 1E3;
+  EMCalEtaPhiMinMax[1][0] = -1E3;
+  EMCalEtaPhiMinMax[1][1] = 1E3;
+  // DCal
+  DCalEtaPhiMinMax[0][0] = -1E3;
+  DCalEtaPhiMinMax[0][1] = 1E3;
+  DCalEtaPhiMinMax[1][0] = -1E3;
+  DCalEtaPhiMinMax[1][1] = 1E3;
+  // DCal hole
+  DCalHoleEtaPhiMinMax[0][0] = 0.;
+  DCalHoleEtaPhiMinMax[0][1] = 0.;
+  DCalHoleEtaPhiMinMax[1][0] = 0.;
+  DCalHoleEtaPhiMinMax[1][1] = 0.;
+  } else if(ClusterAcceptance == "EMC"){
+  // EMCal
+  EMCalEtaPhiMinMax[0][0] = -0.67;
+  EMCalEtaPhiMinMax[0][1] = 0.67;
+  EMCalEtaPhiMinMax[1][0] = 1.4;
+  EMCalEtaPhiMinMax[1][1] = 3.28;
+  // DCal
+  DCalEtaPhiMinMax[0][0] = -0.67;
+  DCalEtaPhiMinMax[0][1] = 0.67;
+  DCalEtaPhiMinMax[1][0] = 4.57;
+  DCalEtaPhiMinMax[1][1] = 5.70;
+  // DCal hole
+  DCalHoleEtaPhiMinMax[0][0] = -0.23;
+  DCalHoleEtaPhiMinMax[0][1] = 0.23;
+  DCalHoleEtaPhiMinMax[1][0] = 4.57;
+  DCalHoleEtaPhiMinMax[1][1] = 5.58;
+  } else if(ClusterAcceptance == "EMC_Fiducial"){
+  // EMCal
+  EMCalEtaPhiMinMax[0][0] = -0.67 + FiducialSpace;
+  EMCalEtaPhiMinMax[0][1] = 0.67 - FiducialSpace;
+  EMCalEtaPhiMinMax[1][0] = 1.4 + FiducialSpace;
+  EMCalEtaPhiMinMax[1][1] = 3.28 - FiducialSpace;
+  // DCal
+  DCalEtaPhiMinMax[0][0] = -0.67 + FiducialSpace;
+  DCalEtaPhiMinMax[0][1] = 0.67 - FiducialSpace;
+  DCalEtaPhiMinMax[1][0] = 4.57 + FiducialSpace;
+  DCalEtaPhiMinMax[1][1] = 5.70 - FiducialSpace;
+  // DCal hole
+  DCalHoleEtaPhiMinMax[0][0] = -0.23;
+  DCalHoleEtaPhiMinMax[0][1] = 0.23;
+  DCalHoleEtaPhiMinMax[1][0] = 4.57;
+  DCalHoleEtaPhiMinMax[1][1] = 5.58;
+  }
+}
+
+void SetAcceptance(TString JetAcceptance, float JetEtaPhiMinMax[2][2], float FiducialSpace = 0.){
+  if(JetAcceptance == "TPC"){
+    JetEtaPhiMinMax[0][0] = -0.9;
+    JetEtaPhiMinMax[0][1] = 0.9;
+    JetEtaPhiMinMax[1][0] = 0.;
+    JetEtaPhiMinMax[1][1] = 2*3.1416;
+  } else if(JetAcceptance == "TPC_Fiducial"){
+    JetEtaPhiMinMax[0][0] = -0.9 + FiducialSpace;
+    JetEtaPhiMinMax[0][1] = 0.9 - FiducialSpace;
+    JetEtaPhiMinMax[1][0] = 0.;
+    JetEtaPhiMinMax[1][1] = 2*3.1416;
+  } else if(JetAcceptance == "NoCut"){
+    JetEtaPhiMinMax[0][0] = -1E3;
+    JetEtaPhiMinMax[0][1] = 1E3;
+    JetEtaPhiMinMax[1][0] = -1E3;
+    JetEtaPhiMinMax[1][1] = 1E3;
+  }
+}
