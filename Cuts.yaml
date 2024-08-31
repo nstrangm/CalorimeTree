@@ -10,7 +10,7 @@ Standard:
   cluster_Acceptance: EMC
 
   #Cluster energy
-  cluster_min_E: 12.
+  cluster_min_E: 0.7
   cluster_max_E: 200.
 
   cluster_min_Nc: 2 #Cluster number of cells
@@ -62,14 +62,59 @@ NoCuts:
   cluster_max_M02: 100
 
   #Cluster-track matching
-  cluster_min_MatchDeta: -100
-  cluster_max_MatchDeta: 100
-  cluster_min_MatchDphi: -100
-  cluster_max_MatchDphi: 100
+  cluster_min_MatchDeta: 0
+  cluster_max_MatchDeta: 0
+  cluster_min_MatchDphi: 0
+  cluster_max_MatchDphi: 0
   cluster_max_MatchVeto: 0
 
   cluster_max_Fplus: 1 #Cluster exotic removal
   cluster_max_ptiso: 100 #Closter isolation
+
+  # ----------------------------> Jet Cuts
+  jetMinPt: 0.
+  jet_Acceptance: NoCut
+
+
+Cluster_E_max_increased:
+  cluster_max_E: 220.
+
+Cluster_E_max_decreased:
+  cluster_max_E: 180.
+
+
+# IsoOnly - Only isolation cut applied
+###################################################################################################
+IsoOnly:
+
+  # ----------------------------> Cluster Cuts
+  #RapidityCut
+  cluster_max_rapidity: 100
+
+  # Acceptance cuts
+  cluster_Acceptance: NoCut
+
+  #Cluster energy
+  cluster_min_E: 0
+  cluster_max_E: 200.
+
+  cluster_min_Nc: 0 #Cluster number of cells
+  cluster_max_NLM: 10 #Cluster number of local maxima
+  cluster_min_distbadch: 0 #Cluster distance to bad channel
+
+  #Cluster long axis
+  cluster_min_M02: 0 
+  cluster_max_M02: 100
+
+  #Cluster-track matching
+  cluster_min_MatchDeta: 0
+  cluster_max_MatchDeta: 0
+  cluster_min_MatchDphi: 0
+  cluster_max_MatchDphi: 0
+  cluster_max_MatchVeto: 0
+
+  cluster_max_Fplus: 1 #Cluster exotic removal
+  cluster_max_ptiso: 1.5 #Closter isolation
 
   # ----------------------------> Jet Cuts
   jetMinPt: 0.

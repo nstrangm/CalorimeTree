@@ -20,3 +20,7 @@ float pTIsoABCDCuts[4] = {-50,1.5,4.0,100};
 float M02ABCDCuts[4] = {0.1,0.3,0.4,2.0};
 
 #endif //_BINNINGS_H_
+
+//ML pT-binning: int npTbinEdges=17;
+//float pTbinEdges[17] = {3,4,4.5,5,5.5,6,6.5,7,7.5,8,9,10,12.5,15,17.5,20};
+//float pTbinsToplot[16] = {3.5,4.25,4.75,5.25,5.75,6.25,6.75,7.25,7.75,8.5,9.5,11.25,13.75,16.25,18.75};

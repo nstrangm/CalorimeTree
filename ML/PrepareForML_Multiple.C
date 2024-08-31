@@ -143,6 +143,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
     float Cluster_SM = 0;                   //unsigned short
     float Cluster_NCells = 0;               //unsigned short
     float Cluster_MatchTrackIsConv = 0;      //bool
+    float Event_Weight = 0;
 
     caloclustertree->Branch("Cluster_E",&Cluster_E);
     caloclustertree->Branch("Cluster_Pt",&Cluster_Pt);
@@ -166,6 +167,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
 
     bool Cluster_isSignal = 0;
     caloclustertree->Branch("Cluster_isSignal",&Cluster_isSignal);
+    caloclustertree->Branch("Event_Weight",&Event_Weight);
 
 //Load isogamma cuts, necessary to determine if cluster issignal:
     TDirectory* dummy= new TDirectory();
@@ -226,6 +228,7 @@ void RestructureTreeForML_TreeUtils(TString AnalysisDirectory,TString inputfilen
 
             if(optns.isMC){
                 Cluster_isSignal = cuts.isSignal(clusters.at(icluster));
+                Event_Weight = event.weight;
             }
 
             caloclustertree->Fill();
@@ -255,41 +258,23 @@ void DoClusterCuts(std::vector<IsoGamma> &IsoGammas, GlobalOptions optns){
     float EMCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
     float DCalEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
     float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
-    // EMcal
-    EMCalEtaPhiMinMax[0][0] = chosencut["cluster_min_EMcal_eta"].IsDefined() ? chosencut["cluster_min_EMcal_eta"].as<float>() : standardcut["cluster_min_EMcal_eta"].as<float>();
-    EMCalEtaPhiMinMax[0][1] = chosencut["cluster_max_EMcal_eta"].IsDefined() ? chosencut["cluster_max_EMcal_eta"].as<float>() : standardcut["cluster_max_EMcal_eta"].as<float>();
-    EMCalEtaPhiMinMax[1][0] = chosencut["cluster_min_EMcal_phi"].IsDefined() ? chosencut["cluster_min_EMcal_phi"].as<float>() : standardcut["cluster_min_EMcal_phi"].as<float>();
-    EMCalEtaPhiMinMax[1][1] = chosencut["cluster_max_EMcal_phi"].IsDefined() ? chosencut["cluster_max_EMcal_phi"].as<float>() : standardcut["cluster_max_EMcal_phi"].as<float>();
-    // DCal
-    DCalEtaPhiMinMax[0][0] = chosencut["cluster_min_Dcal_eta"].IsDefined() ? chosencut["cluster_min_Dcal_eta"].as<float>() : standardcut["cluster_min_Dcal_eta"].as<float>();
-    DCalEtaPhiMinMax[0][1] = chosencut["cluster_max_Dcal_eta"].IsDefined() ? chosencut["cluster_max_Dcal_eta"].as<float>() : standardcut["cluster_max_Dcal_eta"].as<float>();
-    DCalEtaPhiMinMax[1][0] = chosencut["cluster_min_Dcal_phi"].IsDefined() ? chosencut["cluster_min_Dcal_phi"].as<float>() : standardcut["cluster_min_Dcal_phi"].as<float>();
-    DCalEtaPhiMinMax[1][1] = chosencut["cluster_max_Dcal_phi"].IsDefined() ? chosencut["cluster_max_Dcal_phi"].as<float>() : standardcut["cluster_max_Dcal_phi"].as<float>();
-    // DCal hole
-    DCalHoleEtaPhiMinMax[0][0] = chosencut["cluster_min_DcalHole_eta"].IsDefined() ? chosencut["cluster_min_DcalHole_eta"].as<float>() : standardcut["cluster_min_DcalHole_eta"].as<float>();
-    DCalHoleEtaPhiMinMax[0][1] = chosencut["cluster_max_DcalHole_eta"].IsDefined() ? chosencut["cluster_max_DcalHole_eta"].as<float>() : standardcut["cluster_max_DcalHole_eta"].as<float>();
-    DCalHoleEtaPhiMinMax[1][0] = chosencut["cluster_min_DcalHole_phi"].IsDefined() ? chosencut["cluster_min_DcalHole_phi"].as<float>() : standardcut["cluster_min_DcalHole_phi"].as<float>();
-    DCalHoleEtaPhiMinMax[1][1] = chosencut["cluster_max_DcalHole_phi"].IsDefined() ? chosencut["cluster_max_DcalHole_phi"].as<float>() : standardcut["cluster_max_DcalHole_phi"].as<float>();
+    TString ClusterAcceptance = (TString)(chosencut["cluster_Acceptance"].IsDefined() ? chosencut["cluster_Acceptance"].as<std::string>() : standardcut["cluster_Acceptance"].as<std::string>()).c_str();
+    SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
     // Load E cut
     float EMin = chosencut["cluster_min_E"].IsDefined() ? chosencut["cluster_min_E"].as<float>() : standardcut["cluster_min_E"].as<float>();
     float EMax = chosencut["cluster_max_E"].IsDefined() ? chosencut["cluster_max_E"].as<float>() : standardcut["cluster_max_E"].as<float>();
-
     // Load min Ncells
     unsigned short NcellsMin = chosencut["cluster_min_Nc"].IsDefined() ? chosencut["cluster_min_Nc"].as<unsigned short>() : standardcut["cluster_min_Nc"].as<unsigned short>();
-
     // Load NLM cut
     unsigned short NLMMax = chosencut["cluster_max_NLM"].IsDefined() ? chosencut["cluster_max_NLM"].as<unsigned short>() : standardcut["cluster_max_NLM"].as<unsigned short>();
-
     // Load min dist to bad channel cut
     float DistanceToBadChannelMin = chosencut["cluster_min_distbadch"].IsDefined() ? chosencut["cluster_min_distbadch"].as<float>() : standardcut["cluster_min_distbadch"].as<float>();
-
     // Load track matching cut
     float MatchDetaMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
     float MatchDetaMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
     float MatchDphiMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
     float MatchDphiMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
     float MatchVetoMax = chosencut["cluster_max_MatchVeto"].IsDefined() ? chosencut["cluster_max_MatchVeto"].as<float>() : standardcut["cluster_max_MatchVeto"].as<float>();
-
     // Load FM+
     float FplusMax = chosencut["cluster_max_Fplus"].IsDefined() ? chosencut["cluster_max_Fplus"].as<float>() : standardcut["cluster_max_Fplus"].as<float>();
 

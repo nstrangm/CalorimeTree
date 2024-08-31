@@ -112,6 +112,11 @@ void CalculateEffPurABCD(string AnalysisDirectoryMC,string AnalysisDirectoryData
 
         PurityClusterCuts = (TH1F*)NSignalClustCut->Clone("PurityClusterCuts");
         PurityClusterCuts->Divide(NClustCut);
+        for(int i=0;i<npTbinEdges2-1;i++){
+          cout<<"pT-bin:"<<pTbinEdges2[i]<<";"<<pTbinEdges2[i+1]<<"\n";
+          cout<<"Integral:"<<"\n";
+          cout<<(NSignalClustIsoCut->Integral(i,i+1)/NClustIsoCut->Integral(i,i+1));
+        }
       //  PurityClusterCuts->Write();
       }
       if(doAcceptance){

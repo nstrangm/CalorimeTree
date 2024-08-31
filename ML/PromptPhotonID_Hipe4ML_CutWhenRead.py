@@ -15,26 +15,12 @@ from hipe4ml.tree_handler import TreeHandler
 from hipe4ml.analysis_utils import train_test_generator
 from hipe4ml import plot_utils
 
-#Funciton
-#Macro takes the following arguments:
-#1: LoadData (True/False) will read the data.
-#2: BuildHyperparams (True/False) decides whether hyperparameter optimization step is run.
-#3: TrainModel (True/False) Decides whether or not to train model.
-#4: model_file_name (Name) Decides under what name the trained model is saved.
-#5: OutDir (FilePath) Decides in what folder the trained models and general QA-output is saved.
-#6: RemoveIsovar (True/False) Decides whether or not to train on PtIso.
-#7: ApplyIsoCut (True/False) Decides whether or not to apply the isolation cut.
-#8: PtCut (High/Low/"other") If high/low the corresponding part of the pT-spectrum is used for training.
-#   if anythin but High/Low is specified, training is pT-integrated.
-#9: Remove Event vars (redundant).
-#10: Test (True/False) if true, program is run on a very small data-subset.
-
-def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, RemoveIsoVar, ApplyIsoCut, PtCut, RemoveEventvars, Test):
+def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Cut,Test):
 
     #Set values:
     #Hyperparameter tuning:
     n_estimator_range=(200, 1000)
-    max_depth_range=(2, 4)
+    max_depth_range=(2, 7)
     learning_rate_range=(0.01, 0.1)
     MaxTrails=100
     TimeOut=120
@@ -49,10 +35,6 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
     if(dataratio_hyperparm+dataratio_test+dataratio_train>1):
         print("Error! Training/Testing and Hyperparameter optimisation data overlap!")
 
-    #Cuts and pT-binning:
-    IsoCut=1.5
-    LowPtlimit=8
-
 
     if(LoadData==True):
 
@@ -62,11 +44,12 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
         if(Test==True):
             InputFiles=["/alf/data/calorimetrees/ML_pp_MC_AOD/6039_20240527-1821_13TeV_JJDCal18/BASE/pTHardBin_6/294013/GammaIsoTree_100_Charged.root"]
         else:
-            InputFiles = glob.glob('**/*.root',recursive=True)
+            InputFiles = glob.glob('**/*ClusterCuts.root',recursive=True)
             InputFiles = [i for i in InputFiles if "294925" not in i]
-            InputFiles = [i for i in InputFiles if "GammaIsoTree_100_Charged.root" in i]
+            InputFiles = [i for i in InputFiles if "GammaIsoTree_100_Charged_ClusterCuts.root" in i]
             InputFiles = [i for i in InputFiles if "285222" not in i]
             InputFiles = [i for i in InputFiles if "287249" not in i]
+            InputFiles = [i for i in InputFiles if "6097_20240626-1006_13TeV_GJDCal18" not in i ]
             print("Length inputfiles")
             print(len(InputFiles))
             #print("Input Files:")
@@ -77,10 +60,13 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
                               ['Cluster_E',
                               'Cluster_Pt', 'Cluster_M02', 'Cluster_M20', 'Cluster_V1SplitMass',
                               'Cluster_MinMassDiffToPi0', 'Cluster_MinMassDiffToEta', 'Cluster_EFrac',
-                              'Cluster_IsoGammaCorrected', 'Cluster_MatchTrackdEta', 'Cluster_MatchTrackdPhi',
-                              'Cluster_MatchTrackP', 'Cluster_MatchTrackPt', 'Cluster_DistanceToBadChannel',
-                              'Cluster_NLM','Cluster_SM','Cluster_NCells', 'Cluster_SplitFloat', 'Cluster_isSignal'],
-                              array_cache="inherit")#'Event_Rho', 'Event_ZVtx', 'Event_NPrimaryTracks', 
+                              'Cluster_IsoGammaCorrected', 'Cluster_DistanceToBadChannel',
+                              'Cluster_NLM','Cluster_NCells', 'Cluster_SplitFloat', 'Cluster_isSignal', 'Event_Weight'],
+                              array_cache="inherit",
+                              cut=Cut)#'Event_Rho', 'Event_ZVtx', 'Event_NPrimaryTracks', 
+        #Cluster ctu vars: 'Cluster_MatchTrackP', 'Cluster_MatchTrackPt', 'Cluster_MatchTrackdEta', 'Cluster_MatchTrackdPhi',
+        print("Data loaded!")
+        print("Cuts applied: " + Cut)
 
 
         #Move working directory back to amortensen
@@ -114,38 +100,38 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
         print("Bkg, TrainTest:")
         print(bkg_TrainTest.get_data_frame().shape[0]/bkgH.get_data_frame().shape[0])
 
-    #Apply isolation cut if required:
-        print("Check that IsoCut did something:")
-        print(signal_HyperParms.get_data_frame().shape[0])
-        if(ApplyIsoCut==True):
-            signal_HyperParms = signal_HyperParms.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
-            bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
-            signal_TrainTest = signal_TrainTest.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
-            bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
-            print("Isolation cut applied to data!")
-            print('Cluster_IsoGammaCorrected < '+str(IsoCut))
-        else:
-            print("Isolation cut not applied to data!")
-        print(signal_HyperParms.get_data_frame().shape[0])
+    ##Apply isolation cut if required:
+    #    print("Check that IsoCut did something:")
+    #    print(signal_HyperParms.get_data_frame().shape[0])
+    #    if(ApplyIsoCut==True):
+    #        signal_HyperParms = signal_HyperParms.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
+    #        bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
+    #        signal_TrainTest = signal_TrainTest.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
+    #        bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_IsoGammaCorrected < '+str(IsoCut))
+    #        print("Isolation cut applied to data!")
+    #        print('Cluster_IsoGammaCorrected < '+str(IsoCut))
+    #    else:
+    #        print("Isolation cut not applied to data!")
+    #    print(signal_HyperParms.get_data_frame().shape[0])
 
-    #Apply pT-cut if required:
-        print("Check that pT-cut did something:")
-        print(signal_HyperParms.get_data_frame().shape[0])
-        if(PtCut=="Low"):
-            signal_HyperParms = signal_HyperParms.get_subset('Cluster_Pt < '+str(LowPtlimit))
-            bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_Pt < '+str(LowPtlimit))
-            signal_TrainTest = signal_TrainTest.get_subset('Cluster_Pt < '+str(LowPtlimit))
-            bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_Pt < '+str(LowPtlimit))
-            print("Training on pT<"+str(LowPtlimit)+"!")
-        elif(PtCut=="High"):
-            signal_HyperParms = signal_HyperParms.get_subset('Cluster_Pt > '+str(LowPtlimit))
-            bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_Pt > '+str(LowPtlimit))
-            signal_TrainTest = signal_TrainTest.get_subset('Cluster_Pt > '+str(LowPtlimit))
-            bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_Pt > '+str(LowPtlimit))
-            print("Training on pT<"+str(LowPtlimit)+"!")
-        else:
-            print("Training pT-integrated!")
-        print(signal_HyperParms.get_data_frame().shape[0])
+    ##Apply pT-cut if required:
+    #    print("Check that pT-cut did something:")
+    #    print(signal_HyperParms.get_data_frame().shape[0])
+    #    if(PtCut=="Low"):
+    #        signal_HyperParms = signal_HyperParms.get_subset('Cluster_Pt < '+str(LowPtlimit))
+    #        bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_Pt < '+str(LowPtlimit))
+    #        signal_TrainTest = signal_TrainTest.get_subset('Cluster_Pt < '+str(LowPtlimit))
+    #        bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_Pt < '+str(LowPtlimit))
+    #        print("Training on pT<"+str(LowPtlimit)+"!")
+    #    elif(PtCut=="High"):
+    #        signal_HyperParms = signal_HyperParms.get_subset('Cluster_Pt > '+str(LowPtlimit))
+    #        bkg_HyperParms = bkg_HyperParms.get_subset('Cluster_Pt > '+str(LowPtlimit))
+    #        signal_TrainTest = signal_TrainTest.get_subset('Cluster_Pt > '+str(LowPtlimit))
+    #        bkg_TrainTest = bkg_TrainTest.get_subset('Cluster_Pt > '+str(LowPtlimit))
+    #        print("Training on pT<"+str(LowPtlimit)+"!")
+    #    else:
+    #        print("Training pT-integrated!")
+    #    print(signal_HyperParms.get_data_frame().shape[0])
 
 
         #Generate train/test datasets:
@@ -158,8 +144,10 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
         #Do correlation plots between signal and data:
         vars_to_draw = signalH.get_var_names()
         print(vars_to_draw)
+        print(signalH.get_data_frame().keys())
         vars_to_draw.remove('Cluster_isSignal')
         vars_to_draw.remove('Cluster_SplitFloat')
+        vars_to_draw.remove('Event_Weight')
         leg_labels = ['signal','background']
 
         plot_utils.plot_distr([signalH, bkgH], vars_to_draw, bins=100, labels=leg_labels, log=True, density=True, figsize=(12, 7), alpha=0.3, grid=False)
@@ -175,17 +163,18 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
         #Remove quantities of interest (pT and E):
         features_for_train = vars_to_draw.copy()
         features_for_train.remove('Cluster_E')
-        features_for_train.remove('Cluster_Pt')
+        #features_for_train.remove('Cluster_Pt')
+        features_for_train.remove('Cluster_IsoGammaCorrected')
         #if(RemoveEventvars==False):
         #    features_for_train.remove('Event_Rho')
         #    features_for_train.remove('Event_ZVtx')
         #    features_for_train.remove('Event_NPrimaryTracks')
 
-        if(RemoveIsoVar==True):
-            features_for_train.remove('Cluster_IsoGammaCorrected')
-            print("Removing Isolation quantity from variables!")
-        else:
-            print("Isolation quantity kept in variables!")
+        #if(RemoveIsoVar==True):
+        #    features_for_train.remove('Cluster_IsoGammaCorrected')
+        #    print("Removing Isolation quantity from variables!")
+        #else:
+        #    print("Isolation quantity kept in variables!")
 
         if(BuildHyperparams==True):
             t1=t.default_timer()
@@ -196,7 +185,7 @@ def  main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Remov
 
             #Optimize hyper parameters with optuna:
             hyper_pars_ranges = {'n_estimators': n_estimator_range, 'max_depth': max_depth_range, 'learning_rate': learning_rate_range}
-            model_hdl.optimize_params_optuna(hyperparm_optim_data, hyper_pars_ranges, cross_val_scoring=cross_val_scoring, n_trials=MaxTrails,n_jobs=-1, timeout=TimeOut, direction=direction_hyperparm, show_progress_bar=True)
+            model_hdl.optimize_params_optuna(hyperparm_optim_data, hyper_pars_ranges, cross_val_scoring=cross_val_scoring, n_trials=MaxTrails,n_jobs=12, timeout=TimeOut, direction=direction_hyperparm, show_progress_bar=True)
 
             #Save model:
             model_hdl.dump_model_handler(str(OutDir)+'/'+str(model_file_name))
@@ -239,13 +228,14 @@ def save_all_figures(directory='figures', file_format='png'):
 
 
 if __name__ == "__main__":
+    #LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Cut ,Test
     if(sys.argv[1]=="True"):
         LoadData=True
     elif(sys.argv[1]=="False"):
         LoadData=False
     else:
         print("Wrong 1st argument!")
-    
+
     if(sys.argv[2]=="True"):
         BuildHyperparams=True
     elif(sys.argv[2]=="False"):
@@ -261,29 +251,8 @@ if __name__ == "__main__":
         print("Wrong 3rd argument!")
 
     if(sys.argv[6]=="True"):
-        RemoveIsoVar=True
-    elif(sys.argv[6]=="False"):
-        RemoveIsoVar=False
-    else:
-        print("Wrong 6th argument!")
-
-    if(sys.argv[7]=="True"):
-        ApplyIsoCut=True
-    elif(sys.argv[7]=="False"):
-        ApplyIsoCut=False
-    else:
-        print("Wrong 7th argument!")
-
-    if(sys.argv[9]=="True"):
-        RemoveEventvars=True
-    elif(sys.argv[9]=="False"):
-        RemoveEventvars=False
-    else:
-        print("Wrong 9th argument!")
-
-    if(sys.argv[10]=="True"):
         Test=True
-    elif(sys.argv[10]=="False"):
+    elif(sys.argv[6]=="False"):
         Test=False
     else:
         print("Wrong 10th argument!")
@@ -292,7 +261,8 @@ if __name__ == "__main__":
 
     OutDir = str(sys.argv[5])
 
-    PtCut=str(sys.argv[8])
+    #Cut=str(sys.argv[6])
+    Cut="(Cluster_IsoGammaCorrected<1.5)"#(Cluster_Pt<8)&
 
-    main(LoadData,BuildHyperparams,TrainModel,model_file_name,OutDir, RemoveIsoVar, ApplyIsoCut, PtCut, RemoveEventvars, Test)
+    main(LoadData, BuildHyperparams, TrainModel, model_file_name, OutDir, Cut, Test)
     print("LoadData")
