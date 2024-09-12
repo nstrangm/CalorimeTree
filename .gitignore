@@ -30,3 +30,7 @@ RunConfig.yaml
 
 # Ignore all subfolders within CutStudies
 CutStudies/*/**
+
+# Do not ignore the tools folder
+!tools/
+!tools/*
