@@ -19,6 +19,7 @@ import subprocess
 import logging
 from pathlib import Path
 from rich.logging import RichHandler
+from rich.progress import Progress
 
 # setup logging
 logging.basicConfig(
@@ -43,13 +44,18 @@ class FilePair:
     def __repr__(self):
         return f"Source: {self.source}, Destination: {self.destination}"
 
-def downloadAlien(downloadpairs, verbose=True):
+def downloadAlien(downloadpairs, verbose=False):
     for downloadpair in downloadpairs:
         alienpath = downloadpair.source
         localpath = downloadpair.destination
         if verbose:
             log.info(f"Downloading {alienpath} to {localpath}")
-        subprocess.check_output(f'alien_cp {alienpath} {localpath}', shell=True)
+        # try to catch an error, print it and continue
+        try:
+            subprocess.check_output(f'alien_cp {alienpath} {localpath}', shell=True)
+        except subprocess.CalledProcessError as e:
+            log.error(f"Failed to download {alienpath} to {localpath}")
+            log.error(e)
         
         
 def checkAlien():
@@ -73,7 +79,7 @@ def createFileList(folder, filename):
             f.write(file + '\n')
     
 
-def downloadHyperloop(inputfilelist, outputfolder, filename,isDerived):
+def downloadHyperloop(inputfilelist, outputfolder, filename):
     # create output folder if it doesn't exist
     if not os.path.exists(outputfolder):
         os.makedirs(outputfolder)
@@ -93,22 +99,43 @@ def downloadHyperloop(inputfilelist, outputfolder, filename,isDerived):
         inputpaths = f.read().split(',')
 
     
-    log.info(f"Performing alien_find search for all files ...") 
     # loop over list of inputpaths and print them
     downloadpaths = []
-    for path in inputpaths:
-        if isDerived:
-            # add a /AOD to the path
-            path += '/AOD'
+    hasAODFolder = True
+    log.info(f"Checking if there is an /AOD folder in the path ...")
+    try:
+        checkPathOut = subprocess.check_output(f'alien_find {path}/AOD {file}', shell=True).decode('utf-8').split('\n')
+        log.info(f"Found /AOD folder in the path.")
+    except:
+        checkPathOut = []
+        hasAODFolder = False
+        log.info(f"No /AOD folder found in the path.")
 
-        # run bash command and store output
-        for file in inputfiles:
-            if file == "":
-                continue
-            downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
-    
-    # loop over downloadpaths
+    totDownloads = len(inputpaths)*len(inputfiles)
+    log.info(f"Searching for {totDownloads} directories for files to download...")
+    with Progress() as progress:
+        search_task = progress.add_task("[green]Searching for files...", total=totDownloads,refresh_per_second=1)
+        for path in inputpaths:
+            # run bash command and store output
+            for file in inputfiles:
+                if file == "":
+                    continue
+                if hasAODFolder:
+                    path = f"{path}/AOD"
+                downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
+                progress.update(search_task, advance=1)
+
+    # find the biggest number of slashes in the downloadpaths. This we do as a dirty hack to really only get those files that are in the lowest level
+    number_of_slashes = 0
+    for path in downloadpaths:
+        if path == "":
+            continue
+        if path.count('/') > number_of_slashes:
+            number_of_slashes = path.count('/')
+    # remove everything that has less slashes than the biggest number of slashes
     log.info(f"Search complete. Found {len(downloadpaths)} files to download.")
+    downloadpaths = [x for x in downloadpaths if x.count('/') == number_of_slashes]
+    log.info(f"Removed potential dublicates. Found {len(downloadpaths)} files to download.")
    
     # do multithreading download
     counter=0
@@ -123,6 +150,8 @@ def downloadHyperloop(inputfilelist, outputfolder, filename,isDerived):
         # append a pair to the list
         downloadFilePairs.append(FilePair(alienpath, localpath))
         counter+=1
+
+
 
     file_pairs_chunks = [downloadFilePairs[i::args.nThreads] for i in range(args.nThreads)]
     import concurrent.futures
@@ -151,7 +180,6 @@ if __name__ == '__main__':
     parser.add_argument('--inputfilelist', help='The txt file containing the list of files to download. They should be comma separated', type=str)
     parser.add_argument('--outputfolder', help='The folder to save the downloaded files', type=str)
     parser.add_argument('--filename', help='The name of the downloaded file e.g. AO2D.root or comma separated list of files', type=str)
-    parser.add_argument('--isDerived', help='If the data to download is derived', type=bool, default=False)
     parser.add_argument('--nThreads', help='Number of threads to use for downloading', type=int, default=1)
 
     args = parser.parse_args()
@@ -159,7 +187,6 @@ if __name__ == '__main__':
     log.info(f"Inputfilelist: {args.inputfilelist}")
     log.info(f"Outputfolder: {args.outputfolder}")
     log.info(f"Filename(s): {args.filename}")
-    log.info(f"IsDerivedData: {args.isDerived}")
     log.info(f"nThreads: {args.nThreads}")
 
     log.info(f"Checking if alien_find is available...")
@@ -168,4 +195,4 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         log.info("AliEn found.")
-    downloadHyperloop(args.inputfilelist, args.outputfolder, args.filename, args.isDerived)
+    downloadHyperloop(args.inputfilelist, args.outputfolder, args.filename)
