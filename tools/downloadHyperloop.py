@@ -16,10 +16,12 @@ import sys
 import os
 import argparse
 import subprocess
+import threading
 import logging
+import time
 from pathlib import Path
 from rich.logging import RichHandler
-from rich.progress import Progress
+from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn, TimeElapsedColumn, SpinnerColumn, MofNCompleteColumn
 
 # setup logging
 logging.basicConfig(
@@ -44,7 +46,7 @@ class FilePair:
     def __repr__(self):
         return f"Source: {self.source}, Destination: {self.destination}"
 
-def downloadAlien(downloadpairs, verbose=False):
+def downloadAlien(downloadpairs,task,progress,verbose=False):
     for downloadpair in downloadpairs:
         alienpath = downloadpair.source
         localpath = downloadpair.destination
@@ -56,6 +58,10 @@ def downloadAlien(downloadpairs, verbose=False):
         except subprocess.CalledProcessError as e:
             log.error(f"Failed to download {alienpath} to {localpath}")
             log.error(e)
+            return 0
+        progress.update(task, advance=1)
+    return 1
+    
         
         
 def checkAlien():
@@ -122,7 +128,11 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
                     continue
                 if hasAODFolder:
                     path = f"{path}/AOD"
-                downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
+                try:
+                    downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
+                except subprocess.CalledProcessError as e:
+                    log.error(f"Failed to find {file} in {path}")
+                    log.error(e)
                 progress.update(search_task, advance=1)
 
     # find the biggest number of slashes in the downloadpaths. This we do as a dirty hack to really only get those files that are in the lowest level
@@ -154,17 +164,35 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
 
 
     file_pairs_chunks = [downloadFilePairs[i::args.nThreads] for i in range(args.nThreads)]
-    import concurrent.futures
-    with concurrent.futures.ProcessPoolExecutor(max_workers=args.nThreads) as executor:
-        futures = []
-        for fps in file_pairs_chunks:
-            futures.append(executor.submit(downloadAlien,fps, True))
+
+    # tasks = []
+    # import concurrent.futures
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=args.nThreads) as executor:
+    #     futures = []
+    #     with Progress() as progress:
+    #         threadNum = 0
+    #         for fps in file_pairs_chunks:
+    #             # task_id = progress.add_task(f"[green] Downloading files (thread ) ...", total=len(downloadpaths),refresh_per_second=1)
+    #             task_id = progress.add_task(f"[green] Downloading files (thread {threadNum}) ...", total=len(fps),refresh_per_second=1)
+    #             futures.append(executor.submit(downloadAlien,fps, task_id, progress, False))
+    #             threadNum+=1
+    #         for future in concurrent.futures.as_completed(futures):
+    #             if future.result() == 1:
+    #                 log.info("Download complete.")
+    #             else:
+    #                 log.error("Download failed.")
+    # rewrite the above code using threading
+    threads = []
+    with Progress() as progress:
+        for i in range(args.nThreads):
+            task_id = progress.add_task(f"[green] Downloading files (thread {i}) ...", total=len(file_pairs_chunks[i]),refresh_per_second=1)
+            t = threading.Thread(target=downloadAlien, args=(file_pairs_chunks[i], task_id, progress, False))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
         
-        for future in futures:
-            failed_pairs = future.result()
-            if failed_pairs:
-                log.error("Failed to download some files:")
-                log.error(failed_pairs)
+            
     log.info(f"Download complete. I downloaded {len(downloadpaths)} files.")
     for file in inputfiles:
         if file == "":

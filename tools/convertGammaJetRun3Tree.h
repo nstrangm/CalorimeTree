@@ -1,0 +1,47 @@
+#ifndef _convertgammajetrun3tree_h_included
+#define _convertgammajetrun3tree_h_included
+
+
+// Tree definitions
+Int_t fBuffer_multiplicity;
+Float_t fBuffer_centrality;
+Float_t fBuffer_rho;
+uint16_t fBuffer_eventselection;
+uint32_t fBuffer_alias;
+// jet
+std::vector<Float_t> *fBuffer_jet_data_pt;
+std::vector<Float_t> *fBuffer_jet_data_eta;
+std::vector<Float_t> *fBuffer_jet_data_phi;
+std::vector<Float_t> *fBuffer_jet_data_energy;
+std::vector<Float_t> *fBuffer_jet_data_mass;
+std::vector<Float_t> *fBuffer_jet_data_area;
+std::vector<UShort_t> *fBuffer_jet_data_nconstituents;
+
+
+// cluster
+std::vector<Float_t> *fBuffer_cluster_data_energy;
+std::vector<Float_t> *fBuffer_cluster_data_eta;
+std::vector<Float_t> *fBuffer_cluster_data_phi;
+std::vector<Float_t> *fBuffer_cluster_data_m02;
+std::vector<Float_t> *fBuffer_cluster_data_m20;
+std::vector<UShort_t> *fBuffer_cluster_data_ncells;
+std::vector<Float_t> *fBuffer_cluster_data_time;
+std::vector<Bool_t> *fBuffer_cluster_data_isexotic;
+std::vector<UShort_t> *fBuffer_cluster_data_distancebadchannel;
+std::vector<UShort_t> *fBuffer_cluster_data_nlm;
+std::vector<Float_t> *fBuffer_cluster_data_isoraw;
+std::vector<Float_t> *fBuffer_cluster_data_perpconerho;
+
+// define global switches
+Bool_t fIsPbPb = kFALSE;
+Bool_t fIsMC = kFALSE;
+
+//----
+// define output tree
+//----
+TTree *outputTree;
+
+// TODO: MC truth information
+
+
+#endif
