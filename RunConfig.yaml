@@ -1,18 +1,26 @@
-doDebug: false
-doPlotting: true
-nParallelJobsPerVar: 10
+doPlotting: false
+nParallelJobsPerVar: 20
 doIsoGamma: true
 doJets: true
-doPi0: true
+doGGPi0: true
+domPi0: true
+
 DummyDataSet:
   isMC: true
   label: "#gamma-Jet 18 DCal"
   trainconfigs:
     DummyTrainConfig: Standard
+LHC18_pass2:
+  isMC: false
+  path: /alf/data/calorimetrees/GA_pp_AOD/2749_20240701-1424_13TeV_LHC18pass2
+  label: "Run2"
+  trainconfigs:
+    102_Charged: Standard
+    102_Full: Standard
 GJ18D:
   isMC: true
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6038_20240523-1434_13TeV_GJDCal18
-  label: "#gamma-Jet 18 DCal"
+  label: "Run2"
   trainconfigs:
     100_Charged: full
     101_Charged: full
@@ -28,7 +36,7 @@ LHC18_pass2:
 JJ18D:
   isMC: true
   path: /alf/data/calorimetrees/GA_pp_MC_AOD/6039_20240527-1821_13TeV_JJDCal18
-  label: "#Jet-Jet 18 DCal"
+  label: "Run2"
   trainconfigs:
     100_Charged: full
     101_Charged: full

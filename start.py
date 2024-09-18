@@ -4,9 +4,25 @@ import os
 import re
 import pathlib
 import sys
+import argparse
 from collections import defaultdict
 import time
 import threading
+import importlib
+
+try:
+    importlib.import_module('rich')
+except ImportError:
+    activate_script = os.path.join("CaloEnv", "bin", "activate")
+    if not os.path.exists(activate_script):
+        print(f"Virtual environment activation script not found at {activate_script}")
+        sys.exit(1)
+
+    # Use the appropriate shell to activate the virtual environment
+    # The current process is replaced by the new shell in a subshell.
+    subprocess.run(["bash", "-c", f"source {activate_script} && exec python {' '.join(sys.argv)}"], shell=False)
+    sys.exit()  # Exit after running the subprocess to avoid continuing with the current script execution
+
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn, TimeElapsedColumn, SpinnerColumn
 from rich.console import Console
 import logging
@@ -128,41 +144,41 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
     processes = []
     progress_values = [0] * nSplit  # Initialize progress list for all jobs
 
-    def monitor_progress():
-        while any(process.poll() is None for _, process in processes):
-            for iJob, process in processes:
-                log_file = f"{dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log"
-                if os.path.exists(log_file):
-                    with open(log_file, 'r') as f:
-                        lines = f.readlines()
-                        for line in reversed(lines):
-                            match = re.search(r'\[(\d+(\.\d+)?)%\]', line)
-                            if match:
-                                progress_value = float(match.group(1))
-                                progress_values[iJob - 1] = progress_value
-                                break
-            min_progress = min(progress_values)
-            progress.update(task_id, completed=min_progress)
-            time.sleep(0.5)  # Adjust the sleep time as needed
+    # def monitor_progress():
+    #     while any(process.poll() is None for _, process in processes):
+    #         for iJob, process in processes:
+    #             log_file = f"{dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log"
+    #             if os.path.exists(log_file):
+    #                 with open(log_file, 'r') as f:
+    #                     lines = f.readlines()
+    #                     for line in reversed(lines):
+    #                         match = re.search(r'\[(\d+(\.\d+)?)%\]', line)
+    #                         if match:
+    #                             progress_value = float(match.group(1))
+    #                             progress_values[iJob - 1] = progress_value
+    #                             break
+    #         min_progress = min(progress_values)
+    #         progress.update(task_id, completed=min_progress)
+    #         time.sleep(0.5)  # Adjust the sleep time as needed
 
-    for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        processes.append((iJob, process))
+    # for iJob in range(1, nSplit + 1):
+    #     command = f'srun --partition=long --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+    #     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    #     processes.append((iJob, process))
 
-        time.sleep(0.2)
+    #     time.sleep(0.2)
 
-    progress_thread = threading.Thread(target=monitor_progress)
-    progress_thread.start()
-    # Wait for all subprocesses to complete
-    for _, process in processes:
-        process.wait()
+    # progress_thread = threading.Thread(target=monitor_progress)
+    # progress_thread.start()
+    # # Wait for all subprocesses to complete
+    # for _, process in processes:
+    #     process.wait()
 
-    # Ensure the progress is marked as 100% upon completion
-    progress.update(task_id, completed=100)
-    progress_thread.join()  # Wait for the progress monitoring thread to complete
+    # # Ensure the progress is marked as 100% upon completion
+    # progress.update(task_id, completed=100)
+    # progress_thread.join()  # Wait for the progress monitoring thread to complete
 
-    hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
+    # hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
     
     command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -334,15 +350,23 @@ def run_debug(doPlotting):
     if doPlotting:
         process = subprocess.run('root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
 
+# Function to parse command line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description='Script for processing datasets.')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    return parser.parse_args()
+
 # Main function
 def main():
+
+    args = parse_args()
+    doDebug = args.debug
 
     # Ensure ROOT environment is loaded
     load_root_environment()
 
     analysis_config = read_yaml('RunConfig.yaml')
 
-    doDebug = analysis_config.get('doDebug')
     doPlotting = analysis_config.get('doPlotting')
     
     if doDebug:

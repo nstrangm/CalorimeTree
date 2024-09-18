@@ -26,7 +26,8 @@ public:
   bool doQA = true;
   bool doIsoGamma = false;
   bool doJets = false;
-  bool doPi0 = false;
+  bool domPi0 = false;
+  bool doGGPi0 = false;
   GlobalOptions(TString AnalysisDirectory, int jobId);
   // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
   ~GlobalOptions() {};
@@ -66,7 +67,8 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 
   doIsoGamma = config["doIsoGamma"].as<bool>();
   doJets = config["doJets"].as<bool>();
-  doPi0 = config["doPi0"].as<bool>();
+  domPi0 = config["domPi0"].as<bool>();
+  doGGPi0 = config["doGGPi0"].as<bool>();
 
   if (!config[(std::string)dataSet])
     FATAL(Form("Dataset %s not found in YAML file RunConfig.yaml", dataSet.Data()))
@@ -87,7 +89,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
           _______\/////////___\////////\//__\/////////_____\/////_____\///__________\///__\///___\///___\///____\//////////________\///________\///____________\//////////____\//////////__
         )" << '\n';
 
-  INFO(Form("Analyzing %s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doPi0 ? " + Pi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
+  INFO(Form("Analyzing %s%s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", domPi0 ? " + mPi0" : "", doGGPi0 ? " + GGPi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
 }
 
 // Returns the fraction of a cone at Eta = cEta and radius r that lies within the acceptance of a detector covering +-maxEta

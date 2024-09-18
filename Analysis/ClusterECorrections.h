@@ -260,7 +260,7 @@ double applyFinetuning(double clusE, int NLFunction)
   return newEnergy;
 }
 
-void applyNonLinAndFineTuningCorrection(std::vector<IsoGamma>& IsoGammas, IsoGammaCuts isoGammaCuts, GlobalOptions optns)
+void applyNonLinAndFineTuningCorrection(std::vector<Cluster>& IsoGammas, IsoGammaCuts isoGammaCuts, GlobalOptions optns)
 {
   for (int iCluster = 0; iCluster < (int)IsoGammas.size(); iCluster++) {
     float clusterECorrected = IsoGammas.at(iCluster).E;

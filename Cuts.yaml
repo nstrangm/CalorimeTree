@@ -4,39 +4,44 @@ Standard:
 
   # ----------------------------> Cluster Cuts
   #RapidityCut
-  cluster_max_rapidity: 0.8
+  gamma_max_rapidity: 0.8
 
   # Acceptance cuts
-  cluster_Acceptance: EMC
+  gamma_Acceptance: EMC
 
   #Cluster energy
-  cluster_min_E: 0.7
-  cluster_max_E: 200.
+  gamma_min_E: 15.
+  gamma_max_E: 200.
 
-  cluster_min_Nc: 2 #Cluster number of cells
-  cluster_max_NLM: 2 #Cluster number of local maxima
-  cluster_min_distbadch: 1. #Cluster distance to bad channel
+  gamma_min_Nc: 2 #Cluster number of cells
+  gamma_max_NLM: 2 #Cluster number of local maxima
+  gamma_min_distbadch: 1. #Cluster distance to bad channel
 
   #Cluster long axis
-  cluster_min_M02: 0.1
-  cluster_max_M02: 0.3
+  gamma_min_M02: 0.1
+  gamma_max_M02: 0.3
+
+  #Cluster long axis
+  mPi0_min_M02: 0.4
+  mPi0_max_M02: 20.
 
   #Cluster-track matching
-  cluster_min_MatchDeta: -0.05
-  cluster_max_MatchDeta: 0.05
-  cluster_min_MatchDphi: -0.05
-  cluster_max_MatchDphi: 0.05
-  cluster_max_MatchVeto: 1.75
+  gamma_min_MatchDeta: -0.05
+  gamma_max_MatchDeta: 0.05
+  gamma_min_MatchDphi: -0.05
+  gamma_max_MatchDphi: 0.05
+  gamma_max_MatchVeto: 1.75
 
-  cluster_max_Fplus: 0.97 #Cluster exotic removal
-  cluster_max_ptiso: 1.5 #Cluster isolation
+  gamma_max_Fplus: 0.97 #Cluster exotic removal
+  gamma_max_ptiso: 1.5 #Cluster isolation
+  mPi0_max_ptiso: 100 #Cluster isolation
 
-  cluster_applyNonLin: false
+  gamma_applyNonLin: false
   useRhoInsteadOfPerpCone: false
 
   # ----------------------------> Jet Cuts
-  jetMinPt: 8.
-  jet_Acceptance: TPC_Fiducial
+  jetMinPt: 6.
+  jet_Acceptance: TPC
 
 # No Cuts - all cuts fully open
 ###################################################################################################
@@ -44,32 +49,32 @@ NoCuts:
 
   # ----------------------------> Cluster Cuts
   #RapidityCut
-  cluster_max_rapidity: 100
+  gamma_max_rapidity: 100
 
   # Acceptance cuts
-  cluster_Acceptance: NoCut
+  gamma_Acceptance: NoCut
 
   #Cluster energy
-  cluster_min_E: 0
-  cluster_max_E: 200.
+  gamma_min_E: 0
+  gamma_max_E: 200.
 
-  cluster_min_Nc: 0 #Cluster number of cells
-  cluster_max_NLM: 10 #Cluster number of local maxima
-  cluster_min_distbadch: 0 #Cluster distance to bad channel
+  gamma_min_Nc: 0 #Cluster number of cells
+  gamma_max_NLM: 10 #Cluster number of local maxima
+  gamma_min_distbadch: 0 #Cluster distance to bad channel
 
   #Cluster long axis
-  cluster_min_M02: 0 
-  cluster_max_M02: 100
+  gamma_min_M02: 0 
+  gamma_max_M02: 100
 
   #Cluster-track matching
-  cluster_min_MatchDeta: 0
-  cluster_max_MatchDeta: 0
-  cluster_min_MatchDphi: 0
-  cluster_max_MatchDphi: 0
-  cluster_max_MatchVeto: 0
+  gamma_min_MatchDeta: -100
+  gamma_max_MatchDeta: 100
+  gamma_min_MatchDphi: -100
+  gamma_max_MatchDphi: 100
+  gamma_max_MatchVeto: 0
 
-  cluster_max_Fplus: 1 #Cluster exotic removal
-  cluster_max_ptiso: 100 #Closter isolation
+  gamma_max_Fplus: 1 #Cluster exotic removal
+  gamma_max_ptiso: 100 #Closter isolation
 
   # ----------------------------> Jet Cuts
   jetMinPt: 0.
@@ -77,7 +82,7 @@ NoCuts:
 
 
 Cluster_E_max_increased:
-  cluster_max_E: 220.
+  gamma_max_E: 220.
 
 Cluster_E_max_decreased:
   cluster_max_E: 180.
