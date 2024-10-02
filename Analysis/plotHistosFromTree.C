@@ -106,7 +106,7 @@ void plotJetQA(TDirectory *dJetQA, GlobalOptions optns)
 {
   ENTER
 
-  JetCuts jetCuts(optns);
+  DLJetCuts jetCuts(optns);
 
   const char *outputDir = Form("%s/Jets", optns.analysisDirPath.Data());
   createDirectory(outputDir);
