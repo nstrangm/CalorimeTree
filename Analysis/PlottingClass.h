@@ -417,23 +417,21 @@ void Plotting1D::Plot(TString name, bool logx, bool logy, bool TransCanvas)
   if (PlottingObjects.size() < 1)
     ERRORETURN("Nothing added for plotting.")
 
-  
-
   //  Loop thru all elements of all vectors and plot them on top of the empty hDummy and add them to leg
   //----------------------------------------------------------------------------
   for (int i = 0; i < (int)PlottingObjects.size(); ++i)
   {
-    
-    if(i==0){
-      TH1* plot=(TH1*)PlottingObjects.at(i);
-      //const char* plotTitle=plot->GetTitle();
-      //cout<<plotTitle<<"\n";
+
+    if (i == 0)
+    {
+      TH1 *plot = (TH1 *)PlottingObjects.at(i);
+      // const char* plotTitle=plot->GetTitle();
+      // cout<<plotTitle<<"\n";
       InitializeCanvas(logx, logy, TransCanvas); //  Creating Canvas with margins
       InitializeAxis(logx, logy, TransCanvas);   //  Create the hDummy and set its axis label + ranges
-      //hDummy->SetTitle(plotTitle);
-      hDummy->Draw("0");                            //  Draw the just set axis (label) on the Canvas
-      InitializeLegend();                        //  Create leg and set its dimensions + format
-
+      // hDummy->SetTitle(plotTitle);
+      hDummy->Draw("0");  //  Draw the just set axis (label) on the Canvas
+      InitializeLegend(); //  Create leg and set its dimensions + format
     }
     PlottingObjects.at(i)->Draw(Form("same %s", ((TString)DrawOption.at(i)).Data()));
     if (LegendLabel.at(i).BeginsWith("42"))
@@ -784,6 +782,8 @@ public:
 
   //  The ratios have a seperate legend. It's position can be set analogously to SetLegend using this function
   void SetLegendR(double x1 = 0.7, double x2 = 0.95, double y1 = 0.15, double y2 = 0.25, bool bhollow = false);
+
+  void NewRatioLatex(const double PositX = 0.2, const double PositY = 0.2, TString text = "", const double TextSize = StdTextSize, const double dDist = 0.06, const int font = 43, const int color = kBlack, const int angle = 0);
 
   //  The ratio label can be set indiviually, but its offset is set via the y axis label offset
   void SetAxisLabel(TString labelx = "", TString labely = "", TString labelz = "", double offsetx = 1., double offsety = 1., int ndigits = 3);
@@ -1161,6 +1161,33 @@ void PlottingRatio::InitializeLegendR()
   legR->SetTextSize(0.6 * StdTextSize);
   legR->SetBorderSize(0);
   legR->SetFillStyle(LRhollow ? 0 : 1001);
+}
+
+void PlottingRatio::NewRatioLatex(const double PositX, const double PositY, TString text, const double TextSize, const double dDist, const int font, const int color, const int angle)
+{
+  std::vector<TString> LatStr;             //  Each element corresponds to a line of the printed latex string
+  TObjArray *textStr = text.Tokenize(";"); //  The semicolon seperates the string into different lines
+  for (int i = 0; i < textStr->GetEntries(); i++)
+  {
+    TObjString *tempObj = (TObjString *)textStr->At(i);
+    LatStr.push_back(tempObj->GetString());
+  }
+
+  //  Loop thru the latex lines and set the formatting
+  for (int i = 0; i < (int)LatStr.size(); ++i)
+  {
+    TLatex *latex = new TLatex(PositX, PositY - i * dDist, LatStr[i]);
+    latex->SetNDC();
+    latex->SetTextFont(font);
+    latex->SetTextColor(color);
+    latex->SetTextSize(TextSize);
+    latex->SetTextAngle(angle);
+    if (PositX > 0.81)
+      latex->SetTextAlign(32);
+    RatiObjects.push_back(latex);
+    DrawOptionR.push_back("");
+    LegendLabelR.push_back("");
+  }
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1600,72 +1627,6 @@ void PlottingPaint::InitializeCanvas()
 
   Canvas = new TCanvas("Canvas", "Canvas", CanvasDimensions[0], CanvasDimensions[1]);
   Canvas->cd();
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//+++++++++++++++++++++++++++++++ Extra functions ++++++++++++++++++++++++++++++
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-TString ReturnTimehms(int s)
-{
-  int h = s / 3600;
-  s = s % 3600;
-  int m = s / 60;
-  s = s % 60;
-  return Form("%d hours, %d minutes and %d seconds", h, m, s);
-}
-
-void PrintProgress(int i, int N, int Steps = 100)
-{
-
-  int barWidth = 100;
-
-  static int Progress = 0;
-
-  static clock_t t = clock();
-
-  if (((double)i) / ((double)N) * Steps > Progress)
-  {
-
-    cout.flush();
-    cout << " [" << Progress * 100 / Steps << "%]"
-         << "[";
-    int pos = barWidth * (((double)Progress) / Steps);
-    for (int i = 0; i < barWidth; ++i)
-    {
-      if (i < pos)
-        cout << "|";
-      else
-        cout << " ";
-    }
-    cout << "] - " << ReturnTimehms(((clock() - t) / CLOCKS_PER_SEC) * ((double)(N - i) / (double)i)) << " left.  "
-         << "\r";
-
-    Progress++;
-  }
-  if (i == N - 1)
-  {
-    cout.flush();
-    cout << "[" << Progress << "%]"
-         << "[";
-    int pos = barWidth * (Progress / 100.);
-    for (int i = 0; i < barWidth; ++i)
-    {
-      cout << "|";
-    }
-    cout << "] - "
-         << "Processing finished in " << ReturnTimehms((clock() - t) / CLOCKS_PER_SEC) << endl;
-  }
-}
-
-void PrintProgressNumber(int i, int N, int Steps = 100)
-{
-  static int Progress = 0;
-  if (((double)i) / ((double)N) * Steps > Progress)
-  {
-    cout << "[" << Form("%.1f", Progress * 100. / Steps) << "%]" << endl;
-    Progress++;
-  }
 }
 
 #endif

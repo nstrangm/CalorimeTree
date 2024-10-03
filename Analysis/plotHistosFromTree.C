@@ -5,7 +5,9 @@
 #include "Cuts.h"
 #include "plotHistosFromTree.h"
 
-const char *suffix = "png";
+const char *suffix = "pdf";
+
+Int_t GoetheColor[4][2];
 
 // Add to plot class?
 void AvoidLogYconflict(TH1 *h, float logymin = 1e-10)
@@ -104,7 +106,7 @@ void plotJetQA(TDirectory *dJetQA, GlobalOptions optns)
 {
   ENTER
 
-  JetCuts jetCuts(optns);
+  DLJetCuts jetCuts(optns);
 
   const char *outputDir = Form("%s/Jets", optns.analysisDirPath.Data());
   createDirectory(outputDir);
@@ -122,11 +124,11 @@ void plotJetQA(TDirectory *dJetQA, GlobalOptions optns)
   EXIT
 }
 
-void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
+void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns)
 {
   ENTER
 
-  TString outputDir = Form("%s/IsoGammas", optns.analysisDirPath.Data());
+  TString outputDir = Form("%s/%s", optns.analysisDirPath.Data(), GammaType.Data());
 
   createDirectory(outputDir.Data());
 
@@ -391,7 +393,34 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
     float integralM02 = hIsoGammaM02->Integral(1, hIsoGammaM02->GetNbinsX());
     hIsoGammaM02->Scale(1. / integralM02);
     AvoidLogYconflict(hIsoGammaM02);
-    PIsoGammaM02.New(hIsoGammaM02, "Data");
+    if (GammaType == "Clusters")
+    {
+      PIsoGammaM02.New(hIsoGammaM02, "Data", 1, 2, kBlack, "h");
+
+      TH1F *hIsogammaSelectedM02 = (TH1F *)hIsoGammaM02->Clone("hIsogammaSelectedM02");
+      TH1F *hPi0SelectedM02 = (TH1F *)hIsoGammaM02->Clone("hPi0SelectedM02");
+      for (int ibin = 0; ibin < hIsoGammaM02->GetNbinsX(); ibin++)
+      {
+        if (hIsogammaSelectedM02->GetBinCenter(ibin) < 0.1 || hIsogammaSelectedM02->GetBinCenter(ibin) > 0.3)
+        {
+          hIsogammaSelectedM02->SetBinContent(ibin, 0.);
+          hIsogammaSelectedM02->SetBinError(ibin, 0.);
+        }
+        if (hPi0SelectedM02->GetBinCenter(ibin) < 0.4)
+        {
+          hPi0SelectedM02->SetBinContent(ibin, 0.);
+          hPi0SelectedM02->SetBinError(ibin, 0.);
+        }
+      }
+
+      PIsoGammaM02.New(hIsogammaSelectedM02, "#gamma candidates", 1, 4, GoetheColor[1][0], "hf");
+      PIsoGammaM02.New(hPi0SelectedM02, "Merged #pi^{0} candidates", 1, 4, GoetheColor[3][0], "hf");
+      PIsoGammaM02.New(hIsoGammaM02, "", 1, 4, kBlack, "h");
+    }
+    else
+    {
+      PIsoGammaM02.New(hIsoGammaM02, "Data");
+    }
 
     // M20
     hIsoGammaM20 = (TH1F *)dIsoGammaQA->Get("hIsoGammaM20")->Clone("hIsoGammaM20");
@@ -431,54 +460,69 @@ void plotIsoGammaQA(TDirectory *dIsoGammaQA, GlobalOptions optns)
     // IsoChargedCorrected
     hIsoGammaIsoChargedCorrected = (TH1F *)dIsoGammaQA->Get("hIsoGammaIsoChargedCorrected")->Clone("hIsoGammaIsoChargedCorrected");
     float integralIsoChargedCorrected = hIsoGammaIsoChargedCorrected->Integral(1, hIsoGammaIsoChargedCorrected->GetNbinsX());
-    hIsoGammaIsoChargedCorrected->Scale(1. / integralIsoChargedCorrected);
+    // hIsoGammaIsoChargedCorrected->Scale(1. / integralIsoChargedCorrected);
     AvoidLogYconflict(hIsoGammaIsoChargedCorrected);
-    PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrected, "Data");
+    PIsoGammaIsoChargedCorrected.New(hIsoGammaIsoChargedCorrected, "");
   }
   PMinMassDiffToPi0.SetAxisLabel("#bf{#Delta#it{m}_{inv} (GeV/#it{c}^{2})}", "#bf{dN/d#Delta#it{m}_{inv} (GeV/#it{c}^{2})}");
   PMinMassDiffToPi0.SetMargins(0.12, 0.1, 0.08, 0.025);
   PMinMassDiffToPi0.Plot(Form("%s/MinMassDiffToPi0.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}","#bf{log(dN/dE GeV)}");
+  PIsoGammaE.SetAxisLabel("#bf{#it{E}[GeV]}", "#bf{log(dN/dE GeV)}");
   PIsoGammaE.Plot(Form("%s/IsoGammaE.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaM02.SetAxisLabel("#bf{#it{M02}}","#bf{log(dN/dM02)}");
-  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
+  PIsoGammaM02.SetAxisLabel("#bf{#it{#sigma}_{long}^{2}}", "#bf{Normalized counts}", 1., 1.3);
+  PIsoGammaM02.SetAxisRange(0., 2.,1E-3,0.3);
+  PIsoGammaM02.SetLegend(0.4, 0.7, 0.65, 0.85, true);
+  PIsoGammaM02.NewLatex(0.9, 0.9, "ALICE work in progress;2018 data, #sqrt{s} = 13 TeV", StdTextSize, 0.04);
+  PIsoGammaM02.SetMargins(0.11, 0.11, 0.025, 0.025, 1750, 1750);
+  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix), kFALSE, kTRUE, true);
 
-  PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}","#bf{log(dN/dM20)}");
+  PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}", "#bf{log(dN/dM20)}");
   PIsoGammaM20.Plot(Form("%s/IsoGammaM20.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPx.SetAxisLabel("#bf{#it{p_x}[GeV/#it{c}]}","#bf{log(dN/Px GeV/c)}");
+  PIsoGammaPx.SetAxisLabel("#bf{#it{p_x}[GeV/#it{c}]}", "#bf{log(dN/Px GeV/c)}");
   PIsoGammaPx.Plot(Form("%s/IsoGammaPx.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPy.SetAxisLabel("#bf{#it{p_y}[GeV/#it{c}]}","#bf{log(dN/Py GeV/c)}");
+  PIsoGammaPy.SetAxisLabel("#bf{#it{p_y}[GeV/#it{c}]}", "#bf{log(dN/Py GeV/c)}");
   PIsoGammaPy.Plot(Form("%s/IsoGammaPy.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p^{iso, corrected}_{T}}[GeV/#it{c}]}","#bf{log(dN/p_{T, corrected}^{iso} GeV/c)}");
+  PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p}^{iso, corrected}_{T} (GeV/#it{c})}", "#bf{N_{iso #gamma}}", 0.9);
   PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaPz.SetAxisLabel("#bf{#it{p_z}[GeV/#it{c}]}","#bf{log(dN/p_{z} GeV/c)}");
+  PIsoGammaPz.SetAxisLabel("#bf{#it{p_z}[GeV/#it{c}]}", "#bf{log(dN/p_{z} GeV/c)}");
   PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
-  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}","#bf{log(dN/p_{T}^{iso} GeV/c)}");
+  PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}[GeV/#it{c}]}", "#bf{log(dN/p_{T}^{iso} GeV/c)}");
   PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
+
+  TH2F *hIsoGammaEtaPhi = (TH2F *)dIsoGammaQA->Get("hIsoGammaEtaPhi");
+  Plotting2D PEtaPhiMap;
+  PEtaPhiMap.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PEtaPhiMap.New(hIsoGammaEtaPhi);
+  PEtaPhiMap.AddEMCalOutline();
+  PEtaPhiMap.AddPHOSOutline();
+  PEtaPhiMap.SetAxisLabel("#bf{#eta}", "#bf{#phi}");
+  PEtaPhiMap.Plot(Form("%s/EtaPhiMap.%s", outputDir.Data(), suffix));
 
   EXIT
 }
 
-void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOptions optns)
+void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString GammaType, GlobalOptions optns)
 {
-  TString outputDir = Form("%s/GammaJetCorrelations", optns.analysisDirPath.Data());
+  TString outputDir = Form("%s/%sJetCorrelations", optns.analysisDirPath.Data(), GammaType.Data());
+  const char* gammaLatex = GammaType.Contains("Pi0") ? "#pi^{0}" : "#gamma";
 
   createDirectory(outputDir.Data());
 
   TH2F *hpTImbalancevsDeltaPhi = (TH2F *)dGammaJetCorrelations->Get("hpTImbalancevsDeltaPhi")->Clone("hpTImbalancevsDeltaPhi");
+  hpTImbalancevsDeltaPhi->Rebin2D(2, 2);
 
   Plotting2D P2DC; // Plot 2D Correlation
   P2DC.New(hpTImbalancevsDeltaPhi);
-  P2DC.SetMargins(0.15, 0.1, 0.025, 0.15);
-  P2DC.SetAxisLabel("#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}", "#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}");
-  P2DC.Plot(Form("%s/pTImbalancevsDeltaPhi.%s", outputDir.Data(), suffix));
+  P2DC.SetMargins(0.15, 0.1, 0.025, 0.15, 2000, 1750);
+  P2DC.SetAxisLabel(Form("#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{%s}}",gammaLatex), Form("#bf{#Delta#phi = |#phi_{%s}-#phi_{jet}|}",gammaLatex));
+  P2DC.Plot(Form("%s/pTImbalancevsDeltaPhi.%s", outputDir.Data(), suffix), 0, 0, 0, 1);
 
   const int NProjections = 8;
 
@@ -518,8 +562,47 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, GlobalOption
   PDeltaPhiGrid.Plot(Form("%s/deltaPhiGrid.%s", outputDir.Data(), suffix));
 }
 
+void plotIsoGammaJetCorrelationQA(TDirectory *dGammaJetCorrelationQA, TString GammaType, GlobalOptions optns)
+{
+  TString outputDir = Form("%s/%sJetCorrelations", optns.analysisDirPath.Data(), GammaType.Data());
+
+  createDirectory(outputDir.Data());
+
+  TH2F *hIsoGammaFromCorrEtaPhi = (TH2F *)dGammaJetCorrelationQA->Get("hIsoGammaFromCorrelationEtaPhiMap");
+  Plotting2D PIEtaPhiMap;
+  PIEtaPhiMap.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PIEtaPhiMap.New(hIsoGammaFromCorrEtaPhi);
+  PIEtaPhiMap.AddEMCalOutline();
+  PIEtaPhiMap.AddPHOSOutline();
+  PIEtaPhiMap.SetAxisLabel("#bf{#eta}", "#bf{#phi}");
+  PIEtaPhiMap.Plot(Form("%s/IsoGammaEtaPhiMap.%s", outputDir.Data(), suffix));
+
+  TH2F *hJetFromCorrEtaPhi = (TH2F *)dGammaJetCorrelationQA->Get("hJetFromCorrelationEtaPhiMap");
+  Plotting2D PJEtaPhiMap;
+  PJEtaPhiMap.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PJEtaPhiMap.New(hJetFromCorrEtaPhi);
+  PJEtaPhiMap.AddEMCalOutline();
+  PJEtaPhiMap.AddPHOSOutline();
+  PJEtaPhiMap.SetAxisLabel("#bf{#eta}", "#bf{#phi}");
+  PJEtaPhiMap.Plot(Form("%s/JetEtaPhiMap.%s", outputDir.Data(), suffix));
+}
+
 void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
 {
+
+  Float_t r[4][2] = {{77, 228}, {115, 165}, {0, 72}, {134, 173}};
+    Float_t g[4][2] = {{75, 227}, {124, 171}, {97, 143}, {0, 59}};
+    Float_t b[4][2] = {{70, 221}, {69, 82}, {143, 218}, {71, 118}};
+    for (Int_t iC = 0; iC < 4; iC++)
+    {
+        for (Int_t iH = 0; iH < 2; iH++)
+        {
+            Int_t ColorCode = TColor::GetFreeColorIndex();
+            TColor *color = new TColor(ColorCode, r[iC][iH] / 255., g[iC][iH] / 255., b[iC][iH] / 255.);
+            GoetheColor[iC][iH] = ColorCode;
+        }
+    }
+
   GlobalOptions optns(AnalysisDirectory, isDebugRun);
 
   TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectory.Data());
@@ -556,11 +639,19 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     // plotIsoGamma()
     if (optns.doQA)
     {
+      TDirectory *dClusterQA = (TDirectory *)fIn->Get("ClusterQA");
+      if (!dClusterQA)
+        FATAL("Dir ClusterQA not found")
+      TDirectory *dGammaQA = (TDirectory *)fIn->Get("GammaQA");
+      if (!dGammaQA)
+        FATAL("Dir GammaQA not found")
       TDirectory *dIsoGammaQA = (TDirectory *)fIn->Get("IsoGammaQA");
       if (!dIsoGammaQA)
         FATAL("Dir IsoGammaQA not found")
 
-      plotIsoGammaQA(dIsoGammaQA, optns);
+      plotGammaQA(dClusterQA, "Clusters", optns);
+      plotGammaQA(dGammaQA, "Gammas", optns);
+      plotGammaQA(dIsoGammaQA, "IsoGammas", optns);
     }
   }
 
@@ -569,7 +660,44 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     TDirectory *dGammaJetCorrelations = (TDirectory *)fIn->Get("GammaJetCorrelations");
     if (!dGammaJetCorrelations)
       FATAL("Dir GammaJetCorrelations not found")
-    plotIsoGammaJetCorrelations(dGammaJetCorrelations, optns);
+    plotIsoGammaJetCorrelations(dGammaJetCorrelations, "Gamma", optns);
+    if (optns.doQA)
+    {
+      TDirectory *dGammaJetCorrelationQA = (TDirectory *)fIn->Get("GammaJetCorrelationQA");
+      if (!dGammaJetCorrelationQA)
+        FATAL("Dir GammaJetCorrelations not found")
+      plotIsoGammaJetCorrelationQA(dGammaJetCorrelationQA, "Gamma", optns);
+    }
+  }
+
+  if (optns.domPi0 && optns.doJets)
+  {
+    TDirectory *dmPi0JetCorrelations = (TDirectory *)fIn->Get("mPi0JetCorrelations");
+    if (!dmPi0JetCorrelations)
+      FATAL("Dir mPi0JetCorrelations not found")
+    plotIsoGammaJetCorrelations(dmPi0JetCorrelations, "mPi0", optns);
+    if (optns.doQA)
+    {
+      TDirectory *dmPi0JetCorrelationQA = (TDirectory *)fIn->Get("mPi0JetCorrelationQA");
+      if (!dmPi0JetCorrelationQA)
+        FATAL("Dir mPi0JetCorrelationQA not found")
+      plotIsoGammaJetCorrelationQA(dmPi0JetCorrelationQA, "mPi0", optns);
+    }
+  }
+
+    if (optns.doGGPi0 && optns.doJets)
+  {
+    TDirectory *dGGPi0JetCorrelations = (TDirectory *)fIn->Get("GGPi0JetCorrelations");
+    if (!dGGPi0JetCorrelations)
+      FATAL("Dir GGPi0JetCorrelations not found")
+    plotIsoGammaJetCorrelations(dGGPi0JetCorrelations, "GGPi0", optns);
+    if (optns.doQA)
+    {
+      TDirectory *dGGPi0JetCorrelationQA = (TDirectory *)fIn->Get("GGPi0JetCorrelationQA");
+      if (!dGGPi0JetCorrelationQA)
+        FATAL("Dir GGPi0JetCorrelationQA not found")
+      plotIsoGammaJetCorrelationQA(dGGPi0JetCorrelationQA, "GGPi0", optns);
+    }
   }
 
   fIn->Close();

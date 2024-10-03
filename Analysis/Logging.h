@@ -57,4 +57,79 @@ int debugLevel = 2; // 0: No output except for warnings, errors and fatals, 1: +
     exit(0);                                                                                                        \
   }
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++ Extra functions ++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+TString ReturnTimehms(int s)
+{
+  int h = s / 3600;
+  s = s % 3600;
+  int m = s / 60;
+  s = s % 60;
+  return Form("%d hours, %d minutes and %d seconds", h, m, s);
+}
+
+void PrintProgressBar(int i, int N, int Steps = 100)
+{
+
+  int barWidth = 100;
+
+  static int Progress = 0;
+
+  static clock_t t = clock();
+
+  if (((double)i) / ((double)N) * Steps > Progress)
+  {
+
+    cout.flush();
+    cout << " [" << Progress * 100 / Steps << "%]"
+         << "[";
+    int pos = barWidth * (((double)Progress) / Steps);
+    for (int i = 0; i < barWidth; ++i)
+    {
+      if (i < pos)
+        cout << "|";
+      else
+        cout << " ";
+    }
+    cout << "] - " << ReturnTimehms(((clock() - t) / CLOCKS_PER_SEC) * ((double)(N - i) / (double)i)) << " left.  "
+         << "\r";
+
+    Progress++;
+  }
+  if (i == N - 1)
+  {
+    cout.flush();
+    cout << "[" << Progress << "%]"
+         << "[";
+    int pos = barWidth * (Progress / 100.);
+    for (int i = 0; i < barWidth; ++i)
+    {
+      cout << "|";
+    }
+    cout << "] - "
+         << "Processing finished in " << ReturnTimehms((clock() - t) / CLOCKS_PER_SEC) << endl;
+  }
+}
+
+void PrintProgressNumber(int i, int N, int Steps = 100)
+{
+  static int Progress = 0;
+  if (((double)i) / ((double)N) * Steps > Progress)
+  {
+    cout << "[" << Form("%.1f", Progress * 100. / Steps) << "%]" << endl;
+    Progress++;
+  }
+}
+
+void PrintProgress(int i, int N, int Steps = 100, bool isDebug = false)
+{
+  if (isDebug)
+    PrintProgressBar(i, N);
+  else
+    PrintProgressNumber(i, N, 1000);
+}
+
+
 #endif

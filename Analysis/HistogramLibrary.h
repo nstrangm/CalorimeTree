@@ -9,7 +9,6 @@
 #include "PhysicsObjects.h"
 #include "Cuts.h"
 
-
 TDirectory *DefineEventHistograms(TFile *f, GlobalOptions optns)
 {
   TDirectory *dir = f->mkdir("Events");
@@ -47,7 +46,7 @@ TDirectory *DefineEventQAHistograms(TFile *f, GlobalOptions optns)
   return dir;
 }
 
-TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions optns)
+TDirectory *DefineIsoGammaHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma)
     return nullptr;
@@ -57,7 +56,8 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   TH1F *hIsoGammaPt = new TH1F("hIsoGammaPt", "hPt", 1000, 0., 100.);
   TH1F *hIsoGammaE = new TH1F("hIsoGammaE", "hE", 1000, 0., 100.);
 
-  if(optns.isMC){
+  if (optns.isMC)
+  {
     TH1F *hGammaGenE = new TH1F("hGammaGenE", "hE", 1000, 0., 100.);
     TH1F *hGammaGenPt = new TH1F("hGammaGenPt", "hPt", 1000, 0., 100.);
     TH1F *hGammaGenESignal = new TH1F("hGammaGenESignal", "hESignal", 1000, 0., 100.);
@@ -67,7 +67,6 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
 
     TH1F *hGammaGenEAcceptanceCut = new TH1F("hGammaGenEAcceptanceCut", "hEAcceptanceCut", 1000, 0., 100.);
     TH1F *hGammaGenPtAcceptanceCut = new TH1F("hGammaGenPtAcceptanceCut", "hPtAcceptanceCut", 1000, 0., 100.);
-    
 
     TH1F *hIsoGammaPtSignal = new TH1F("hIsoGammaPtSignal", "hPtSignal", 1000, 0., 100.);
     TH1F *hIsoGammaESignal = new TH1F("hIsoGammaESignal", "hESignal", 1000, 0., 100.);
@@ -82,12 +81,13 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   hIsoGammaIsovsM02vsPt->Sumw2();
   dir->Add(hIsoGammaIsovsM02vsPt);
 
-  if(optns.isMC){
-    //no-cuts signal
+  if (optns.isMC)
+  {
+    // no-cuts signal
     THnSparseF *hIsoGammaIsovsM02vsPtSignal = new THnSparseF("hIsoGammaIsovsM02vsPtSignal", "hIsoGammaIsovsM02vsPtSignal", 3, nBins, xmin, xmax);
     hIsoGammaIsovsM02vsPtSignal->Sumw2();
     dir->Add(hIsoGammaIsovsM02vsPtSignal);
-    //no-cuts background
+    // no-cuts background
     THnSparseF *hIsoGammaIsovsM02vsPtBackground = new THnSparseF("hIsoGammaIsovsM02vsPtBackground", "hIsoGammaIsovsM02vsPtBackground", 3, nBins, xmin, xmax);
     hIsoGammaIsovsM02vsPtBackground->Sumw2();
     dir->Add(hIsoGammaIsovsM02vsPtBackground);
@@ -96,7 +96,7 @@ TDirectory *DefineIsoGammaHistograms(TFile *f, string dirname, GlobalOptions opt
   return dir;
 }
 
-TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions optns)
+TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma || !optns.doQA)
     return nullptr;
@@ -149,16 +149,16 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
   TH2F *hIsoGammaM02pT = new TH2F("hIsoGammaM02pT", "hIsoGammaM02pT", 100, M02Range[0], M02Range[1], 100, 0, 50);
   TH2F *hIsoGammaEBeforeAfterNL = new TH2F("hIsoGammaEBeforeAfterNL", "hIsoGammaEBeforeAfterNL;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
   TH2F *hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
-  TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi","hIsoGammadEtadphi",100,-0.1,0.1,100,-0.1,0.1);
-  TH2F *hIsoGammadEtadphiCut = new TH2F("hIsoGammadEtadphiCut","hIsoGammadEtadphiCut",100,-0.1,0.1,100,-0.1,0.1);
-  TH2F *hDistanceToBadChannelvsPt = new TH2F("hDistanceToBadChannelvsPt", "hDistanceToBadChannelvsPt", 12, 0.5, 12.5, 100, 0,100);
+  TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi", "hIsoGammadEtadphi", 100, -0.1, 0.1, 100, -0.1, 0.1);
+  TH2F *hIsoGammadEtadphiCut = new TH2F("hIsoGammadEtadphiCut", "hIsoGammadEtadphiCut", 100, -0.1, 0.1, 100, -0.1, 0.1);
+  TH2F *hDistanceToBadChannelvsPt = new TH2F("hDistanceToBadChannelvsPt", "hDistanceToBadChannelvsPt", 12, 0.5, 12.5, 100, 0, 100);
 
   if (optns.isMC)
   { // ------------------> MC IsoGammaQA histograms
     TH1F *hMinMassDiffToPi0Signal = new TH1F("hMinMassDiffToPi0Signal", "hMinMassDiffToPi0Signal", 50, 0., 0.1);
     TH1F *hMinMassDiffToPi0Background = new TH1F("hMinMassDiffToPi0Background", "hMinMassDiffToPi0Background", 50, 0., 0.1);
 
-    TH2F *hNewVsOldSignalDef = new TH2F("hNewVsOldSignalDef","hNewVsOldSignalDef",2,-0.5,1.5,2,-0.5,1.5);
+    TH2F *hNewVsOldSignalDef = new TH2F("hNewVsOldSignalDef", "hNewVsOldSignalDef", 2, -0.5, 1.5, 2, -0.5, 1.5);
     hNewVsOldSignalDef->GetXaxis()->SetBinLabel(2, "Signal Old");
     hNewVsOldSignalDef->GetXaxis()->SetBinLabel(1, "Background Old");
     hNewVsOldSignalDef->GetYaxis()->SetBinLabel(2, "Signal New");
@@ -167,19 +167,20 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH1F *hTrueIsoGammaMCTag = new TH1F("hTrueIsoGammaMCTag", "hMCTag", 20, 0.5, 20.5);
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(1, "Prompt #gamma");
     hTrueIsoGammaMCTag->GetXaxis()->SetBinLabel(2, "Frag #gamma");
-    //Generated photons QA:
-    if(dirname!="ClusterQA"){
-      TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged","hGammaGenIsoCharged",100,-10,30);
-      TH1F *hGammaGenBckPerb = new TH1F("hGammaGenBckPerb","hGammaGenBckPerb",100,0,200);
-      TH2F *hGammaGenEtaPhi = new TH2F("hGammaGenEtaPhi","hGammaGenEtaPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
-      TH2F *hGammaGenEtaPhiAcceptanceCut = new TH2F("hGammaGenEtaPhiAcceptanceCut","hGammaGenEtaPhiAcceptanceCut", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+    // Generated photons QA:
+    if (dirname != "ClusterQA")
+    {
+      TH1F *hGammaGenIsoCharged = new TH1F("hGammaGenIsoCharged", "hGammaGenIsoCharged", 100, -10, 30);
+      TH1F *hGammaGenBckPerb = new TH1F("hGammaGenBckPerb", "hGammaGenBckPerb", 100, 0, 200);
+      TH2F *hGammaGenEtaPhi = new TH2F("hGammaGenEtaPhi", "hGammaGenEtaPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+      TH2F *hGammaGenEtaPhiAcceptanceCut = new TH2F("hGammaGenEtaPhiAcceptanceCut", "hGammaGenEtaPhiAcceptanceCut", 100, -1., 1., 100, 0., 2 * TMath::Pi());
       //((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
     }
-    
+
     // Signal IsoGammas
     TH1F *hNIsoGammaSignal = new TH1F("hNIsoGammaSignal", "hNIsoGammaSignal", 21, -0.5, 20.5);
-    TH1F *hIsoGammaIsoChargedSignal = new TH1F("hIsoGammaIsoChargedSignal", "hIsoGammaIsoChargedSignal", 100, 0, 200);
-    TH1F *hIsoGammaIsoChargedCorrectedSignal = new TH1F("hIsoGammaIsoChargedCorrectedSignal", "hIsoGammaIsoChargedCorrectedSignal", 100, -10, 30);
+    TH1F *hIsoGammaIsoChargedSignal = new TH1F("hIsoGammaIsoChargedSignal", "hIsoGammaIsoChargedSignal", 400, 0, 200);
+    TH1F *hIsoGammaIsoChargedCorrectedSignal = new TH1F("hIsoGammaIsoChargedCorrectedSignal", "hIsoGammaIsoChargedCorrectedSignal", 400, -10, 30);
     TH1F *hIsoGammaESignal = new TH1F("hIsoGammaESignal", "hIsoGammaESignal", 100, 0, 156);
     TH1F *hIsoGammaM02Signal = new TH1F("hIsoGammaM02Signal", "hIsoGammaM02Signal", 100, M02Range[0], M02Range[1]);
     TH1F *hIsoGammaM20Signal = new TH1F("hIsoGammaM20Signal", "hIsoGammaM20Signal", 100, M20Range[0], M20Range[1]);
@@ -191,12 +192,12 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH2F *hIsoGammaM02pTSignal = new TH2F("hIsoGammaM02pTSignal", "hIsoGammaM02pTSignal", 100, M02Range[0], M02Range[1], 100, 0, 50);
     TH2F *hIsoGammaEBeforeAfterNLSignal = new TH2F("hIsoGammaEBeforeAfterNLSignal", "hIsoGammaEBeforeAfterNLSignal;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F *hGGMinvDistSignal = new TH2F("hGGMinvDistSignal", "hGGMinvDistSignal", 100, 0, 1, 500, 0, 50);
-    TH2F *hDistanceToBadChannelvsPtSignal = new TH2F("hDistanceToBadChannelvsPtSignal", "hDistanceToBadChannelvsPtSignal", 12, 0.5, 12.5, 100, 0,100);
+    TH2F *hDistanceToBadChannelvsPtSignal = new TH2F("hDistanceToBadChannelvsPtSignal", "hDistanceToBadChannelvsPtSignal", 12, 0.5, 12.5, 100, 0, 100);
 
     // NonSignal IsGammas
     TH1F *hNIsoGammaBackground = new TH1F("hNIsoGammaBackground", "hNIsoGammaBackground", 21, -0.5, 20.5);
-    TH1F *hIsoGammaIsoChargedBackground = new TH1F("hIsoGammaIsoChargedBackground", "hIsoGammaIsoChargedBackground", 100, 0, 200);
-    TH1F *hIsoGammaIsoChargedCorrectedBackground = new TH1F("hIsoGammaIsoChargedCorrectedBackground", "hIsoGammaIsoChargedCorrectedBackground", 100, -10, 30);
+    TH1F *hIsoGammaIsoChargedBackground = new TH1F("hIsoGammaIsoChargedBackground", "hIsoGammaIsoChargedBackground", 400, 0, 200);
+    TH1F *hIsoGammaIsoChargedCorrectedBackground = new TH1F("hIsoGammaIsoChargedCorrectedBackground", "hIsoGammaIsoChargedCorrectedBackground", 400, -10, 30);
     TH1F *hIsoGammaEBackground = new TH1F("hIsoGammaEBackground", "hIsoGammaEBackground", 100, 0, 156);
     TH1F *hIsoGammaM02Background = new TH1F("hIsoGammaM02Background", "hIsoGammaM02Background", 100, M02Range[0], M02Range[1]);
     TH1F *hIsoGammaM20Background = new TH1F("hIsoGammaM20Background", "hIsoGammaM20Background", 100, M20Range[0], M20Range[1]);
@@ -208,7 +209,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, string dirname, GlobalOptions o
     TH2F *hIsoGammaM02pTBackground = new TH2F("hIsoGammaM02pTBackground", "hIsoGammaM02pTBackground", 100, M02Range[0], M02Range[1], 100, 0, 50);
     TH2F *hIsoGammaEBeforeAfterNLBackground = new TH2F("hIsoGammaEBeforeAfterNLBackground", "hIsoGammaEBeforeAfterNLBackground;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
     TH2F *hGGMinvDistBackground = new TH2F("hGGMinvDistBackground", "hGGMinvDistBackground", 100, 0, 1, 500, 0, 50);
-    TH2F *hDistanceToBadChannelvsPtBackground = new TH2F("hDistanceToBadChannelvsPtBackground", "hDistanceToBadChannelvsPtBackground", 12, 0.5, 12.5, 100, 0,100);
+    TH2F *hDistanceToBadChannelvsPtBackground = new TH2F("hDistanceToBadChannelvsPtBackground", "hDistanceToBadChannelvsPtBackground", 12, 0.5, 12.5, 100, 0, 100);
 
     // All Gammas
     TH2F *hIsoGammaM02pTAllGamma = new TH2F("hIsoGammaM02pTAllGamma", "hM02pTAllGamma", 100, M02Range[0], M02Range[1], 100, 0, 50);
@@ -283,11 +284,35 @@ TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
   return dir;
 }
 
-TDirectory *DefineGammaJetHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineGGPi0Histograms(TFile *f, std::string dirname, GlobalOptions optns)
+{
+  if (!optns.doGGPi0)
+    return nullptr;
+  TDirectory *dir = f->mkdir(dirname.c_str());
+  dir->cd();
+
+  TH2F *hGGMinvPt = new TH2F("hGGMinvPt", "hGGMinvPt", 400, 0., 0.4, 200, 0., 20.);
+
+  return dir;
+}
+
+TDirectory *DefineGGPi0QAHistograms(TFile *f, std::string dirname, GlobalOptions optns)
+{
+  if (!optns.doGGPi0)
+    return nullptr;
+  TDirectory *dir = f->mkdir(dirname.c_str());
+  dir->cd();
+
+  TH2F *hGGMinvPt = new TH2F("hGGMinvPt", "hGGMinvPt", 400, 0., 0.4, 200, 0., 20.);
+
+  return dir;
+}
+
+TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma || !optns.doJets)
     return nullptr;
-  TDirectory *dir = f->mkdir("GammaJetCorrelations");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
   TH2F *hpTImbalancevsDeltaPhi = new TH2F("hpTImbalancevsDeltaPhi", "hpTImbalancevsDeltaPhi;#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}};#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 100, 0., 2., 314, 0, TMath::Pi());
@@ -295,222 +320,207 @@ TDirectory *DefineGammaJetHistograms(TFile *f, GlobalOptions optns)
   return dir;
 }
 
-TDirectory *DefineGammaJetQAHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineGammaJetQAHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma || !optns.doJets || !optns.doQA)
     return nullptr;
-  TDirectory *dir = f->mkdir("GammaJetCorrelationQA");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
   TH2F *hNIsoGammaJets = new TH2F("hNIsoGammaJets", "hNIsoGammaJets;#bf{N_{#gamma}};#bf{N_{jet}}", 11, -0.5, 10.5, 11, -0.5, 10.5);
   TH2F *hDeltaEtavsDeltaPhi = new TH2F("hDeltaEtavsDeltaPhi", "hDeltaEtavsDeltaPhi;#bf{#Delta#eta = |#eta_{#gamma}-#eta_{jet}|};#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 100, 0., 2., 314, 0, TMath::Pi());
-  TH2F *hIsoGammaFromCorrelationEtaPhiMap = new TH2F("hIsoGammaFromCorrelationEtaPhiMap", "hIsoGammaFromCorrelationEtaPhiMap;#bf{#eta_{iso #gamma}};#bf{#phi_{iso #gamma}}", 100, -1, 1., 628, 0, 2*TMath::Pi());
-  TH2F *hJetFromCorrelationEtaPhiMap = new TH2F("hJetFromCorrelationEtaPhiMap", "hJetFromCorrelationEtaPhiMap;#bf{#eta_{Jet}};#bf{#phi_{Jet}}", 100, -1, 1., 628, 0, 2*TMath::Pi());
+  TH2F *hIsoGammaFromCorrelationEtaPhiMap = new TH2F("hIsoGammaFromCorrelationEtaPhiMap", "hIsoGammaFromCorrelationEtaPhiMap;#bf{#eta_{iso #gamma}};#bf{#phi_{iso #gamma}}", 100, -1, 1., 628, 0, 2 * TMath::Pi());
+  TH2F *hJetFromCorrelationEtaPhiMap = new TH2F("hJetFromCorrelationEtaPhiMap", "hJetFromCorrelationEtaPhiMap;#bf{#eta_{Jet}};#bf{#phi_{Jet}}", 100, -1, 1., 628, 0, 2 * TMath::Pi());
 
   TH1F *hpTImbalance = new TH1F("hpTImbalance", "hpTImbalance;#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}}", 100, 0., 2.);
   TH1F *hDeltaPhi = new TH1F("hDeltaPhi", "hDeltaPhi;#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 314, 0, TMath::Pi());
-  
+
   return dir;
 }
 
-template <typename T>
-void fillHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
+void fillHistograms(std::vector<Cluster> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
 {
-  if constexpr (std::is_same<T, std::vector<IsoGamma>>::value)
+  for (unsigned long i = 0; i < obj.size(); i++)
   {
-    for (unsigned long i = 0; i < obj.size(); i++)
+    ((TH1F *)dir->FindObject("hIsoGammaPt"))->Fill(obj.at(i).Pt(), eventWeight);
+    ((TH1F *)dir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
+    ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPt"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+    if (optns.isMC)
     {
-      ((TH1F *)dir->FindObject("hIsoGammaPt"))->Fill(obj.at(i).Pt(), eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
-      ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPt"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-      if(optns.isMC){
-        if(IsoGammaCuts.isSignal(obj.at(i))){
-          ((TH1F *)dir->FindObject("hIsoGammaPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
-          ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPtSignal"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-        }else{
-          ((TH1F *)dir->FindObject("hIsoGammaPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaEBackground"))->Fill(obj.at(i).E, eventWeight);
-          ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPtBackground"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-        }
+      if (IsoGammaCuts.isSignal(obj.at(i)))
+      {
+        ((TH1F *)dir->FindObject("hIsoGammaPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
+        ((TH1F *)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
+        ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPtSignal"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+      }
+      else
+      {
+        ((TH1F *)dir->FindObject("hIsoGammaPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
+        ((TH1F *)dir->FindObject("hIsoGammaEBackground"))->Fill(obj.at(i).E, eventWeight);
+        ((THnSparseF *)dir->FindObject("hIsoGammaIsovsM02vsPtBackground"))->Fill(obj.at(i).IsoChargedCorrected, obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       }
     }
   }
-  if constexpr (std::is_same<T, std::vector<Jet>>::value)
+  if (optns.doQA)
   {
+    ((TH1F *)QAdir->FindObject("hNIsoGamma"))->Fill((int)obj.size(), eventWeight);
     for (unsigned long i = 0; i < obj.size(); i++)
     {
-      ((TH1F *)dir->FindObject("hJetPt"))->Fill(obj.at(i).Pt(), eventWeight);
-    }
-  }
-  if constexpr (std::is_same<T, std::vector<PLJet>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH1F *)dir->FindObject("hPLJetPt"))->Fill(obj.at(i).Pt(), eventWeight);
-      if (obj.at(i).ClosestDLJet != nullptr){
-        ((TH2F *)dir->FindObject("hDLJetPtVsPLJetPt"))->Fill(obj.at(i).ClosestDLJet->Pt(), obj.at(i).Pt(), eventWeight);
-        ((TH2F *)dir->FindObject("hDLSubPLDivPLJetPtVsPLJetPt"))->Fill((obj.at(i).ClosestDLJet->Pt()-obj.at(i).Pt())/obj.at(i).Pt(), obj.at(i).Pt(), eventWeight);
-      }
-    }
-  }
-  if constexpr (std::is_same<T, std::vector<GammaJetPair>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH2F *)dir->FindObject("hpTImbalancevsDeltaPhi"))->Fill(obj.at(i).pTImbalance, obj.at(i).DPhi, eventWeight);
-    }
-  }
-  if constexpr (std::is_same<T, Event>::value)
-  {
-    ((TH1F *)dir->FindObject("hNEvents"))->Fill((int)0, eventWeight);
-    ((TH1F *)dir->FindObject("hNEvents"))->Fill(1, ((int)(obj.IsTriggered)) * eventWeight);
-    ((TH1F *)dir->FindObject("hNEvents"))->Fill(2, ((int)(obj.ZVtxOK)) * eventWeight);
-    ((TH1F *)dir->FindObject("hNEvents"))->Fill(3, ((int)(obj.QualityOK)) * eventWeight);
-    ((TH1F *)dir->FindObject("hNEvents"))->Fill(4, ((int)(obj.Selected)) * eventWeight);
-  }
-}
-
-template <typename T>
-void fillGammaGenHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, GammaGenCuts GammaGenCuts)
-{
-  if constexpr (std::is_same<T, std::vector<GammaGen>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH1F *)dir->FindObject("hGammaGenE"))->Fill(obj.at(i).E, eventWeight);
-      ((TH1F *)dir->FindObject("hGammaGenPt"))->Fill(obj.at(i).Pt(), eventWeight);
-      if (GammaGenCuts.isSignal(obj.at(i))){
-        ((TH1F *)dir->FindObject("hGammaGenESignal"))->Fill(obj.at(i).E, eventWeight);
-        ((TH1F *)dir->FindObject("hGammaGenPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
-      }else{
-        ((TH1F *)dir->FindObject("hGammaGenEBackground"))->Fill(obj.at(i).E, eventWeight);
-        ((TH1F *)dir->FindObject("hGammaGenPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
-      }
-      if(GammaGenCuts.PassedGammaGenCuts(obj.at(i))){
-        ((TH1F *)dir->FindObject("hGammaGenEAcceptanceCut"))->Fill(obj.at(i).E, eventWeight);
-        ((TH1F *)dir->FindObject("hGammaGenPtAcceptanceCut"))->Fill(obj.at(i).Pt(), eventWeight);
-      }
-      
-    }
-  }
-}
-
-template <typename T>
-void fillGammaGenQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, GammaGenCuts GammaGenCuts)
-{
-  if constexpr (std::is_same<T, std::vector<GammaGen>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH1F *)dir->FindObject("hGammaGenIsoCharged"))->Fill(obj.at(i).IsoCharged,eventWeight);
-      ((TH1F *)dir->FindObject("hGammaGenBckPerb"))->Fill(obj.at(i).IsoBckPerp,eventWeight);
-      ((TH2F *)dir->FindObject("hGammaGenEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-      if(GammaGenCuts.PassedGammaGenCuts(obj.at(i))){
-        ((TH2F *)dir->FindObject("hGammaGenEtaPhiAcceptanceCut"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-      }
-    }
-  }
-}
-
-template <typename T>
-void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
-{
-  if constexpr (std::is_same<T, std::vector<IsoGamma>>::value)
-  {
-    ((TH1F *)dir->FindObject("hNIsoGamma"))->Fill((int)obj.size(), eventWeight);
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      //
-      ((TH1F *)dir->FindObject("hIsoGammaIsoCharged"))->Fill(obj.at(i).IsoCharged, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrected"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPx"))->Fill(obj.at(i).Px(), eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPy"))->Fill(obj.at(i).Py(), eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaPz"))->Fill(obj.at(i).Pz(), eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaM02"))->Fill(obj.at(i).M02, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaM20"))->Fill(obj.at(i).M20, eventWeight);
-      ((TH1F *)dir->FindObject("hIsoGammaNLM"))->Fill(obj.at(i).NLM, eventWeight);
-      ((TH2F *)dir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-      ((TH2F *)dir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-      ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
-      ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPt"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
-      if(obj.at(i).MatchedTrack.P>0){
-        ((TH2F *)dir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaIsoCharged"))->Fill(obj.at(i).IsoCharged, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaIsoChargedCorrected"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaPz"))->Fill(obj.at(i).Pz(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaE"))->Fill(obj.at(i).E, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaM02"))->Fill(obj.at(i).M02, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaM20"))->Fill(obj.at(i).M20, eventWeight);
+      ((TH1F *)QAdir->FindObject("hIsoGammaNLM"))->Fill(obj.at(i).NLM, eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+      ((TH2F *)QAdir->FindObject("hDistanceToBadChannelvsPt"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(), eventWeight);
+      if (obj.at(i).MatchedTrack.P > 0)
+      {
+        ((TH2F *)QAdir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
       }
 
       if (optns.isMC)
       {
-        double isSigOld=0;
-        double isSigNew=0;
-        if(IsoGammaCuts.isSignalClusterLevelIso(obj.at(i))){
-          isSigOld=1;
+        double isSigOld = 0;
+        double isSigNew = 0;
+        if (IsoGammaCuts.isSignalClusterLevelIso(obj.at(i)))
+        {
+          isSigOld = 1;
         }
-        if(IsoGammaCuts.isSignal(obj.at(i))){
-          isSigNew=1;
-        }
-        ((TH2F *)dir->FindObject("hNewVsOldSignalDef"))->Fill(isSigOld,isSigNew);
-        ((TH2F *)dir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);
         if (IsoGammaCuts.isSignal(obj.at(i)))
         {
-          ((TH1F *)dir->FindObject("hIsoGammaIsoChargedSignal"))->Fill(obj.at(i).IsoCharged, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrectedSignal"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
-          ((TH1F *)dir->FindObject("hNIsoGammaSignal"))->Fill((int)obj.size(), eventWeight);
-          ((TH1F *)dir->FindObject("hMinMassDiffToPi0Signal"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPxSignal"))->Fill(obj.at(i).Px(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPySignal"))->Fill(obj.at(i).Py(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPzSignal"))->Fill(obj.at(i).Pz(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaM02Signal"))->Fill(obj.at(i).M02, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaM20Signal"))->Fill(obj.at(i).M20, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaNLMSignal"))->Fill(obj.at(i).NLM, eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaEtaPhiSignal"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTSignal"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNLSignal"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
-          ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPtSignal"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
+          isSigNew = 1;
+        }
+        ((TH2F *)QAdir->FindObject("hNewVsOldSignalDef"))->Fill(isSigOld, isSigNew);
+        ((TH2F *)QAdir->FindObject("hTrueIsoGammaMCTag"))->Fill(obj.at(i).MCTag, eventWeight);
+        if (IsoGammaCuts.isSignal(obj.at(i)))
+        {
+          ((TH1F *)QAdir->FindObject("hIsoGammaIsoChargedSignal"))->Fill(obj.at(i).IsoCharged, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaIsoChargedCorrectedSignal"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
+          ((TH1F *)QAdir->FindObject("hNIsoGammaSignal"))->Fill((int)obj.size(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hMinMassDiffToPi0Signal"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPxSignal"))->Fill(obj.at(i).Px(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPySignal"))->Fill(obj.at(i).Py(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPzSignal"))->Fill(obj.at(i).Pz(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaESignal"))->Fill(obj.at(i).E, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaM02Signal"))->Fill(obj.at(i).M02, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaM20Signal"))->Fill(obj.at(i).M20, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaNLMSignal"))->Fill(obj.at(i).NLM, eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaEtaPhiSignal"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTSignal"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaEBeforeAfterNLSignal"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+          ((TH2F *)QAdir->FindObject("hDistanceToBadChannelvsPtSignal"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(), eventWeight);
         }
         else
         {
-          ((TH1F *)dir->FindObject("hIsoGammaIsoChargedBackground"))->Fill(obj.at(i).IsoCharged, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaIsoChargedCorrectedBackground"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
-          ((TH1F *)dir->FindObject("hNIsoGammaBackground"))->Fill((int)obj.size(), eventWeight);
-          ((TH1F *)dir->FindObject("hMinMassDiffToPi0Background"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPxBackground"))->Fill(obj.at(i).Px(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPyBackground"))->Fill(obj.at(i).Py(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaPzBackground"))->Fill(obj.at(i).Pz(), eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaEBackground"))->Fill(obj.at(i).E, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaM02Background"))->Fill(obj.at(i).M02, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaM20Background"))->Fill(obj.at(i).M20, eventWeight);
-          ((TH1F *)dir->FindObject("hIsoGammaNLMBackground"))->Fill(obj.at(i).NLM, eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaEtaPhiBackground"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTBackground"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
-          ((TH2F *)dir->FindObject("hIsoGammaEBeforeAfterNLBackground"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
-          ((TH2F *)dir->FindObject("hDistanceToBadChannelvsPtBackground"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(),eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaIsoChargedBackground"))->Fill(obj.at(i).IsoCharged, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaIsoChargedCorrectedBackground"))->Fill(obj.at(i).IsoChargedCorrected, eventWeight);
+          ((TH1F *)QAdir->FindObject("hNIsoGammaBackground"))->Fill((int)obj.size(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hMinMassDiffToPi0Background"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPxBackground"))->Fill(obj.at(i).Px(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPyBackground"))->Fill(obj.at(i).Py(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaPzBackground"))->Fill(obj.at(i).Pz(), eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaEBackground"))->Fill(obj.at(i).E, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaM02Background"))->Fill(obj.at(i).M02, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaM20Background"))->Fill(obj.at(i).M20, eventWeight);
+          ((TH1F *)QAdir->FindObject("hIsoGammaNLMBackground"))->Fill(obj.at(i).NLM, eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaEtaPhiBackground"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTBackground"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaEBeforeAfterNLBackground"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
+          ((TH2F *)QAdir->FindObject("hDistanceToBadChannelvsPtBackground"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(), eventWeight);
         }
         if (obj.at(i).isPhoton())
         {
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTAllGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTAllGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
         }
         if (obj.at(i).isGammaFromPion())
         {
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTPionDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTPionDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
         }
         if (obj.at(i).isGammaFromEta())
         {
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTEtaDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTEtaDecayGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
         }
         if (obj.at(i).isPion())
         {
-          ((TH2F *)dir->FindObject("hIsoGammaM02pTMergedPionGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
+          ((TH2F *)QAdir->FindObject("hIsoGammaM02pTMergedPionGamma"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
         }
       }
       else
       {
-        ((TH1F *)dir->FindObject("hMinMassDiffToPi0"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
+        ((TH1F *)QAdir->FindObject("hMinMassDiffToPi0"))->Fill(obj.at(i).MinMassDiffToPi0, eventWeight);
       }
     }
   }
-  if constexpr (std::is_same<T, std::vector<Pi0>>::value)
+}
+
+void fillHistograms(std::vector<DLJet> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
+  {
+    ((TH1F *)dir->FindObject("hJetPt"))->Fill(obj.at(i).Pt(), eventWeight);
+  }
+  if (optns.doQA)
+  {
+    ((TH1F *)QAdir->FindObject("hNDLJets"))->Fill(obj.size(), eventWeight);
+    for (unsigned long i = 0; i < obj.size(); i++)
+    {
+      ((TH1F *)QAdir->FindObject("hJetPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetArea"))->Fill(obj.at(i).Area, eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetNch"))->Fill(obj.at(i).Nch, eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetNclus"))->Fill(obj.at(i).Nclus, eventWeight);
+      ((TH1F *)QAdir->FindObject("hJetNconstits"))->Fill(obj.at(i).Nconstits, eventWeight);
+      ((TH2F *)QAdir->FindObject("hJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+    }
+  }
+}
+
+void fillHistograms(std::vector<PLJet> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
+  {
+    ((TH1F *)dir->FindObject("hPLJetPt"))->Fill(obj.at(i).Pt(), eventWeight);
+    if (obj.at(i).ClosestDLJet != nullptr)
+    {
+      ((TH2F *)dir->FindObject("hDLJetPtVsPLJetPt"))->Fill(obj.at(i).ClosestDLJet->Pt(), obj.at(i).Pt(), eventWeight);
+      ((TH2F *)dir->FindObject("hDLSubPLDivPLJetPtVsPLJetPt"))->Fill((obj.at(i).ClosestDLJet->Pt() - obj.at(i).Pt()) / obj.at(i).Pt(), obj.at(i).Pt(), eventWeight);
+    }
+  }
+  if (optns.doQA)
+  {
+    ((TH1F *)QAdir->FindObject("hNPLJets"))->Fill(obj.size(), eventWeight);
+    for (unsigned long i = 0; i < obj.size(); i++)
+    {
+      ((TH1F *)QAdir->FindObject("hPLJetPx"))->Fill(obj.at(i).Px(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hPLJetPy"))->Fill(obj.at(i).Py(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hPLJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hPLJetArea"))->Fill(obj.at(i).Area, eventWeight);
+      ((TH1F *)QAdir->FindObject("hPLJetNPart"))->Fill(obj.at(i).NPart, eventWeight);
+      ((TH2F *)QAdir->FindObject("hPLJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      if (obj.at(i).ClosestDLJet != nullptr)
+      {
+        ((TH2F *)QAdir->FindObject("hDLJetPVsPLJetP"))->Fill(obj.at(i).ClosestDLJet->P(), obj.at(i).P(), eventWeight);
+        ((TH2F *)QAdir->FindObject("hDLJetPxVsPLJetPx"))->Fill(fabs(obj.at(i).ClosestDLJet->Px()), fabs(obj.at(i).Px()), eventWeight);
+        ((TH2F *)QAdir->FindObject("hDLJetPyVsPLJetPy"))->Fill(fabs(obj.at(i).ClosestDLJet->Py()), fabs(obj.at(i).Py()), eventWeight);
+      }
+    }
+  }
+}
+
+void fillHistograms(std::vector<Pi0> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
+  {
+    ((TH2F *)dir->FindObject("hGGMinvPt"))->Fill(obj.at(i).Mass, obj.at(i).Pt(), eventWeight);
+  }
+  if (optns.doQA)
   {
     if (((TString)dir->GetName()) == "IsoGammaQA")
     {
@@ -520,59 +530,99 @@ void fillQAHistograms(T obj, TDirectory *dir, float eventWeight, GlobalOptions o
       }
     }
   }
-  if constexpr (std::is_same<T, std::vector<Jet>>::value)
+}
+
+void fillHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
   {
-    ((TH1F *)dir->FindObject("hNDLJets"))->Fill(obj.size(), eventWeight);
+    ((TH2F *)dir->FindObject("hpTImbalancevsDeltaPhi"))->Fill(obj.at(i).pTImbalance, obj.at(i).DPhi, eventWeight);
+  }
+  if (optns.doQA)
+  {
     for (unsigned long i = 0; i < obj.size(); i++)
     {
-      ((TH1F *)dir->FindObject("hJetPx"))->Fill(obj.at(i).Px(), eventWeight);
-      ((TH1F *)dir->FindObject("hJetPy"))->Fill(obj.at(i).Py(), eventWeight);
-      ((TH1F *)dir->FindObject("hJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
-      ((TH1F *)dir->FindObject("hJetArea"))->Fill(obj.at(i).Area, eventWeight);
-      ((TH1F *)dir->FindObject("hJetNch"))->Fill(obj.at(i).Nch, eventWeight);
-      ((TH1F *)dir->FindObject("hJetNclus"))->Fill(obj.at(i).Nclus, eventWeight);
-      ((TH1F *)dir->FindObject("hJetNconstits"))->Fill(obj.at(i).Nconstits, eventWeight);
-      ((TH2F *)dir->FindObject("hJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hDeltaEtavsDeltaPhi"))->Fill(obj.at(i).DEta, obj.at(i).DPhi, eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaFromCorrelationEtaPhiMap"))->Fill(obj.at(i).isoGamma->Eta(), obj.at(i).isoGamma->Phi(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hJetFromCorrelationEtaPhiMap"))->Fill(obj.at(i).jet->Eta(), obj.at(i).jet->Phi(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hpTImbalance"))->Fill(obj.at(i).pTImbalance, eventWeight);
+      ((TH1F *)QAdir->FindObject("hDeltaPhi"))->Fill(obj.at(i).DPhi, eventWeight);
     }
   }
-  if constexpr (std::is_same<T, std::vector<PLJet>>::value)
+}
+
+void fillHistograms(std::vector<GGPi0JetPair> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
   {
-    ((TH1F *)dir->FindObject("hNPLJets"))->Fill(obj.size(), eventWeight);
+    ((TH2F *)dir->FindObject("hpTImbalancevsDeltaPhi"))->Fill(obj.at(i).pTImbalance, obj.at(i).DPhi, eventWeight);
+  }
+  if (optns.doQA)
+  {
     for (unsigned long i = 0; i < obj.size(); i++)
     {
-      ((TH1F *)dir->FindObject("hPLJetPx"))->Fill(obj.at(i).Px(), eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetPy"))->Fill(obj.at(i).Py(), eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetPz"))->Fill(obj.at(i).Pz(), eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetArea"))->Fill(obj.at(i).Area, eventWeight);
-      ((TH1F *)dir->FindObject("hPLJetNPart"))->Fill(obj.at(i).NPart, eventWeight);
-      ((TH2F *)dir->FindObject("hPLJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
-      if (obj.at(i).ClosestDLJet != nullptr)
+      ((TH2F *)QAdir->FindObject("hDeltaEtavsDeltaPhi"))->Fill(obj.at(i).DEta, obj.at(i).DPhi, eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaFromCorrelationEtaPhiMap"))->Fill(obj.at(i).ggPi0->Eta(), obj.at(i).ggPi0->Phi(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hJetFromCorrelationEtaPhiMap"))->Fill(obj.at(i).jet->Eta(), obj.at(i).jet->Phi(), eventWeight);
+      ((TH1F *)QAdir->FindObject("hpTImbalance"))->Fill(obj.at(i).pTImbalance, eventWeight);
+      ((TH1F *)QAdir->FindObject("hDeltaPhi"))->Fill(obj.at(i).DPhi, eventWeight);
+    }
+  }
+}
+
+void fillHistograms(Event obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+{
+  ((TH1F *)dir->FindObject("hNEvents"))->Fill(0., (Double_t)eventWeight);
+  ((TH1F *)dir->FindObject("hNEvents"))->Fill(1., ((int)(obj.IsTriggered)) * eventWeight);
+  ((TH1F *)dir->FindObject("hNEvents"))->Fill(2., ((int)(obj.ZVtxOK)) * eventWeight);
+  ((TH1F *)dir->FindObject("hNEvents"))->Fill(3., ((int)(obj.QualityOK)) * eventWeight);
+  ((TH1F *)dir->FindObject("hNEvents"))->Fill(4., ((int)(obj.Selected)) * eventWeight);
+  if (optns.doQA)
+  {
+    ((TH1F *)QAdir->FindObject("hZVtx"))->Fill(obj.ZVtx, eventWeight);
+    ((TH1F *)QAdir->FindObject("hWeights"))->Fill(obj.weight);
+    ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(0., 1);
+    ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(1., (int)(obj.IsTriggered));
+    ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(2., (int)(obj.ZVtxOK));
+    ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(3., (int)(obj.QualityOK));
+    ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(4., (int)(obj.Selected));
+  }
+}
+
+template <typename T>
+void fillHistograms(T obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns, GammaGenCuts GammaGenCuts)
+{
+  for (unsigned long i = 0; i < obj.size(); i++)
+  {
+    ((TH1F *)dir->FindObject("hGammaGenE"))->Fill(obj.at(i).E, eventWeight);
+    ((TH1F *)dir->FindObject("hGammaGenPt"))->Fill(obj.at(i).Pt(), eventWeight);
+    if (GammaGenCuts.isSignal(obj.at(i)))
+    {
+      ((TH1F *)dir->FindObject("hGammaGenESignal"))->Fill(obj.at(i).E, eventWeight);
+      ((TH1F *)dir->FindObject("hGammaGenPtSignal"))->Fill(obj.at(i).Pt(), eventWeight);
+    }
+    else
+    {
+      ((TH1F *)dir->FindObject("hGammaGenEBackground"))->Fill(obj.at(i).E, eventWeight);
+      ((TH1F *)dir->FindObject("hGammaGenPtBackground"))->Fill(obj.at(i).Pt(), eventWeight);
+    }
+    if (GammaGenCuts.PassedGammaGenCuts(obj.at(i)))
+    {
+      ((TH1F *)dir->FindObject("hGammaGenEAcceptanceCut"))->Fill(obj.at(i).E, eventWeight);
+      ((TH1F *)dir->FindObject("hGammaGenPtAcceptanceCut"))->Fill(obj.at(i).Pt(), eventWeight);
+    }
+  }
+  if (optns.doQA)
+  {
+    for (unsigned long i = 0; i < obj.size(); i++)
+    {
+      ((TH1F *)QAdir->FindObject("hGammaGenIsoCharged"))->Fill(obj.at(i).IsoCharged, eventWeight);
+      ((TH1F *)QAdir->FindObject("hGammaGenBckPerb"))->Fill(obj.at(i).IsoBckPerp, eventWeight);
+      ((TH2F *)QAdir->FindObject("hGammaGenEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      if (GammaGenCuts.PassedGammaGenCuts(obj.at(i)))
       {
-        ((TH2F *)dir->FindObject("hDLJetPVsPLJetP"))->Fill(obj.at(i).ClosestDLJet->P(), obj.at(i).P(), eventWeight);
-        ((TH2F *)dir->FindObject("hDLJetPxVsPLJetPx"))->Fill(fabs(obj.at(i).ClosestDLJet->Px()), fabs(obj.at(i).Px()), eventWeight);
-        ((TH2F *)dir->FindObject("hDLJetPyVsPLJetPy"))->Fill(fabs(obj.at(i).ClosestDLJet->Py()), fabs(obj.at(i).Py()), eventWeight);
+        ((TH2F *)QAdir->FindObject("hGammaGenEtaPhiAcceptanceCut"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
       }
     }
-  }
-  if constexpr (std::is_same<T, std::vector<GammaJetPair>>::value)
-  {
-    for (unsigned long i = 0; i < obj.size(); i++)
-    {
-      ((TH2F *)dir->FindObject("hDeltaEtavsDeltaPhi"))->Fill(obj.at(i).DEta, obj.at(i).DPhi, eventWeight);
-      ((TH2F *)dir->FindObject("hIsoGammaFromCorrelationEtaPhiMap"))->Fill(obj.at(i).isoGamma->Eta(), obj.at(i).isoGamma->Phi(), eventWeight);
-      ((TH2F *)dir->FindObject("hJetFromCorrelationEtaPhiMap"))->Fill(obj.at(i).jet->Eta(), obj.at(i).jet->Phi(), eventWeight);
-      ((TH1F *)dir->FindObject("hpTImbalance"))->Fill(obj.at(i).pTImbalance, eventWeight);
-      ((TH1F *)dir->FindObject("hDeltaPhi"))->Fill(obj.at(i).DPhi, eventWeight);
-    }
-  }
-  if constexpr (std::is_same<T, Event>::value)
-  {
-    ((TH1F *)dir->FindObject("hZVtx"))->Fill(obj.ZVtx, eventWeight);
-    ((TH1F *)dir->FindObject("hWeights"))->Fill(obj.weight);
-    ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill((int)0, 1);
-    ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(1, (int)(obj.IsTriggered));
-    ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(2, (int)(obj.ZVtxOK));
-    ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(3, (int)(obj.QualityOK));
-    ((TH1F *)dir->FindObject("hNEventswoWeights"))->Fill(4, (int)(obj.Selected));
   }
 }

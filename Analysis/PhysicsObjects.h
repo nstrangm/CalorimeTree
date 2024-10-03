@@ -5,7 +5,6 @@
 #include "Logging.h"
 #include "MCUtils.h"
 #include "Geometry.h"
-// #include "analyseHistosFromTree.h"
 
 class PhysicsObject
 {
@@ -48,7 +47,7 @@ float calculateAngleBetweenPhysicsObjects(T1 o1, T2 o2)
 template <typename T1, typename T2>
 float calculateDeltaPhiBetweenPhysicsObjects(T1 o1, T2 o2)
 {
-  float dPhi = o1.Phi() - o2.Phi();
+  float dPhi = fabs(o1.Phi() - o2.Phi());
   if (dPhi > TMath::Pi())
     dPhi = fabs(dPhi - 2 * TMath::Pi());
   return dPhi;
@@ -179,11 +178,11 @@ bool GammaGen::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEt
   return false;
 }
 
-class IsoGamma : public PhysicsObject
+class Cluster : public PhysicsObject
 {
 public:
   using PhysicsObject::PhysicsObject;
-  ~IsoGamma() {};
+  ~Cluster() {};
   bool isPhoton();
   // bool isSignal();
   bool isGammaFromPion();
@@ -215,7 +214,7 @@ public:
   int MCTag;
 };
 
-bool IsoGamma::isPhoton()
+bool Cluster::isPhoton()
 {
   if (CheckTagBit(MCTag, kMCPhoton))
   {
@@ -224,7 +223,7 @@ bool IsoGamma::isPhoton()
   return false;
 }
 
-bool IsoGamma::isGammaFromPion()
+bool Cluster::isGammaFromPion()
 {
   if (CheckTagBit(MCTag, kMCPhoton))
   {
@@ -236,7 +235,7 @@ bool IsoGamma::isGammaFromPion()
   return false;
 }
 
-bool IsoGamma::isGammaFromEta()
+bool Cluster::isGammaFromEta()
 {
   if (CheckTagBit(MCTag, kMCPhoton))
   {
@@ -248,7 +247,7 @@ bool IsoGamma::isGammaFromEta()
   return false;
 }
 
-bool IsoGamma::isPion()
+bool Cluster::isPion()
 {
   if (CheckTagBit(MCTag, kMCPion))
   {
@@ -257,12 +256,12 @@ bool IsoGamma::isPion()
   return false;
 }
 
-bool IsoGamma::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2])
+bool Cluster::isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2])
 {
   return (Eta() < EMCalEtaPhiMinMax[0][1] && Eta() > EMCalEtaPhiMinMax[0][0] && Phi() > EMCalEtaPhiMinMax[1][0] && Phi() < EMCalEtaPhiMinMax[1][1]);
 }
 
-bool IsoGamma::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2])
+bool Cluster::isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2])
 {
   if (Eta() < DCalEtaPhiMinMax[0][1] && Eta() > DCalEtaPhiMinMax[0][0] && Phi() > DCalEtaPhiMinMax[1][0] && Phi() < DCalEtaPhiMinMax[1][1])
   {                                                                                                                                                           // In DCal
@@ -303,13 +302,13 @@ void saveGenPhotonsFromEventInVector(TreeBuffer tree, std::vector<GammaGen> &Gam
   }
 }
 
-void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGammas, GlobalOptions optns)
+void saveClustersFromEventInVector(TreeBuffer tree, std::vector<Cluster> &IsoGammas, GlobalOptions optns)
 {
   for (int iCluster = 0; iCluster < (int)tree.Cluster_E->size(); iCluster++)
   {
     if (optns.TreeFormat == kRun2Tree)
     {
-      IsoGamma isoGamma(PtFromPxPy(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster)), EtaFromPxPyPz(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster), tree.Cluster_Pz->at(iCluster)), PhiFromPxPy(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster)));
+      Cluster isoGamma(PtFromPxPy(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster)), EtaFromPxPyPz(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster), tree.Cluster_Pz->at(iCluster)), PhiFromPxPy(tree.Cluster_Px->at(iCluster), tree.Cluster_Py->at(iCluster)));
       isoGamma.EBeforeNL = tree.Cluster_E->at(iCluster);
       isoGamma.E = tree.Cluster_E->at(iCluster);
       isoGamma.M02 = tree.Cluster_M02->at(iCluster);
@@ -338,7 +337,7 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGa
     }
     else if (optns.TreeFormat == kRun3Tree)
     {
-      IsoGamma isoGamma(PtFromPEta(tree.Cluster_E->at(iCluster), tree.Cluster_Eta->at(iCluster)), tree.Cluster_Eta->at(iCluster), tree.Cluster_Phi->at(iCluster));
+      Cluster isoGamma(PtFromPEta(tree.Cluster_E->at(iCluster), tree.Cluster_Eta->at(iCluster)), tree.Cluster_Eta->at(iCluster), tree.Cluster_Phi->at(iCluster));
       isoGamma.EBeforeNL = tree.Cluster_E->at(iCluster);
       isoGamma.E = tree.Cluster_E->at(iCluster);
       isoGamma.M02 = tree.Cluster_M02->at(iCluster);
@@ -362,11 +361,14 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<IsoGamma> &IsoGa
   }
 }
 
-void calculateIsolation(std::vector<IsoGamma> &IsoGammas, Event &Event, bool useRhoInsteadOfPerpCone)
+// ########################################################################################################################
+// ###### ToDo: Check whether this is run3 and if so do not apply a correction since this is done online already! #########
+// ########################################################################################################################
+void calculateIsolation(std::vector<Cluster> &IsoGammas, Event &Event, bool useRhoInsteadOfPerpCone)
 {
   for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++)
   {
-    IsoGamma *isoGamma = &IsoGammas.at(iGamma);
+    Cluster *isoGamma = &IsoGammas.at(iGamma);
 
     // Calculate corrected isolation pT subtracting backperp mult by cone area.
     float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
@@ -401,10 +403,29 @@ public:
   unsigned short Nch = 0;
   unsigned short Nclus = 0;
   unsigned short Nconstits = 0;
-  float M =0;
+  float M = 0;
+  bool isInJetAcceptance(float JetEtaPhiMinMax[2][2]);
 };
 
-void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets, GlobalOptions optns)
+bool Jet::isInJetAcceptance(float JetEtaPhiMinMax[2][2])
+{
+  return (Eta() < JetEtaPhiMinMax[0][1] && Eta() > JetEtaPhiMinMax[0][0] && Phi() > JetEtaPhiMinMax[1][0] && Phi() < JetEtaPhiMinMax[1][1]);
+}
+
+class DLJet : public Jet
+{
+public:
+  using Jet::Jet;
+  ~DLJet() {};
+  float Area = 0;
+  unsigned short Nch = 0;
+  unsigned short Nclus = 0;
+  unsigned short Nconstits = 0;
+  float M = 0;
+  bool isInJetAcceptance(float JetEtaPhiMinMax[2][2]);
+};
+
+void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, GlobalOptions optns)
 {
   for (int iJet = 0; iJet < (int)tree.Jet_Area->size(); iJet++)
   {
@@ -413,7 +434,7 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets, GlobalOp
       float px = tree.Jet_Px->at(iJet);
       float py = tree.Jet_Py->at(iJet);
       float pz = tree.Jet_Pz->at(iJet);
-      Jet jet(PtFromPxPy(px, py), EtaFromPxPyPz(px, py, pz), PhiFromPxPy(px, py));
+      DLJet jet(PtFromPxPy(px, py), EtaFromPxPyPz(px, py, pz), PhiFromPxPy(px, py));
       jet.Area = tree.Jet_Area->at(iJet);
       jet.Nch = tree.Jet_Nch->at(iJet);
       jet.Nclus = tree.Jet_Nclus->at(iJet);
@@ -421,7 +442,7 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<Jet> &Jets, GlobalOp
     }
     else if (optns.TreeFormat == kRun3Tree)
     {
-      Jet jet(tree.Jet_Pt->at(iJet), tree.Jet_Eta->at(iJet), tree.Jet_Phi->at(iJet));
+      DLJet jet(tree.Jet_Pt->at(iJet), tree.Jet_Eta->at(iJet), tree.Jet_Phi->at(iJet));
       jet.Area = tree.Jet_Area->at(iJet);
       jet.M = tree.Jet_M->at(iJet);
       jet.Nconstits = tree.Jet_Nconstits->at(iJet);
@@ -471,13 +492,6 @@ void savePLJetsFromEventInVector(TreeBuffer tree, std::vector<PLJet> &PLJets, Gl
       FATAL(Form("Unknown treeFormat %d", optns.TreeFormat))
     }
   }
-  //   tree->SetBranchAddress("jet_data_pt", &Jet_Pt);
-  // tree->SetBranchAddress("jet_data_eta", &Jet_Eta);
-  // tree->SetBranchAddress("jet_data_phi", &Jet_Phi);
-  // tree->SetBranchAddress("jet_data_energy", &Jet_E);
-  // tree->SetBranchAddress("jet_data_mass", &Jet_M);
-  // tree->SetBranchAddress("jet_data_area", &Jet_Area);
-  // tree->SetBranchAddress("jet_data_nconstituents", &Jet_Constits);
 }
 
 template <typename JT1, typename JT2>
@@ -500,7 +514,7 @@ short int getClosestJetNumber(JT1 Jet, std::vector<JT2> JetGroup, float R)
   return closestJetNumber;
 }
 
-void mapPLtoDLjets(std::vector<Jet> &DLJets, std::vector<PLJet> &PLJets, float R)
+void mapPLtoDLjets(std::vector<DLJet> &DLJets, std::vector<PLJet> &PLJets, float R)
 {
   std::vector<short int> closestPLJetFromDLJetNumber;
   std::vector<short int> closestDLJetFromPLJetNumber;
@@ -526,19 +540,24 @@ public:
   float Mass;
 };
 
-class GammaJetPair
+class CorrelationPair
 {
 public:
-  GammaJetPair(IsoGamma *isoGammaptr, Jet *jetptr);
-  ~GammaJetPair() {};
-  IsoGamma *isoGamma = nullptr;
-  Jet *jet = nullptr;
   float DPhi = 0;
   float DEta = 0;
   float pTImbalance = 1; // pTjet/pTgamma
 };
 
-GammaJetPair::GammaJetPair(IsoGamma *isoGammaptr, Jet *jetptr)
+class GammaJetPair : public CorrelationPair
+{
+public:
+  GammaJetPair(Cluster *isoGammaptr, Jet *jetptr);
+  ~GammaJetPair() {};
+  Cluster *isoGamma = nullptr;
+  Jet *jet = nullptr;
+};
+
+GammaJetPair::GammaJetPair(Cluster *isoGammaptr, Jet *jetptr)
 {
   isoGamma = isoGammaptr;
   jet = jetptr;
@@ -547,25 +566,47 @@ GammaJetPair::GammaJetPair(IsoGamma *isoGammaptr, Jet *jetptr)
   pTImbalance = jet->Pt() / isoGamma->Pt();
 }
 
-void pairGammasWithJets(std::vector<IsoGamma> &IsoGammas, std::vector<Jet> &Jets, std::vector<GammaJetPair> &GammaJetPairs)
+class GGPi0JetPair : public CorrelationPair
 {
-  for (int ig = 0; ig < (int)IsoGammas.size(); ig++)
+public:
+  GGPi0JetPair(Pi0 *ggp0ptr, Jet *jetptr);
+  ~GGPi0JetPair() {};
+  Pi0 *ggPi0 = nullptr;
+  Jet *jet = nullptr;
+};
+
+GGPi0JetPair::GGPi0JetPair(Pi0 *ggp0ptr, Jet *jetptr)
+{
+  ggPi0 = ggp0ptr;
+  jet = jetptr;
+  DPhi = calculateDeltaPhiBetweenPhysicsObjects(*ggPi0, *jet);
+  DEta = calculateDeltaEtaBetweenPhysicsObjects(*ggPi0, *jet);
+  pTImbalance = jet->Pt() / ggPi0->Pt();
+}
+
+template <typename X, typename Y, typename Z>
+void pairXWithYIntoZ(std::vector<X> &x, std::vector<Y> &y, std::vector<Z> &z)
+{
+  for (int i = 0; i < (int)x.size(); i++)
   {
-    for (int ij = 0; ij < (int)Jets.size(); ij++)
+    for (int j = 0; j < (int)y.size(); j++)
     {
-      GammaJetPair gammaJetPair(&IsoGammas.at(ig), &Jets.at(ij));
-      GammaJetPairs.push_back(gammaJetPair);
+      Z pair(&x.at(i), &y.at(j));
+      z.push_back(pair);
     }
   }
 }
 
-void pairIsoGammasFromEventInVector(std::vector<IsoGamma> &IsoGammas, std::vector<Pi0> &Pi0s)
+void pairGammasFromEventInVector(std::vector<Cluster> &IsoGammas, std::vector<Pi0> &Pi0s)
 {
   for (int ig1 = 0; ig1 < (int)IsoGammas.size(); ig1++)
   {
     for (int ig2 = ig1 + 1; ig2 < (int)IsoGammas.size(); ig2++)
     {
-      Pi0 pi0(IsoGammas.at(ig1).Px() + IsoGammas.at(ig2).Px(), IsoGammas.at(ig1).Py() + IsoGammas.at(ig2).Py(), IsoGammas.at(ig1).Pz() + IsoGammas.at(ig2).Pz());
+      float pt = PtFromPxPy(IsoGammas.at(ig1).Px() + IsoGammas.at(ig2).Px(), IsoGammas.at(ig1).Py() + IsoGammas.at(ig2).Py());
+      float eta = EtaFromPxPyPz(IsoGammas.at(ig1).Px() + IsoGammas.at(ig2).Px(), IsoGammas.at(ig1).Py() + IsoGammas.at(ig2).Py(), IsoGammas.at(ig1).Pz() + IsoGammas.at(ig2).Pz());
+      float phi = PhiFromPxPy(IsoGammas.at(ig1).Px() + IsoGammas.at(ig2).Px(), IsoGammas.at(ig1).Py() + IsoGammas.at(ig2).Py());
+      Pi0 pi0(pt, eta, phi);
       pi0.Mass = TMath::Sqrt(2 * IsoGammas.at(ig1).E * IsoGammas.at(ig2).E * (1 - TMath::Cos(calculateAngleBetweenPhysicsObjects(IsoGammas.at(ig1), IsoGammas.at(ig2)))));
       Pi0s.push_back(pi0);
     }

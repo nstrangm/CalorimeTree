@@ -84,11 +84,11 @@ GammaGenCuts::GammaGenCuts(GlobalOptions optns)
   YAML::Node standardcut = ycut["Standard"];
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
   // Acceptance cut
-  TString ClusterAcceptance = (TString)(chosencut["cluster_Acceptance"].IsDefined() ? chosencut["cluster_Acceptance"].as<std::string>() : standardcut["cluster_Acceptance"].as<std::string>()).c_str();
+  TString ClusterAcceptance = (TString)(chosencut["gamma_Acceptance"].IsDefined() ? chosencut["gamma_Acceptance"].as<std::string>() : standardcut["gamma_Acceptance"].as<std::string>()).c_str();
   SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
   // Load Isolation cut
-  pTisoCorrectedMax = chosencut["cluster_max_ptiso"].IsDefined() ? chosencut["cluster_max_ptiso"].as<float>() : standardcut["cluster_max_ptiso"].as<float>();
-  RapidityMax = chosencut["cluster_max_rapidity"].IsDefined() ? chosencut["cluster_max_rapidity"].as<float>() : standardcut["cluster_max_rapidity"].as<float>();
+  pTisoCorrectedMax = chosencut["gamma_max_ptiso"].IsDefined() ? chosencut["gamma_max_ptiso"].as<float>() : standardcut["gamma_max_ptiso"].as<float>();
+  RapidityMax = chosencut["gamma_max_rapidity"].IsDefined() ? chosencut["gamma_max_rapidity"].as<float>() : standardcut["gamma_max_rapidity"].as<float>();
   
   LOG(Form("Gen Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
 }
@@ -200,10 +200,10 @@ public:
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
   bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
-  bool PassedIsoGammaCuts(IsoGamma IsoGamma);
-  bool PassedClusterCuts(IsoGamma IsoGamma);
-  bool isSignal(IsoGamma IsoGamma);
-  bool isSignalClusterLevelIso(IsoGamma IsoGamma); // For troubleshooting, use "isSignal" for actual signal def.
+  bool PassedIsoGammaCuts(Cluster IsoGamma);
+  bool PassedClusterCuts(Cluster IsoGamma);
+  bool isSignal(Cluster IsoGamma);
+  bool isSignalClusterLevelIso(Cluster IsoGamma); // For troubleshooting, use "isSignal" for actual signal def.
 };
 
 IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
@@ -211,47 +211,52 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   hQADir = hQADirIsoGammas;
   YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
 
+  bool bmerged = ((TString)hQADirIsoGammas->GetTitle()).Contains("mPi0");
+
   if (!ycut[(std::string)optns.cutString])
     FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
 
   YAML::Node standardcut = ycut["Standard"];
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
-  applyNonLin = chosencut["cluster_applyNonLin"].IsDefined() ? chosencut["cluster_applyNonLin"].as<bool>() : standardcut["cluster_applyNonLin"].as<bool>();
+  applyNonLin = chosencut["gamma_applyNonLin"].IsDefined() ? chosencut["gamma_applyNonLin"].as<bool>() : standardcut["gamma_applyNonLin"].as<bool>();
 
   // Acceptance cuts
-  TString ClusterAcceptance = (TString)(chosencut["cluster_Acceptance"].IsDefined() ? chosencut["cluster_Acceptance"].as<std::string>() : standardcut["cluster_Acceptance"].as<std::string>()).c_str();
+  TString ClusterAcceptance = (TString)(chosencut["gamma_Acceptance"].IsDefined() ? chosencut["gamma_Acceptance"].as<std::string>() : standardcut["gamma_Acceptance"].as<std::string>()).c_str();
   SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
 
   // Load E cut
-  EMin = chosencut["cluster_min_E"].IsDefined() ? chosencut["cluster_min_E"].as<float>() : standardcut["cluster_min_E"].as<float>();
-  EMax = chosencut["cluster_max_E"].IsDefined() ? chosencut["cluster_max_E"].as<float>() : standardcut["cluster_max_E"].as<float>();
+  EMin = chosencut["gamma_min_E"].IsDefined() ? chosencut["gamma_min_E"].as<float>() : standardcut["gamma_min_E"].as<float>();
+  EMax = chosencut["gamma_max_E"].IsDefined() ? chosencut["gamma_max_E"].as<float>() : standardcut["gamma_max_E"].as<float>();
 
   // Load min Ncells
-  NcellsMin = chosencut["cluster_min_Nc"].IsDefined() ? chosencut["cluster_min_Nc"].as<unsigned short>() : standardcut["cluster_min_Nc"].as<unsigned short>();
+  NcellsMin = chosencut["gamma_min_Nc"].IsDefined() ? chosencut["gamma_min_Nc"].as<unsigned short>() : standardcut["gamma_min_Nc"].as<unsigned short>();
 
   // Load NLM cut
-  NLMMax = chosencut["cluster_max_NLM"].IsDefined() ? chosencut["cluster_max_NLM"].as<unsigned short>() : standardcut["cluster_max_NLM"].as<unsigned short>();
+  NLMMax = chosencut["gamma_max_NLM"].IsDefined() ? chosencut["gamma_max_NLM"].as<unsigned short>() : standardcut["gamma_max_NLM"].as<unsigned short>();
 
   // Load min dist to bad channel cut
-  DistanceToBadChannelMin = chosencut["cluster_min_distbadch"].IsDefined() ? chosencut["cluster_min_distbadch"].as<float>() : standardcut["cluster_min_distbadch"].as<float>();
+  DistanceToBadChannelMin = chosencut["gamma_min_distbadch"].IsDefined() ? chosencut["gamma_min_distbadch"].as<float>() : standardcut["gamma_min_distbadch"].as<float>();
 
   // Load Sigma long cut
-  M02Min = chosencut["cluster_min_M02"].IsDefined() ? chosencut["cluster_min_M02"].as<float>() : standardcut["cluster_min_M02"].as<float>();
-  M02Max = chosencut["cluster_max_M02"].IsDefined() ? chosencut["cluster_max_M02"].as<float>() : standardcut["cluster_max_M02"].as<float>();
+  const char* minM02 = bmerged ? "mPi0_min_M02" : "gamma_min_M02";
+  const char* maxM02 = bmerged ? "mPi0_max_M02" : "gamma_max_M02";
+  M02Min = chosencut[minM02].IsDefined() ? chosencut[minM02].as<float>() : standardcut[minM02].as<float>();
+  M02Max = chosencut[maxM02].IsDefined() ? chosencut[maxM02].as<float>() : standardcut[maxM02].as<float>();
 
   // Load track matching cut
-  MatchDetaMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
-  MatchDetaMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
-  MatchDphiMin = chosencut["cluster_min_MatchDeta"].IsDefined() ? chosencut["cluster_min_MatchDeta"].as<float>() : standardcut["cluster_min_MatchDeta"].as<float>();
-  MatchDphiMax = chosencut["cluster_max_MatchDeta"].IsDefined() ? chosencut["cluster_max_MatchDeta"].as<float>() : standardcut["cluster_max_MatchDeta"].as<float>();
-  MatchVetoMax = chosencut["cluster_max_MatchVeto"].IsDefined() ? chosencut["cluster_max_MatchVeto"].as<float>() : standardcut["cluster_max_MatchVeto"].as<float>();
+  MatchDetaMin = chosencut["gamma_min_MatchDeta"].IsDefined() ? chosencut["gamma_min_MatchDeta"].as<float>() : standardcut["gamma_min_MatchDeta"].as<float>();
+  MatchDetaMax = chosencut["gamma_max_MatchDeta"].IsDefined() ? chosencut["gamma_max_MatchDeta"].as<float>() : standardcut["gamma_max_MatchDeta"].as<float>();
+  MatchDphiMin = chosencut["gamma_min_MatchDeta"].IsDefined() ? chosencut["gamma_min_MatchDeta"].as<float>() : standardcut["gamma_min_MatchDeta"].as<float>();
+  MatchDphiMax = chosencut["gamma_max_MatchDeta"].IsDefined() ? chosencut["gamma_max_MatchDeta"].as<float>() : standardcut["gamma_max_MatchDeta"].as<float>();
+  MatchVetoMax = chosencut["gamma_max_MatchVeto"].IsDefined() ? chosencut["gamma_max_MatchVeto"].as<float>() : standardcut["gamma_max_MatchVeto"].as<float>();
 
   // Load FM+
-  FplusMax = chosencut["cluster_max_Fplus"].IsDefined() ? chosencut["cluster_max_Fplus"].as<float>() : standardcut["cluster_max_Fplus"].as<float>();
+  FplusMax = chosencut["gamma_max_Fplus"].IsDefined() ? chosencut["gamma_max_Fplus"].as<float>() : standardcut["gamma_max_Fplus"].as<float>();
 
   // Load Isolation cut
-  pTisoCorrectedMax = chosencut["cluster_max_ptiso"].IsDefined() ? chosencut["cluster_max_ptiso"].as<float>() : standardcut["cluster_max_ptiso"].as<float>();
+  const char* maxptiso = bmerged ? "mPi0_max_ptiso" : "gamma_max_ptiso";
+  pTisoCorrectedMax = chosencut[maxptiso].IsDefined() ? chosencut[maxptiso].as<float>() : standardcut[maxptiso].as<float>();
 
   useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 
@@ -259,7 +264,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   LOG(Form("Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
 }
 
-bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
+bool IsoGammaCuts::PassedIsoGammaCuts(Cluster IsoGamma)
 {
   bool passed = true;
   // check cluster long-axis
@@ -283,7 +288,7 @@ bool IsoGammaCuts::PassedIsoGammaCuts(IsoGamma IsoGamma)
   return passed;
 }
 
-bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
+bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
 {
   bool passed = true;
   // Check if event was loaded.
@@ -309,7 +314,7 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(2., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // check cells pr. cluster
+  // check cells per cluster
   if (IsoGamma.NCells < NcellsMin)
   {
     passed = false;
@@ -360,7 +365,7 @@ bool IsoGammaCuts::PassedClusterCuts(IsoGamma IsoGamma)
   return passed;
 }
 
-bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
+bool IsoGammaCuts::isSignal(Cluster IsoGamma)
 {
   // Calculate generator level isolation:
   float pTisoGen = IsoGamma.TrueClusterIsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.TrueClusterIsoBckPerp * TMath::Pi() * 0.4 * 0.4;
@@ -374,7 +379,7 @@ bool IsoGammaCuts::isSignal(IsoGamma IsoGamma)
   return false;
 }
 
-bool IsoGammaCuts::isSignalClusterLevelIso(IsoGamma IsoGamma) // For troubleshooting, use "isSignal" for actual signal def.
+bool IsoGammaCuts::isSignalClusterLevelIso(Cluster IsoGamma) // For troubleshooting, use "isSignal" for actual signal def.
 {
   // Calculate generator level isolation:
   float pTisoGen = IsoGamma.IsoCharged / CalculateIsoCorrectionFactor(IsoGamma.Eta(), 0.8, 0.4) - IsoGamma.IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
@@ -388,9 +393,9 @@ bool IsoGammaCuts::isSignalClusterLevelIso(IsoGamma IsoGamma) // For troubleshoo
   return false;
 }
 
-void doIsoGammaClusterCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
+void doIsoGammaClusterCuts(std::vector<Cluster> &IsoGammas, IsoGammaCuts IsoGammaCuts)
 {
-  std::vector<IsoGamma>::iterator iter;
+  std::vector<Cluster>::iterator iter;
   for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
   {
     if (!IsoGammaCuts.PassedClusterCuts(*iter))
@@ -404,9 +409,9 @@ void doIsoGammaClusterCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGam
   }
 }
 
-void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
+void doIsoGammaCuts(std::vector<Cluster> &IsoGammas, IsoGammaCuts IsoGammaCuts)
 {
-  std::vector<IsoGamma>::iterator iter;
+  std::vector<Cluster>::iterator iter;
   for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
   {
     if (!IsoGammaCuts.PassedIsoGammaCuts(*iter))
@@ -426,20 +431,20 @@ void doIsoGammaCuts(std::vector<IsoGamma> &IsoGammas, IsoGammaCuts IsoGammaCuts)
 // ----------------------- Jet Cuts --------------------------
 // -----------------------------------------------------------
 // -----------------------------------------------------------
-class JetCuts
+class DLJetCuts
 {
 private:
   float PtMin = 0.;
 
 public:
-  JetCuts(GlobalOptions optns);
-  ~JetCuts() {};
+  DLJetCuts(GlobalOptions optns);
+  ~DLJetCuts() {};
   bool PassedCuts(Jet Jet);
   float R = 0.4;
   float JetEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
 };
 
-JetCuts::JetCuts(GlobalOptions optns)
+DLJetCuts::DLJetCuts(GlobalOptions optns)
 {
   YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
 
@@ -459,10 +464,15 @@ JetCuts::JetCuts(GlobalOptions optns)
   LOG(Form("Jet %s Acceptance: %.2f < Jet_Eta < %.2f | %.2f < Jet_Phi < %.2f", JetAcceptance.Data(), JetEtaPhiMinMax[0][0], JetEtaPhiMinMax[0][1], JetEtaPhiMinMax[1][0], JetEtaPhiMinMax[1][1]))
 }
 
-bool JetCuts::PassedCuts(Jet Jet)
+bool DLJetCuts::PassedCuts(Jet Jet)
 {
   bool passed = true;
   if (Jet.Pt() < PtMin)
+  {
+    passed = false;
+  }
+  // Check GammaGen acceptance
+  if (!Jet.isInJetAcceptance(JetEtaPhiMinMax))
   {
     passed = false;
   }
@@ -470,9 +480,9 @@ bool JetCuts::PassedCuts(Jet Jet)
   return passed;
 }
 
-void doJetCuts(std::vector<Jet> &Jets, JetCuts JetCuts)
+void doJetCuts(std::vector<DLJet> &Jets, DLJetCuts JetCuts)
 {
-  std::vector<Jet>::iterator iter;
+  std::vector<DLJet>::iterator iter;
   for (iter = Jets.begin(); iter != Jets.end();)
   {
     if (!JetCuts.PassedCuts(*iter))
@@ -496,6 +506,8 @@ class Pi0Cuts
 {
 private:
   float PtMin = 0.;
+  float MinvMax = 0.17;
+  float MinvMin = 0.1;
 
 public:
   Pi0Cuts(GlobalOptions optns);
@@ -514,8 +526,29 @@ bool Pi0Cuts::PassedCuts(Pi0 Pi0)
   {
     passed = false;
   }
+  if (Pi0.Mass < MinvMin || Pi0.Mass > MinvMax)
+  {
+    passed = false;
+  }
 
   return passed;
 }
+
+void doPi0Cuts(std::vector<Pi0> &Pi0s, Pi0Cuts pi0Cuts)
+{
+  std::vector<Pi0>::iterator iter;
+  for (iter = Pi0s.begin(); iter != Pi0s.end();)
+  {
+    if (!pi0Cuts.PassedCuts(*iter))
+    {
+      iter = Pi0s.erase(iter);
+    }
+    else
+    {
+      ++iter;
+    }
+  }
+}
+
 
 #endif
