@@ -12,9 +12,12 @@ uint32_t fBuffer_alias;
 std::vector<Float_t> *fBuffer_jet_data_pt;
 std::vector<Float_t> *fBuffer_jet_data_eta;
 std::vector<Float_t> *fBuffer_jet_data_phi;
+std::vector<Float_t> *fBuffer_jet_data_radius;
 std::vector<Float_t> *fBuffer_jet_data_energy;
 std::vector<Float_t> *fBuffer_jet_data_mass;
 std::vector<Float_t> *fBuffer_jet_data_area;
+std::vector<Float_t> *fBuffer_jet_data_leadingtrackpt;
+std::vector<Float_t> *fBuffer_jet_data_perpconerho;
 std::vector<UShort_t> *fBuffer_jet_data_nconstituents;
 
 
@@ -31,6 +34,9 @@ std::vector<UShort_t> *fBuffer_cluster_data_distancebadchannel;
 std::vector<UShort_t> *fBuffer_cluster_data_nlm;
 std::vector<Float_t> *fBuffer_cluster_data_isoraw;
 std::vector<Float_t> *fBuffer_cluster_data_perpconerho;
+std::vector<Float_t> *fBuffer_cluster_data_match_deta;
+std::vector<Float_t> *fBuffer_cluster_data_match_dphi;
+std::vector<Float_t> *fBuffer_cluster_data_match_p;
 
 // define global switches
 Bool_t fIsPbPb = kFALSE;

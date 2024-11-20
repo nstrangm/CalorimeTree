@@ -6,6 +6,7 @@ import pathlib
 import sys
 import argparse
 from collections import defaultdict
+from difflib import SequenceMatcher
 import time
 import threading
 import importlib
@@ -29,6 +30,10 @@ import logging
 from rich.logging import RichHandler
 from rich.style import Style
 from itertools import cycle
+from rich.traceback import install
+install()
+from rich import print
+from rich.panel import Panel
 
 # Define a list of colors to cycle through
 COLORS = ["red", "green", "yellow", "blue", "magenta", "cyan", "white"]
@@ -112,7 +117,6 @@ def clear_logs():
 def hadd_root_files(input_folder, output_file):
     # Collect all ROOT files in the given folder
     root_files = [f for f in os.listdir(input_folder) if (f.startswith('HistosFromTree_') and f.endswith('.root'))]
-    
     if not root_files:
         raise RuntimeError("No ROOT files found in the specified folder.")
     
@@ -140,9 +144,15 @@ def hadd_root_files(input_folder, output_file):
             except OSError as e:
                 log.error(f"Error deleting file {root_file}: {e}")
 
-def run_macro(dataset, setting, cut, nSplit, task_id, progress):
+def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     processes = []
     progress_values = [0] * nSplit  # Initialize progress list for all jobs
+    
+    doIsoGamma = runOptions['doIsoGamma']
+    doJets = runOptions['doJets']
+    doGGPi0 = runOptions['doGGPi0']
+    domPi0 = runOptions['domPi0']
+    doPlotting = runOptions['doPlotting']
 
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
@@ -163,10 +173,13 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
 
     for iJob in range(1, nSplit + 1):
         command = f'srun --partition=long --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        # if none of the analysis options are enables, just run a dummy job
+        if not (doIsoGamma or doJets or doGGPi0 or domPi0):
+            command = f'echo "Dummy job {iJob}. Nothing to see here!" >> {dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
-
-        time.sleep(0.2)
+        if (doIsoGamma or doJets or doGGPi0 or domPi0):
+            time.sleep(0.2)
 
     progress_thread = threading.Thread(target=monitor_progress)
     progress_thread.start()
@@ -177,21 +190,22 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress):
     # Ensure the progress is marked as 100% upon completion
     progress.update(task_id, completed=100)
     progress_thread.join()  # Wait for the progress monitoring thread to complete
+    if doIsoGamma or doJets or doGGPi0 or domPi0:
+        hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
+    if doPlotting:
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            log.error(result.stderr)
+            raise RuntimeError("plotHistosFromTree.C failed")
 
-    hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
-    
-    command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
-    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if result.returncode != 0:
-        log.error(result.stderr)
-        raise RuntimeError("plotHistosFromTree.C failed")
-
-def run_multiple_macros(jobs):
+def run_multiple_macros(jobs , runOptions):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
     trainconfig_colors = {}
 
     console = Console()
     bar_columns = {}
+
 
     # Initialize a single Progress object
     with Progress(
@@ -226,7 +240,7 @@ def run_multiple_macros(jobs):
             task_id = progress.add_task(f"{trainconfig_colors[trainconfig]}{description}[/]", total=100)
             tasks[description] = task_id
 
-            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress))
+            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress,runOptions))
             threads.append(thread)
             thread.start()
 
@@ -331,8 +345,11 @@ def distribute_files(analysisdirectory, inputdatapath, trainconfig, num_output_f
 def compile_makeHistosFromTree():
     command = 'root -q -b -x ./Analysis/makeHistosFromTree.C+\(\\"\\"\,\-1\)'
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # if compilation fails, raise an error and print the whole compilation output
     if result.returncode != 0:
-        print("Error compiling makeHistosFromTree.C:")
+        log.error("Error compiling makeHistosFromTree.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
         raise RuntimeError("Compilation failed")
 
 def check_and_create_folder(folder_path):
@@ -354,6 +371,7 @@ def run_debug(doPlotting):
 def parse_args():
     parser = argparse.ArgumentParser(description='Script for processing datasets.')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--config', type=str, help='Path to the configuration file, defaults to RunConfig.yaml', default='RunConfig.yaml')
     return parser.parse_args()
 
 # Main function
@@ -365,16 +383,31 @@ def main():
     # Ensure ROOT environment is loaded
     load_root_environment()
 
-    analysis_config = read_yaml('RunConfig.yaml')
+    analysis_config = read_yaml(args.config)
 
     doPlotting = analysis_config.get('doPlotting')
+    doIsoGamma = analysis_config.get('doIsoGamma')
+    doJets = analysis_config.get('doJets')
+    doGGPi0 = analysis_config.get('doGGPi0')
+    domPi0 = analysis_config.get('domPi0')
+
+    log.info("Starting the analysis...")
+    log.info("Detected options:")
+    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting}")
+
+    
     
     if doDebug:
         run_debug(doPlotting)
         exit()
 
     cuts_config = read_yaml('Cuts.yaml')
-
+    # count number of lines in file "./Analysis/makeHistosFromTree.C"
+    lines = 0
+    with open("./Analysis/makeHistosFromTree.C") as f:
+        for line in f:
+            lines += 1
+    log.info("Be patient, I am busy compiling {} lines of code ...".format(lines))
     compile_makeHistosFromTree()
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
@@ -406,15 +439,55 @@ def main():
             
             if cut == 'disabled':
                 continue
-            elif cut == 'Standard':
-                check_and_create_folder(f'{trainconfigdir}/{cut}')
-                jobs.append((dataset, trainconfig, cut, nSplit))
+            # elif cut == 'Standard':
+            #     check_and_create_folder(f'{trainconfigdir}/{cut}')
+            #     jobs.append((dataset, trainconfig, cut, nSplit))
             elif cut == 'full':
                 for cut_name in cuts_config.keys():
                     check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                     jobs.append((dataset, trainconfig, cut_name, nSplit))
-
-    run_multiple_macros(jobs)
+            else:
+                # split string comma separated to extract multiple cuts
+                try:
+                    cuts = cut.split(',')
+                # if it does not work for any reason, just continue
+                except:
+                    log.warning(f"Could not split cuts for {dataset}/{trainconfig}. Skipping.")
+                    continue
+                for cut_name in cuts:
+                    # remove all white spaces from cut_name
+                    cut_name = cut_name.replace(" ", "")
+                    # check if cut name is in cuts_config.keys(). If it is not, if one found an entry that is onlye different by one character ask "Did you mean ..."
+                    foundCut = False
+                    similarCut = ""
+                    simScore = 0
+                    for cut_name_config in cuts_config.keys():
+                        if cut_name_config.lower() == cut_name.lower():
+                            cut_name = cut_name_config
+                            foundCut = True
+                            break
+                        # if you found a match that is similar (only one character different) ask if the user meant that
+                        else:
+                            s = SequenceMatcher(None, cut_name_config.lower(), cut_name.lower()).ratio()
+                            if s > simScore:
+                                similarCut = cut_name_config
+                                simScore = s
+                    if not foundCut:
+                        log.error(f'Cut "{cut_name}" not found in Cuts.yaml. Skipping.')
+                        if similarCut:
+                            log.error(f'Did you maybe mean "{similarCut}" (y or n)?')
+                            # wait for user interaction
+                            usrInp = input("(y or n)")
+                            if usrInp == "y":
+                                cut_name = similarCut
+                                foundCut = True
+                            else:
+                                continue  
+                    if foundCut:
+                        check_and_create_folder(f'{trainconfigdir}/{cut_name}')
+                        jobs.append((dataset, trainconfig, cut_name, nSplit))
+    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting }
+    run_multiple_macros(jobs,runOptions)
 
 
 if __name__ == "__main__":

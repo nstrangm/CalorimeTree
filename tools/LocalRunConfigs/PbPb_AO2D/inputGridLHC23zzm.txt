@@ -1,0 +1,8 @@
+alien:///alice/data/2023/LHC23zzm/544653/apass4/0710/o2_ctf_run00544653_orbit0064712416_tf0000150534_epn244/001/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544653/apass4/0710/o2_ctf_run00544653_orbit0066675648_tf0000211885_epn087/001/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544653/apass4/0710/o2_ctf_run00544653_orbit0064712416_tf0000150534_epn244/001/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544653/apass4/0710/o2_ctf_run00544653_orbit0066675648_tf0000211885_epn087/001/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544742/apass4/2220/o2_ctf_run00544742_orbit0074109344_tf0000262225_epn151/005/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544742/apass4/2220/o2_ctf_run00544742_orbit0072700480_tf0000218198_epn134/003/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544742/apass4/2220/o2_ctf_run00544742_orbit0074109344_tf0000262225_epn151/005/AO2D.root
+alien:///alice/data/2023/LHC23zzm/544742/apass4/2220/o2_ctf_run00544742_orbit0072700480_tf0000218198_epn134/003/AO2D.root

@@ -43,6 +43,14 @@ TDirectory *DefineEventQAHistograms(TFile *f, GlobalOptions optns)
   hNEventswoWeights->GetXaxis()->SetBinLabel(4, "Quality ok");
   hNEventswoWeights->GetXaxis()->SetBinLabel(5, "Selected");
 
+  THnSparseF* hCentralityRhoMultiplicity = new THnSparseF("hCentralityRhoMultiplicity", "hCentralityRhoMultiplicity", 3, new int[3]{100, 200, 500}, new double[3]{0, 0, 0}, new double[3]{100, 100, 20000});
+  hCentralityRhoMultiplicity->GetAxis(0)->SetTitle("Centrality");
+  hCentralityRhoMultiplicity->GetAxis(1)->SetTitle("Rho (GeV/c)");
+  hCentralityRhoMultiplicity->GetAxis(2)->SetTitle("Multiplicity");
+  hCentralityRhoMultiplicity->Sumw2();
+  dir->Add(hCentralityRhoMultiplicity);
+
+
   return dir;
 }
 
@@ -104,7 +112,7 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOpti
   const float M02Range[2] = {0, 5};
   const float M20Range[2] = {0, 5};
   const float pxyzRange[2] = {-50, 50};
-  const float pTRange[2] = {0, 50};
+  const float pTRange[2] = {0, 150};
 
   // QA plots for all IsoGammas
   TDirectory *dir = f->mkdir(dirname.c_str());
@@ -112,29 +120,31 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOpti
 
   TH1F *hNIsoGamma = new TH1F("hNIsoGamma", "hNIsoGamma", 21, -0.5, 20.5);
 
-  TH2F *hpTSpectraAfterSubsequentCuts = new TH2F("hpTSpectraAfterSubsequentCuts", "hpTSpectraAfterSubsequentCuts", 10, -0.5, 9.5, 100, pTRange[0], pTRange[1]);
+  TH2F *hpTSpectraAfterSubsequentCuts = new TH2F("hpTSpectraAfterSubsequentCuts", "hpTSpectraAfterSubsequentCuts", 11, -0.5, 10.5, 300, pTRange[0], pTRange[1]);
   hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(1, "All");
   hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(2, "Accepted");
   hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(3, "E_{min}");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(4, "N_{cells}");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(5, "NLM");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(6, "Dist BC");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(7, "Track matching");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(8, "Exotic");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(9, "M_{02}");
-  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(10, "#it{p}_{T}^{iso}");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(4, "Time");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(5, "N_{cells}");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(6, "NLM");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(7, "Dist BC");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(8, "Track matching");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(9, "Exotic");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(10, "M_{02}");
+  hpTSpectraAfterSubsequentCuts->GetXaxis()->SetBinLabel(11, "#it{p}_{T}^{iso}");
 
-  TH2F *hpTSpectrumLossFromIndividualCuts = new TH2F("hpTSpectrumLossFromIndividualCuts", "hpTSpectrumLossFromIndividualCuts", 10, -0.5, 9.5, 100, pTRange[0], pTRange[1]);
+  TH2F *hpTSpectrumLossFromIndividualCuts = new TH2F("hpTSpectrumLossFromIndividualCuts", "hpTSpectrumLossFromIndividualCuts", 11, -0.5, 10.5, 300, pTRange[0], pTRange[1]);
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(1, "All");
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(2, "Acceptance");
   hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(3, "E_{min}");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(4, "N_{cells}");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(5, "NLM");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(6, "Dist BC");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(7, "Track matching");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(8, "Exotic");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(9, "M_{02}");
-  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(10, "#it{p}_{T}^{iso}");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(4, "Time");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(5, "N_{cells}");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(6, "NLM");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(7, "Dist BC");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(8, "Track matching");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(9, "Exotic");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(10, "M_{02}");
+  hpTSpectrumLossFromIndividualCuts->GetXaxis()->SetBinLabel(11, "#it{p}_{T}^{iso}");
 
   TH1F *hIsoGammaIsoCharged = new TH1F("hIsoGammaIsoCharged", "hIsoGammaIsoCharged", 100, 0, 200);
   TH1F *hIsoGammaIsoChargedCorrected = new TH1F("hIsoGammaIsoChargedCorrected", "hIsoGammaIsoChargedCorrected", 100, -10, 30);
@@ -146,7 +156,21 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOpti
   TH1F *hIsoGammaPz = new TH1F("hIsoGammaPz", "hPz", 1000, pxyzRange[0], pxyzRange[1]);
   TH1F *hIsoGammaNLM = new TH1F("hIsoGammaNLM", "hIsoGammaNLM", 6, 0, 6);
   TH2F *hIsoGammaEtaPhi = new TH2F("hIsoGammaEtaPhi", "hEtaPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+  TH2F *hIsoGammaRhoPt = new TH2F("hIsoGammaRhoPt", "hRhoPt", 600, 0, 300, 300, 0, 150);
+  hIsoGammaRhoPt->GetXaxis()->SetTitle("#rho (GeV/#it{c})");
+  hIsoGammaRhoPt->GetYaxis()->SetTitle("#it{p}_{T}^{trigger} (GeV/#it{c})");
+  
+  // replase EtaPhi later on with ThNsparseF. For now "double it and give it to the next person"
+  THnSparseF *hIsoGammaEtaPhiPt = new THnSparseF("hIsoGammaEtaPhiPt", "hIsoGammaEtaPhiPt", 3, new int[3]{100, 100, 300}, new double[3]{-1, 0., 0}, new double[3]{1, 2 * TMath::Pi(), 150});
+  hIsoGammaEtaPhiPt->Sumw2();
+  hIsoGammaEtaPhiPt->GetAxis(0)->SetTitle("#eta");
+  hIsoGammaEtaPhiPt->GetAxis(1)->SetTitle("#phi");
+  hIsoGammaEtaPhiPt->GetAxis(2)->SetTitle("p_{T} (GeV/#it{c})");
+  dir->Add(hIsoGammaEtaPhiPt);
+
   TH2F *hIsoGammaM02pT = new TH2F("hIsoGammaM02pT", "hIsoGammaM02pT", 100, M02Range[0], M02Range[1], 100, 0, 50);
+  TH2F * hIsoGammaNCellsPt = new TH2F("hIsoGammaNCellsPt", "hIsoGammaNCellsPt", 100, 0, 100, 300, 0, 150);
+  TH2F * hIsoGammaTimePt = new TH2F("hIsoGammaTimePt", "hIsoGammaTimePt", 300, -150, 150, 300, 0, 150);
   TH2F *hIsoGammaEBeforeAfterNL = new TH2F("hIsoGammaEBeforeAfterNL", "hIsoGammaEBeforeAfterNL;#bf{E_{cls}^{before} (GeV)};#bf{E_{cls}^{after}/E_{cls}^{before}}", 2000, 0, 200, 200, 0.8, 1.2);
   TH2F *hGGMinvDist = new TH2F("hGGMinvDist", "hGGMinvDist", 100, 0, 1, 500, 0, 50);
   TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi", "hIsoGammadEtadphi", 100, -0.1, 0.1, 100, -0.1, 0.1);
@@ -228,11 +252,11 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOpti
   return dir;
 }
 
-TDirectory *DefineJetHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineJetHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doJets)
     return nullptr;
-  TDirectory *dir = f->mkdir("Jets");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
   TH1F *hJetPt = new TH1F("hJetPt", "hPt", 1000, 0., 100.);
@@ -249,12 +273,12 @@ TDirectory *DefineJetHistograms(TFile *f, GlobalOptions optns)
   return dir;
 }
 
-TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
+TDirectory *DefineJetQAHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doJets || !optns.doQA)
     return nullptr;
   const float pxyzRange[2] = {-50, 50};
-  TDirectory *dir = f->mkdir("JetQA");
+  TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
   TH1F *hNDLJets = new TH1F("hNDLJets", "hNDLJets", 21, -0.5, 20.5);
   TH1F *hJetPx = new TH1F("hJetPx", "hPx", 1000, pxyzRange[0], pxyzRange[1]);
@@ -263,8 +287,21 @@ TDirectory *DefineJetQAHistograms(TFile *f, GlobalOptions optns)
   TH1F *hJetArea = new TH1F("hJetArea", "hArea", 100, 0., 1.);
   TH1F *hJetNch = new TH1F("hJetNch", "hNch", 51, -0.5, 50.5);
   TH1F *hJetNclus = new TH1F("hJetNclus", "hNclus", 51, -0.5, 50.5);
-  TH1F *hJetNconstits = new TH1F("hJetNconstits", "hNconstits", 51, -0.5, 50.5);
-  TH2F *hJetEtaPhi = new TH2F("hJetEtaPhi", "hJetPhi", 100, -1., 1., 100, 0., 2 * TMath::Pi());
+  TH1F *hJetNconstits = new TH1F("hJetNconstits", "hNconstits", 201, -0.5, 200.5);
+  THnSparseF *hJetPtEtaPhi = new THnSparseF("hJetPtEtaPhi", "hJetPtEtaPhi", 3, new int[3]{300, 100, 100}, new double[3]{0, -1, 0}, new double[3]{150, 1, 2 * TMath::Pi()});
+  hJetPtEtaPhi->GetAxis(0)->SetTitle("p_{T} (GeV/c)");
+  hJetPtEtaPhi->GetAxis(1)->SetTitle("#eta");
+  hJetPtEtaPhi->GetAxis(2)->SetTitle("#phi");
+  hJetPtEtaPhi->Sumw2();
+  dir->Add(hJetPtEtaPhi);
+
+  // define THNSparse that has three axes: jet pt, jet eta and z=leading hadron pt / jet pt
+  THnSparseF *hJetPtEtaZ = new THnSparseF("hJetPtEtaZ", "hJetPtEtaZ", 3, new int[3]{300, 100, 100}, new double[3]{0, -1, 0}, new double[3]{150, 1, 2});
+  hJetPtEtaZ->GetAxis(0)->SetTitle("p_{T} (GeV/c)");
+  hJetPtEtaZ->GetAxis(1)->SetTitle("#eta");
+  hJetPtEtaZ->GetAxis(2)->SetTitle("z = p_{T}^{leading hadron} / p_{T}^{jet}");
+  hJetPtEtaZ->Sumw2();
+  dir->Add(hJetPtEtaZ);
 
   // ------------------> MC Jet QA histograms
   if (optns.isMC)
@@ -315,8 +352,33 @@ TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOption
   TDirectory *dir = f->mkdir(dirname.c_str());
   dir->cd();
 
-  TH2F *hpTImbalancevsDeltaPhi = new TH2F("hpTImbalancevsDeltaPhi", "hpTImbalancevsDeltaPhi;#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}};#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 100, 0., 2., 314, 0, TMath::Pi());
+  int nBinsPhotonPt = 300;
+  int nBinsJetPt = 600;
+  Double_t photonPtMinMax[2] = {0, 150};
+  Double_t jetPtMinMax[2] = {-100, 200};
 
+  TH2F *hpTImbalancevsDeltaPhi = new TH2F("hpTImbalancevsDeltaPhi", "hpTImbalancevsDeltaPhi;#bf{#it{p}_{T}^{jet}/#it{p}_{T}^{#gamma}};#bf{#Delta#phi = |#phi_{#gamma}-#phi_{jet}|}", 100, 0., 2., 314, 0, TMath::Pi());
+  THnSparseF *hIsoGammaJetDeltaPhiJetPtGammaPt = new THnSparseF("hIsoGammaJetDeltaPhiJetPtGammaPt", "hIsoGammaJetDeltaPhiJetPtGammaPt", 3, new int[3]{100, nBinsJetPt, nBinsPhotonPt}, new double[3]{0, jetPtMinMax[0], photonPtMinMax[0]}, new double[3]{TMath::Pi(), jetPtMinMax[1], photonPtMinMax[1]});
+  hIsoGammaJetDeltaPhiJetPtGammaPt->GetAxis(0)->SetTitle("#Delta#phi = |#phi_{#gamma}-#phi_{jet}|");
+  hIsoGammaJetDeltaPhiJetPtGammaPt->GetAxis(1)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+  hIsoGammaJetDeltaPhiJetPtGammaPt->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+  hIsoGammaJetDeltaPhiJetPtGammaPt->Sumw2();
+  dir->Add(hIsoGammaJetDeltaPhiJetPtGammaPt);
+  int nBinsArray[3] = {100, nBinsJetPt, nBinsPhotonPt};
+  double minArray[3] = {0, jetPtMinMax[0], photonPtMinMax[0]};
+  double maxArray[3] = {2*TMath::Pi(), jetPtMinMax[1], photonPtMinMax[1]};
+  
+  THnSparseF *hIsoGammaJetDeltaPhi2piJetPtGammaPt = new THnSparseF("hIsoGammaJetDeltaPhi2piJetPtGammaPt", 
+                                                                    "hIsoGammaJetDeltaPhi2piJetPtGammaPt", 
+                                                                    3, 
+                                                                    nBinsArray,
+                                                                    minArray,
+                                                                    maxArray);
+  hIsoGammaJetDeltaPhi2piJetPtGammaPt->GetAxis(0)->SetTitle("#Delta#phi = |#phi_{#gamma}-#phi_{jet}|");
+  hIsoGammaJetDeltaPhi2piJetPtGammaPt->GetAxis(1)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+  hIsoGammaJetDeltaPhi2piJetPtGammaPt->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+  hIsoGammaJetDeltaPhi2piJetPtGammaPt->Sumw2();
+  dir->Add(hIsoGammaJetDeltaPhi2piJetPtGammaPt);
   return dir;
 }
 
@@ -338,7 +400,7 @@ TDirectory *DefineGammaJetQAHistograms(TFile *f, std::string dirname, GlobalOpti
   return dir;
 }
 
-void fillHistograms(std::vector<Cluster> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
+void fillHistograms(std::vector<Cluster> obj, Event evt,TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns, IsoGammaCuts IsoGammaCuts)
 {
   for (unsigned long i = 0; i < obj.size(); i++)
   {
@@ -375,7 +437,12 @@ void fillHistograms(std::vector<Cluster> obj, TDirectory *dir, TDirectory *QAdir
       ((TH1F *)QAdir->FindObject("hIsoGammaM02"))->Fill(obj.at(i).M02, eventWeight);
       ((TH1F *)QAdir->FindObject("hIsoGammaM20"))->Fill(obj.at(i).M20, eventWeight);
       ((TH1F *)QAdir->FindObject("hIsoGammaNLM"))->Fill(obj.at(i).NLM, eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaNCellsPt"))->Fill(obj.at(i).NCells, obj.at(i).Pt(), eventWeight);
+      ((TH2F *)QAdir->FindObject("hIsoGammaTimePt"))->Fill(obj.at(i).Time, obj.at(i).Pt(), eventWeight);
       ((TH2F *)QAdir->FindObject("hIsoGammaEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      // hIsoGammaEtaPhi
+      double coords[3] = {obj.at(i).Eta(), obj.at(i).Phi(), obj.at(i).Pt()};
+      ((THnSparseF*) QAdir->FindObject("hIsoGammaEtaPhiPt"))->Fill(coords, eventWeight);
       ((TH2F *)QAdir->FindObject("hIsoGammaM02pT"))->Fill(obj.at(i).M02, obj.at(i).Pt(), eventWeight);
       ((TH2F *)QAdir->FindObject("hIsoGammaEBeforeAfterNL"))->Fill(obj.at(i).EBeforeNL, obj.at(i).E / obj.at(i).EBeforeNL, eventWeight);
       ((TH2F *)QAdir->FindObject("hDistanceToBadChannelvsPt"))->Fill(obj.at(i).DistanceToBadChannel, obj.at(i).Pt(), eventWeight);
@@ -383,6 +450,7 @@ void fillHistograms(std::vector<Cluster> obj, TDirectory *dir, TDirectory *QAdir
       {
         ((TH2F *)QAdir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
       }
+      ((TH2F *)QAdir->FindObject("hIsoGammaRhoPt"))->Fill(evt.Rho, obj.at(i).Pt(), eventWeight);
 
       if (optns.isMC)
       {
@@ -477,7 +545,13 @@ void fillHistograms(std::vector<DLJet> obj, TDirectory *dir, TDirectory *QAdir, 
       ((TH1F *)QAdir->FindObject("hJetNch"))->Fill(obj.at(i).Nch, eventWeight);
       ((TH1F *)QAdir->FindObject("hJetNclus"))->Fill(obj.at(i).Nclus, eventWeight);
       ((TH1F *)QAdir->FindObject("hJetNconstits"))->Fill(obj.at(i).Nconstits, eventWeight);
-      ((TH2F *)QAdir->FindObject("hJetEtaPhi"))->Fill(obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+      ((THnSparseF *)QAdir->FindObject("hJetPtEtaPhi"))->Fill(obj.at(i).Pt(),obj.at(i).Eta(), obj.at(i).Phi(), eventWeight);
+
+      // define THNSparse that has three axes: jet pt, jet eta and z=leading hadron pt / jet pt
+      if (obj.at(i).Pt() > 0) {
+        double coords[3] = {obj.at(i).Pt(), obj.at(i).Eta(), obj.at(i).LeadingTrackPt / obj.at(i).Pt()};
+        ((THnSparseF *)QAdir->FindObject("hJetPtEtaZ"))->Fill(coords, eventWeight);
+      }
     }
   }
 }
@@ -537,6 +611,10 @@ void fillHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, TDirectory *
   for (unsigned long i = 0; i < obj.size(); i++)
   {
     ((TH2F *)dir->FindObject("hpTImbalancevsDeltaPhi"))->Fill(obj.at(i).pTImbalance, obj.at(i).DPhi, eventWeight);
+    double coords[3] = {obj.at(i).DPhi, obj.at(i).jet->Pt(), obj.at(i).isoGamma->Pt()};
+    ((THnSparseF *)dir->FindObject("hIsoGammaJetDeltaPhiJetPtGammaPt"))->Fill(coords, eventWeight);
+    coords[0] = obj.at(i).DPhi2pi;
+    ((THnSparseF *)dir->FindObject("hIsoGammaJetDeltaPhi2piJetPtGammaPt"))->Fill(coords, eventWeight);
   }
   if (optns.doQA)
   {
@@ -586,6 +664,7 @@ void fillHistograms(Event obj, TDirectory *dir, TDirectory *QAdir, float eventWe
     ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(2., (int)(obj.ZVtxOK));
     ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(3., (int)(obj.QualityOK));
     ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(4., (int)(obj.Selected));
+    ((THnSparseF *)QAdir->FindObject("hCentralityRhoMultiplicity"))->Fill(obj.Centrality, obj.Rho, obj.Multiplicity, eventWeight);
   }
 }
 

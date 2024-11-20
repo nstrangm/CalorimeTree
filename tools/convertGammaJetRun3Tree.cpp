@@ -22,9 +22,12 @@ void createTree() {
     outputTree->Branch("jet_data_pt", &fBuffer_jet_data_pt);
     outputTree->Branch("jet_data_eta", &fBuffer_jet_data_eta);
     outputTree->Branch("jet_data_phi", &fBuffer_jet_data_phi);
+    outputTree->Branch("jet_data_radius", &fBuffer_jet_data_radius);
     outputTree->Branch("jet_data_energy", &fBuffer_jet_data_energy);
     outputTree->Branch("jet_data_mass", &fBuffer_jet_data_mass);
     outputTree->Branch("jet_data_area", &fBuffer_jet_data_area);
+    outputTree->Branch("jet_data_leadingtrackpt", &fBuffer_jet_data_leadingtrackpt);
+    outputTree->Branch("jet_data_perpconerho", &fBuffer_jet_data_perpconerho);
     outputTree->Branch("jet_data_nconstituents", &fBuffer_jet_data_nconstituents);
     outputTree->Branch("cluster_data_energy", &fBuffer_cluster_data_energy);
     outputTree->Branch("cluster_data_eta", &fBuffer_cluster_data_eta);
@@ -38,6 +41,9 @@ void createTree() {
     outputTree->Branch("cluster_data_nlm", &fBuffer_cluster_data_nlm);
     outputTree->Branch("cluster_data_isoraw", &fBuffer_cluster_data_isoraw);
     outputTree->Branch("cluster_data_perpconerho", &fBuffer_cluster_data_perpconerho);
+    outputTree->Branch("cluster_data_match_deta", &fBuffer_cluster_data_match_deta);
+    outputTree->Branch("cluster_data_match_dphi", &fBuffer_cluster_data_match_dphi);
+    outputTree->Branch("cluster_data_match_p", &fBuffer_cluster_data_match_p);
 
 }
 
@@ -45,9 +51,12 @@ void clearBuffers(){
     fBuffer_jet_data_pt->clear();
     fBuffer_jet_data_eta->clear();
     fBuffer_jet_data_phi->clear();
+    fBuffer_jet_data_radius->clear();
     fBuffer_jet_data_energy->clear();
     fBuffer_jet_data_mass->clear();
     fBuffer_jet_data_area->clear();
+    fBuffer_jet_data_leadingtrackpt->clear();
+    fBuffer_jet_data_perpconerho->clear();
     fBuffer_jet_data_nconstituents->clear();
     fBuffer_cluster_data_energy->clear();
     fBuffer_cluster_data_eta->clear();
@@ -61,6 +70,9 @@ void clearBuffers(){
     fBuffer_cluster_data_nlm->clear();
     fBuffer_cluster_data_isoraw->clear();
     fBuffer_cluster_data_perpconerho->clear();
+    fBuffer_cluster_data_match_deta->clear();
+    fBuffer_cluster_data_match_dphi->clear();
+    fBuffer_cluster_data_match_p->clear();
 }
 
 void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
@@ -112,9 +124,12 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
             fBuffer_jet_data_pt->push_back((Float_t) tJets->GetBranch("fPt")->GetLeaf("fPt")->GetValue());
             fBuffer_jet_data_eta->push_back((Float_t) tJets->GetBranch("fEta")->GetLeaf("fEta")->GetValue());
             fBuffer_jet_data_phi->push_back((Float_t)tJets->GetBranch("fPhi")->GetLeaf("fPhi")->GetValue());
+            fBuffer_jet_data_radius->push_back((Float_t)tJets->GetBranch("fRadius")->GetLeaf("fRadius")->GetValue() / 100.);
             fBuffer_jet_data_energy->push_back((Float_t)tJets->GetBranch("fEnergy")->GetLeaf("fEnergy")->GetValue());
             fBuffer_jet_data_mass->push_back((Float_t)tJets->GetBranch("fMass")->GetLeaf("fMass")->GetValue());
             fBuffer_jet_data_area->push_back((Float_t)tJets->GetBranch("fArea")->GetLeaf("fArea")->GetValue());
+            fBuffer_jet_data_leadingtrackpt->push_back((Float_t)tJets->GetBranch("fLeadingTrackPt")->GetLeaf("fLeadingTrackPt")->GetValue());
+            fBuffer_jet_data_perpconerho->push_back((Float_t)tJets->GetBranch("fPerpConeRho")->GetLeaf("fPerpConeRho")->GetValue());
             fBuffer_jet_data_nconstituents->push_back((UShort_t)tJets->GetBranch("fNConstituents")->GetLeaf("fNConstituents")->GetValue());
         }
 
@@ -134,6 +149,9 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
             fBuffer_cluster_data_nlm->push_back(tClusters->GetBranch("fNLM")->GetLeaf("fNLM")->GetValue());
             fBuffer_cluster_data_isoraw->push_back(tClusters->GetBranch("fIsoRaw")->GetLeaf("fIsoRaw")->GetValue());
             fBuffer_cluster_data_perpconerho->push_back(tClusters->GetBranch("fPerpConeRho")->GetLeaf("fPerpConeRho")->GetValue());
+            fBuffer_cluster_data_match_deta->push_back(tClusters->GetBranch("fTMdeltaEta")->GetLeaf("fTMdeltaEta")->GetValue());
+            fBuffer_cluster_data_match_dphi->push_back(tClusters->GetBranch("fTMdeltaPhi")->GetLeaf("fTMdeltaPhi")->GetValue());
+            fBuffer_cluster_data_match_p->push_back(tClusters->GetBranch("fTMtrackP")->GetLeaf("fTMtrackP")->GetValue());
         }
 
         outputTree->Fill();

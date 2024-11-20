@@ -1,6 +1,6 @@
 {
     "gamma-jet-tree-producer": {
-      "trackSelections": "globalTracks",
+      "trackSelections": "uniformTracks",
       "jetPtMin": "0.",
       "processClusters": "1",
       "processChargedJets": "1",
@@ -27,7 +27,7 @@
       "trackPhiMin": "-999",
       "triggerMasks": "",
       "clusterTimeMax": "999",
-      "trackSelections": "globalTracks",
+      "trackSelections": "uniformTracks",
       "jetEtaMin": "-0.9",
       "clusterPhiMin": "-999",
       "processChargedEvtWiseSubJets": "0",
@@ -78,7 +78,7 @@
       "processChargedCollisions": "1",
       "bkgEtaMax": "0.9",
       "bkgPhiMax": "99",
-      "trackSelections": "globalTracks",
+      "trackSelections": "uniformTracks",
       "processD0Collisions": "0",
       "processBplusCollisions": "0",
       "trackPtMax": "1000",

@@ -5,6 +5,7 @@
 #include "Logging.h"
 #include "MCUtils.h"
 #include "Geometry.h"
+#include "TVector2.h"
 
 class PhysicsObject
 {
@@ -50,6 +51,22 @@ float calculateDeltaPhiBetweenPhysicsObjects(T1 o1, T2 o2)
   float dPhi = fabs(o1.Phi() - o2.Phi());
   if (dPhi > TMath::Pi())
     dPhi = fabs(dPhi - 2 * TMath::Pi());
+  return dPhi;
+}
+
+template <typename T1, typename T2>
+float calculateDeltaPhi2piBetweenPhysicsObjects(T1 o1, T2 o2)
+{
+  // make sure phi is in the range [0, 2pi]
+  float phi1 = o1.Phi();
+  float phi2 = o2.Phi();
+  if (phi1 < 0)
+    phi1 += 2 * TMath::Pi();
+  if (phi2 < 0)
+    phi2 += 2 * TMath::Pi();
+  float dPhi = phi1 - phi2;
+  if (dPhi < 0)
+    dPhi += 2 * TMath::Pi();
   return dPhi;
 }
 
@@ -196,11 +213,13 @@ public:
   float M02Recalc = 0; // Calculated in 5x5 window - not used for now
   float M20 = 0;
   unsigned short NCells = 0;
+  float Time = 0;
   float V1SplitMass = 0;
   float MinMassDiffToPi0 = 0; // ToDo: Problem: this is calculated in AliPhysics before applying the NL
   float MinMassDiffToEta = 0;
   unsigned short SM = 0; // EMCal/DCal super module number
   float EFrac = 0;
+  bool IsExotic = false; // only used in run3 tree
   float IsoCharged = 0;
   float IsoChargedCorrected = 0;
   float IsoBckPerp = 0;
@@ -210,6 +229,8 @@ public:
   float DistanceToBadChannel = 1;
   float NLM = 0;
   float EventWeight = 1;
+
+  // implement
 
   int MCTag;
 };
@@ -343,9 +364,12 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<Cluster> &IsoGam
       isoGamma.M02 = tree.Cluster_M02->at(iCluster);
       isoGamma.M20 = tree.Cluster_M20->at(iCluster);
       isoGamma.NCells = tree.Cluster_NCells->at(iCluster);
+      isoGamma.Time = tree.Cluster_Time->at(iCluster);
+      isoGamma.IsExotic = tree.Cluster_IsExotic->at(iCluster);
       isoGamma.IsoCharged = tree.Cluster_IsoCharged3->at(iCluster);
       isoGamma.IsoBckPerp = tree.Cluster_IsoBckPerp->at(iCluster);
-      isoGamma.MatchedTrack.SetMatchedTrackProperties(0., 0., 0., 0., 0.);
+      // TODO Pt is not stored in Run 3 tree, will just be set to 0 for now
+      isoGamma.MatchedTrack.SetMatchedTrackProperties(tree.Cluster_MatchTrackP->at(iCluster), 0., tree.Cluster_MatchTrackdEta->at(iCluster), tree.Cluster_MatchTrackdPhi->at(iCluster), 0);
       isoGamma.NLM = tree.Cluster_NLM->at(iCluster);
       if (optns.isMC)
       {
@@ -371,11 +395,11 @@ void calculateIsolation(std::vector<Cluster> &IsoGammas, Event &Event, bool useR
     Cluster *isoGamma = &IsoGammas.at(iGamma);
 
     // Calculate corrected isolation pT subtracting backperp mult by cone area.
-    float IsoChargedAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4;
+    float IsoChargedAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)) - (isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4);
 
     if (useRhoInsteadOfPerpCone)
     {
-      float IsoBckPerpAcceptanceCorrected = isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4) - Event.Rho * TMath::Pi() * 0.4 * 0.4;
+      float IsoBckPerpAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4))- (Event.Rho * TMath::Pi() * 0.4 * 0.4);
     }
     else
     {
@@ -400,6 +424,7 @@ public:
   using PhysicsObject::PhysicsObject;
   ~Jet() {};
   float Area = 0;
+  float Radius = 0.;
   unsigned short Nch = 0;
   unsigned short Nclus = 0;
   unsigned short Nconstits = 0;
@@ -421,11 +446,13 @@ public:
   unsigned short Nch = 0;
   unsigned short Nclus = 0;
   unsigned short Nconstits = 0;
+  float LeadingTrackPt = 0;
+  float PerpConeRho = 0;
   float M = 0;
   bool isInJetAcceptance(float JetEtaPhiMinMax[2][2]);
 };
 
-void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, GlobalOptions optns)
+void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, GlobalOptions optns, float R)
 {
   for (int iJet = 0; iJet < (int)tree.Jet_Area->size(); iJet++)
   {
@@ -442,10 +469,15 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, Global
     }
     else if (optns.TreeFormat == kRun3Tree)
     {
+      if (abs(tree.Jet_Radius->at(iJet) - R) > 1E-6)
+        continue;
       DLJet jet(tree.Jet_Pt->at(iJet), tree.Jet_Eta->at(iJet), tree.Jet_Phi->at(iJet));
       jet.Area = tree.Jet_Area->at(iJet);
       jet.M = tree.Jet_M->at(iJet);
       jet.Nconstits = tree.Jet_Nconstits->at(iJet);
+      jet.LeadingTrackPt = tree.Jet_LeadingTrackPt->at(iJet);
+      jet.PerpConeRho = tree.Jet_PerpConeRho->at(iJet);
+      jet.Radius = tree.Jet_Radius->at(iJet);
       Jets.push_back(jet);
     }
     else
@@ -544,6 +576,7 @@ class CorrelationPair
 {
 public:
   float DPhi = 0;
+  float DPhi2pi = 0;
   float DEta = 0;
   float pTImbalance = 1; // pTjet/pTgamma
 };
@@ -562,6 +595,7 @@ GammaJetPair::GammaJetPair(Cluster *isoGammaptr, Jet *jetptr)
   isoGamma = isoGammaptr;
   jet = jetptr;
   DPhi = calculateDeltaPhiBetweenPhysicsObjects(*isoGamma, *jet);
+  DPhi2pi = calculateDeltaPhi2piBetweenPhysicsObjects(*isoGamma, *jet);
   DEta = calculateDeltaEtaBetweenPhysicsObjects(*isoGamma, *jet);
   pTImbalance = jet->Pt() / isoGamma->Pt();
 }

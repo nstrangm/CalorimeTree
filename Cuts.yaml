@@ -10,8 +10,11 @@ Standard:
   gamma_Acceptance: EMC
 
   #Cluster energy
-  gamma_min_E: 15.
+  gamma_min_E: 8.
   gamma_max_E: 200.
+
+  gamma_min_time: -35.
+  gamma_max_time: 35.
 
   gamma_min_Nc: 2 #Cluster number of cells
   gamma_max_NLM: 2 #Cluster number of local maxima
@@ -25,7 +28,8 @@ Standard:
   mPi0_min_M02: 0.4
   mPi0_max_M02: 20.
 
-  #Cluster-track matching
+  #Cluster-track matching (like in Run 2)
+  gamma_doTrackMatching: false
   gamma_min_MatchDeta: -0.05
   gamma_max_MatchDeta: 0.05
   gamma_min_MatchDphi: -0.05
@@ -39,9 +43,31 @@ Standard:
   gamma_applyNonLin: false
   useRhoInsteadOfPerpCone: false
 
+  # additional settings used for the photon entering pi0->
+  gPi0_min_M02: 0.1
+  gPi0_max_M02: 0.3
+  gPi0_min_E: 8
+  gPi0_max_E: 200
+
   # ----------------------------> Jet Cuts
-  jetMinPt: 6.
-  jet_Acceptance: TPC
+  jetMinPt: -500
+  jet_Radius: 0.4
+  jet_Acceptance: TPC_Fiducial
+  jet_applyUESubtraction: true
+  jet_UEEstimationMethod: JetArea # options: JetArea, PerpCone
+  jet_MinArea: 0.
+
+  # ---Selections related for hadron-jet like analysis
+  # using signal and reference trigger pt (TT) intervals
+  # only if doExclusiveSelections is true
+  doExclusiveSelections: true
+  trigger_sig_ptmin: 20
+  trigger_sig_ptmax: 40
+  trigger_ref_ptmin: 8
+  trigger_ref_ptmax: 10
+  event_signal_fraction: 0.9
+
+
 
 # No Cuts - all cuts fully open
 ###################################################################################################
@@ -67,6 +93,7 @@ NoCuts:
   gamma_max_M02: 100
 
   #Cluster-track matching
+  gamma_doTrackMatching: false
   gamma_min_MatchDeta: -100
   gamma_max_MatchDeta: 100
   gamma_min_MatchDphi: -100
@@ -77,9 +104,22 @@ NoCuts:
   gamma_max_ptiso: 100 #Closter isolation
 
   # ----------------------------> Jet Cuts
-  jetMinPt: 0.
+  jetMinPt: -500
   jet_Acceptance: NoCut
 
+JetRadius_R02:
+  jet_Radius: 0.2
+JetRadius_R03:
+  jet_Radius: 0.3
+JetRadius_R05:
+  jet_Radius: 0.5
+JetRadius_R06:
+  jet_Radius: 0.6
+
+JetRadius_R04_PerpCone:
+  jet_UEEstimationMethod: PerpCone
+
+    
 
 Cluster_E_max_increased:
   gamma_max_E: 220.
@@ -122,7 +162,7 @@ IsoOnly:
   cluster_max_ptiso: 1.5 #Closter isolation
 
   # ----------------------------> Jet Cuts
-  jetMinPt: 0.
+  jetMinPt: -500.
   jet_Acceptance: NoCut
 
 

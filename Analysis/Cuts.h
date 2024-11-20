@@ -3,6 +3,7 @@
 
 #include "PhysicsObjects.h"
 #include "Logging.h"
+#include "TRandom3.h"
 
 // -----------------------------------------------------------
 // -----------------------------------------------------------
@@ -179,11 +180,14 @@ private:
   float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
   float EMin = 0.;
   float EMax = 0.;
+  float TimeMin = -1000;
+  float TimeMax = +1000;
   unsigned short NcellsMin = 0;
   unsigned short NLMMax = 0;
   float DistanceToBadChannelMin = 0;
   float M02Min = 0.;
   float M02Max = 0.;
+  bool doTrackMatching = false;
   float MatchDetaMin = 0;
   float MatchDetaMax = 0;
   float MatchDphiMin = 0;
@@ -200,6 +204,7 @@ public:
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
   bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
+  bool PassedShowerShapeCuts(Cluster IsoGamma);
   bool PassedIsoGammaCuts(Cluster IsoGamma);
   bool PassedClusterCuts(Cluster IsoGamma);
   bool isSignal(Cluster IsoGamma);
@@ -212,6 +217,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
 
   bool bmerged = ((TString)hQADirIsoGammas->GetTitle()).Contains("mPi0");
+  bool bgammaForPi0 = ((TString)hQADirIsoGammas->GetTitle()).Contains("gammaForPi0");
 
   if (!ycut[(std::string)optns.cutString])
     FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
@@ -226,8 +232,14 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
 
   // Load E cut
-  EMin = chosencut["gamma_min_E"].IsDefined() ? chosencut["gamma_min_E"].as<float>() : standardcut["gamma_min_E"].as<float>();
-  EMax = chosencut["gamma_max_E"].IsDefined() ? chosencut["gamma_max_E"].as<float>() : standardcut["gamma_max_E"].as<float>();
+  const char* minE = bgammaForPi0 ? "gPi0_min_E" : "gamma_min_E";
+  const char* maxE = bgammaForPi0 ? "gPi0_max_E" : "gamma_max_E";
+  EMin = chosencut[minE].IsDefined() ? chosencut[minE].as<float>() : standardcut[minE].as<float>();
+  EMax = chosencut[maxE].IsDefined() ? chosencut[maxE].as<float>() : standardcut[maxE].as<float>();
+
+  // Load Time cut
+  TimeMin = chosencut["gamma_min_time"].IsDefined() ? chosencut["gamma_min_time"].as<float>() : standardcut["gamma_min_time"].as<float>();
+  TimeMax = chosencut["gamma_max_time"].IsDefined() ? chosencut["gamma_max_time"].as<float>() : standardcut["gamma_max_time"].as<float>();
 
   // Load min Ncells
   NcellsMin = chosencut["gamma_min_Nc"].IsDefined() ? chosencut["gamma_min_Nc"].as<unsigned short>() : standardcut["gamma_min_Nc"].as<unsigned short>();
@@ -241,10 +253,16 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   // Load Sigma long cut
   const char* minM02 = bmerged ? "mPi0_min_M02" : "gamma_min_M02";
   const char* maxM02 = bmerged ? "mPi0_max_M02" : "gamma_max_M02";
+  if(bgammaForPi0)
+  {
+    minM02 = "gPi0_min_M02";
+    maxM02 = "gPi0_max_M02";
+  }
   M02Min = chosencut[minM02].IsDefined() ? chosencut[minM02].as<float>() : standardcut[minM02].as<float>();
   M02Max = chosencut[maxM02].IsDefined() ? chosencut[maxM02].as<float>() : standardcut[maxM02].as<float>();
 
   // Load track matching cut
+  doTrackMatching = chosencut["gamma_doTrackMatching"].IsDefined() ? chosencut["gamma_doTrackMatching"].as<bool>() : standardcut["gamma_doTrackMatching"].as<bool>();
   MatchDetaMin = chosencut["gamma_min_MatchDeta"].IsDefined() ? chosencut["gamma_min_MatchDeta"].as<float>() : standardcut["gamma_min_MatchDeta"].as<float>();
   MatchDetaMax = chosencut["gamma_max_MatchDeta"].IsDefined() ? chosencut["gamma_max_MatchDeta"].as<float>() : standardcut["gamma_max_MatchDeta"].as<float>();
   MatchDphiMin = chosencut["gamma_min_MatchDeta"].IsDefined() ? chosencut["gamma_min_MatchDeta"].as<float>() : standardcut["gamma_min_MatchDeta"].as<float>();
@@ -260,11 +278,12 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
 
   useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 
-  LOG(Form("%s IsoGammaCuts: applyNonLin = %s, %.1f < E < %.1f, NCells >= %d, NLM <= %d, DistToBadChannel >= %.1f, %.1f < M02 < %.1f, F+ <= %.1f, pTIso < %.1f GeV/c, useRhoInsteadOfPerpCone = %s", optns.cutString.Data(), applyNonLin ? "true" : "false", EMin, EMax, NcellsMin, NLMMax, DistanceToBadChannelMin, M02Min, M02Max, FplusMax, pTisoCorrectedMax, useRhoInsteadOfPerpCone ? "true" : "false"))
+  LOG(Form("%s IsoGammaCuts: applyNonLin = %s, %.1f < E < %.1f, %.1f < Time < %.1f, NCells >= %d, NLM <= %d, DistToBadChannel >= %.1f, %.1f < M02 < %.1f, F+ <= %.1f, pTIso < %.1f GeV/c, useRhoInsteadOfPerpCone = %s", optns.cutString.Data(), applyNonLin ? "true" : "false", EMin, EMax,TimeMin,TimeMax, NcellsMin, NLMMax, DistanceToBadChannelMin, M02Min, M02Max, FplusMax, pTisoCorrectedMax, useRhoInsteadOfPerpCone ? "true" : "false"))
   LOG(Form("Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
 }
 
-bool IsoGammaCuts::PassedIsoGammaCuts(Cluster IsoGamma)
+// additional function in case one wants apply shower shape cut but not isolation cut
+bool IsoGammaCuts::PassedShowerShapeCuts(Cluster IsoGamma)
 {
   bool passed = true;
   // check cluster long-axis
@@ -272,19 +291,34 @@ bool IsoGammaCuts::PassedIsoGammaCuts(Cluster IsoGamma)
   {
     passed = false;
     if (hQADir != nullptr)
-      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
   }
   if (passed && hQADir != nullptr)
-    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // Check ptiso (fully corrected quantity)
-  if (IsoGamma.IsoChargedCorrected > pTisoCorrectedMax)
-  {
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
+  return passed;
+}
+
+bool IsoGammaCuts::PassedIsoGammaCuts(Cluster IsoGamma)
+{
+  bool passed = true;
+  // check cluster long-axis
+  if (!PassedShowerShapeCuts(IsoGamma)){
     passed = false;
     if (hQADir != nullptr)
       ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(9., IsoGamma.Pt(), IsoGamma.EventWeight);
+
+  // Check ptiso (fully corrected quantity)
+  if (IsoGamma.IsoChargedCorrected > pTisoCorrectedMax)
+  {
+    passed = false;
+    if (hQADir != nullptr)
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(10., IsoGamma.Pt(), IsoGamma.EventWeight);
+  }
+  if (passed && hQADir != nullptr)
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(10., IsoGamma.Pt(), IsoGamma.EventWeight);
   return passed;
 }
 
@@ -314,8 +348,8 @@ bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(2., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // check cells per cluster
-  if (IsoGamma.NCells < NcellsMin)
+  // check cluster time
+  if (IsoGamma.Time < TimeMin || IsoGamma.Time > TimeMax)
   {
     passed = false;
     if (hQADir != nullptr)
@@ -323,8 +357,9 @@ bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(3., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // Check number of local maxima
-  if (IsoGamma.NLM > NLMMax)
+  
+  // check cells per cluster
+  if (IsoGamma.NCells < NcellsMin)
   {
     passed = false;
     if (hQADir != nullptr)
@@ -332,8 +367,8 @@ bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(4., IsoGamma.Pt(), IsoGamma.EventWeight);
-  // Check distance to bad channel
-  if (IsoGamma.DistanceToBadChannel < DistanceToBadChannelMin)
+  // Check number of local maxima
+  if (IsoGamma.NLM > NLMMax)
   {
     passed = false;
     if (hQADir != nullptr)
@@ -341,27 +376,36 @@ bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
   }
   if (passed && hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(5., IsoGamma.Pt(), IsoGamma.EventWeight);
+  // Check distance to bad channel
+  if (IsoGamma.DistanceToBadChannel < DistanceToBadChannelMin)
+  {
+    passed = false;
+    if (hQADir != nullptr)
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
+  }
+  if (passed && hQADir != nullptr)
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
   // Check track matching
-  if (IsoGamma.MatchedTrack.P > 0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
+  if (doTrackMatching && IsoGamma.MatchedTrack.P > 0 && IsoGamma.MatchedTrack.dEta < MatchDetaMax && IsoGamma.MatchedTrack.dEta > MatchDetaMin && IsoGamma.MatchedTrack.dPhi > MatchDphiMin && IsoGamma.MatchedTrack.dPhi < MatchDphiMax && (IsoGamma.E / IsoGamma.MatchedTrack.P) < MatchVetoMax)
   {
     passed = false;
     if (hQADir != nullptr)
     {
-      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(7., IsoGamma.Pt(), IsoGamma.EventWeight);
       ((TH2F *)hQADir->FindObject("hIsoGammadEtadphiCut"))->Fill(IsoGamma.MatchedTrack.dPhi, IsoGamma.MatchedTrack.dEta, IsoGamma.EventWeight);
     }
   }
   if (passed && hQADir != nullptr)
-    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(6., IsoGamma.Pt(), IsoGamma.EventWeight);
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(7., IsoGamma.Pt(), IsoGamma.EventWeight);
   // Check Fplus
-  if (IsoGamma.EFrac > FplusMax)
+  if (IsoGamma.EFrac > FplusMax || IsoGamma.IsExotic)
   {
     passed = false;
     if (hQADir != nullptr)
-      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(7., IsoGamma.Pt(), IsoGamma.EventWeight);
+      ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
   }
   if (passed && hQADir != nullptr)
-    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(7., IsoGamma.Pt(), IsoGamma.EventWeight);
+    ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(8., IsoGamma.Pt(), IsoGamma.EventWeight);
   return passed;
 }
 
@@ -409,6 +453,22 @@ void doIsoGammaClusterCuts(std::vector<Cluster> &IsoGammas, IsoGammaCuts IsoGamm
   }
 }
 
+void doIsoGammaShowerShapeCuts(std::vector<Cluster> &IsoGammas, IsoGammaCuts IsoGammaCuts)
+{
+  std::vector<Cluster>::iterator iter;
+  for (iter = IsoGammas.begin(); iter != IsoGammas.end();)
+  {
+    if (!IsoGammaCuts.PassedShowerShapeCuts(*iter))
+    {
+      iter = IsoGammas.erase(iter);
+    }
+    else
+    {
+      ++iter;
+    }
+  }
+}
+
 void doIsoGammaCuts(std::vector<Cluster> &IsoGammas, IsoGammaCuts IsoGammaCuts)
 {
   std::vector<Cluster>::iterator iter;
@@ -435,12 +495,14 @@ class DLJetCuts
 {
 private:
   float PtMin = 0.;
-
+  float AreaMin = 0.;
 public:
   DLJetCuts(GlobalOptions optns);
   ~DLJetCuts() {};
   bool PassedCuts(Jet Jet);
   float R = 0.4;
+  bool doUEsubtraction = false;
+  string UEEstimationMethod = "JetArea";
   float JetEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
 };
 
@@ -455,13 +517,22 @@ DLJetCuts::DLJetCuts(GlobalOptions optns)
   YAML::Node chosencut = ycut[(std::string)optns.cutString];
 
   // Acceptance cuts
+  R = chosencut["jet_Radius"].IsDefined() ? chosencut["jet_Radius"].as<float>() : standardcut["jet_Radius"].as<float>();
+
   TString JetAcceptance = (TString)(chosencut["jet_Acceptance"].IsDefined() ? chosencut["jet_Acceptance"].as<std::string>() : standardcut["jet_Acceptance"].as<std::string>()).c_str();
   SetAcceptance(JetAcceptance, JetEtaPhiMinMax, R);
 
   PtMin = chosencut["jetMinPt"].IsDefined() ? chosencut["jetMinPt"].as<float>() : standardcut["jetMinPt"].as<float>();
 
+  AreaMin = chosencut["jet_MinArea"].IsDefined() ? chosencut["jet_MinArea"].as<float>() : standardcut["jet_MinArea"].as<float>();
+
+  doUEsubtraction = chosencut["jet_applyUESubtraction"].IsDefined() ? chosencut["jet_applyUESubtraction"].as<bool>() : standardcut["jet_applyUESubtraction"].as<bool>();
+  
+  UEEstimationMethod = chosencut["jet_UEEstimationMethod"].IsDefined() ? chosencut["jet_UEEstimationMethod"].as<std::string>() : standardcut["jet_UEEstimationMethod"].as<std::string>();
+
   LOG(Form("%s JetCuts: pT > %.1f GeV/c", optns.cutString.Data(), PtMin))
   LOG(Form("Jet %s Acceptance: %.2f < Jet_Eta < %.2f | %.2f < Jet_Phi < %.2f", JetAcceptance.Data(), JetEtaPhiMinMax[0][0], JetEtaPhiMinMax[0][1], JetEtaPhiMinMax[1][0], JetEtaPhiMinMax[1][1]))
+  LOG(Form("Jet %s Area > %.2f", JetAcceptance.Data(), AreaMin))
 }
 
 bool DLJetCuts::PassedCuts(Jet Jet)
@@ -473,6 +544,11 @@ bool DLJetCuts::PassedCuts(Jet Jet)
   }
   // Check GammaGen acceptance
   if (!Jet.isInJetAcceptance(JetEtaPhiMinMax))
+  {
+    passed = false;
+  }
+
+  if (Jet.Area < AreaMin)
   {
     passed = false;
   }
@@ -495,6 +571,108 @@ void doJetCuts(std::vector<DLJet> &Jets, DLJetCuts JetCuts)
     }
   }
 }
+
+//-----------------------------------------------------------
+//-----------------------------------------------------------
+//-----------------------------------------------------------
+// -----------Exclusive Trigger Particle Selection-----------
+//-----------------------------------------------------------
+//-----------------------------------------------------------
+//-----------------------------------------------------------
+// this class handles many things related to the selection
+// of exclusive trigger particles, i.e. determination of signal
+// and reference trigger particle (only one random per event in specified pt range)
+class ExclusiveTriggerParticleSelection
+{
+private:
+  float PtMinSignal = 0.;
+  float PtMaxSignal = 0.;
+  float PtMinReference = 0.;
+  float PtMaxReference = 0.;
+  bool isSigEvent = false;
+  float SignalFraction = 0.9;
+  TRandom3 rndm;
+public:
+  bool doExclusiveSelections = false;
+  ExclusiveTriggerParticleSelection(GlobalOptions optns);
+  ~ExclusiveTriggerParticleSelection() {};
+  bool isSignalEvent();
+  template <typename T>
+  bool getTriggerParticle(std::vector<T> Objects, T &trigObject);
+  float getSignalFraction() {return SignalFraction;};
+  float getPtMinSignal() {return PtMinSignal;};
+  float getPtMaxSignal() {return PtMaxSignal;};
+  float getPtMinReference() {return PtMinReference;};
+  float getPtMaxReference() {return PtMaxReference;};
+};
+
+ExclusiveTriggerParticleSelection::ExclusiveTriggerParticleSelection(GlobalOptions optns)
+{
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+  if (!ycut[(std::string)optns.cutString])
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
+
+  PtMinSignal = chosencut["trigger_sig_ptmin"].IsDefined() ? chosencut["trigger_sig_ptmin"].as<float>() : standardcut["trigger_sig_ptmin"].as<float>();
+  PtMaxSignal = chosencut["trigger_sig_ptmax"].IsDefined() ? chosencut["trigger_sig_ptmax"].as<float>() : standardcut["trigger_sig_ptmax"].as<float>();
+  PtMinReference = chosencut["trigger_ref_ptmin"].IsDefined() ? chosencut["trigger_ref_ptmin"].as<float>() : standardcut["trigger_ref_ptmin"].as<float>();
+  PtMaxReference = chosencut["trigger_ref_ptmax"].IsDefined() ? chosencut["trigger_ref_ptmax"].as<float>() : standardcut["trigger_ref_ptmax"].as<float>();
+  SignalFraction = chosencut["event_signal_fraction"].IsDefined() ? chosencut["event_signal_fraction"].as<float>() : standardcut["event_signal_fraction"].as<float>();
+  doExclusiveSelections = chosencut["doExclusiveSelections"].IsDefined() ? chosencut["doExclusiveSelections"].as<bool>() : standardcut["doExclusiveSelections"].as<bool>();
+}
+bool ExclusiveTriggerParticleSelection::isSignalEvent()
+{
+  if (rndm.Rndm() < SignalFraction)
+  {
+    isSigEvent = true;
+  } else {
+    isSigEvent = false;
+  }
+  return isSigEvent;
+}
+
+// returns signal or reference trigger particle
+template <typename T>
+bool ExclusiveTriggerParticleSelection::getTriggerParticle(std::vector<T> Objects, T &trigObject)
+{
+  std::vector<T> triggerObjects;
+  if(isSigEvent){ // signal trigger particle
+     for (auto &obj : Objects)
+     {
+        if (obj.Pt() > PtMinSignal && obj.Pt() < PtMaxSignal)
+        {
+          triggerObjects.push_back(obj);
+        }
+     }
+  } else { // reference trigger particle
+    // find all objs in vector that pass PtMinReference < pt < PtMaxReference
+    for (auto &obj : Objects)
+    {
+      if (obj.Pt() > PtMinReference && obj.Pt() < PtMaxReference)
+      {
+        triggerObjects.push_back(obj);
+      }
+    }
+  }
+  // check if triggerObjects vector is empty
+  if (triggerObjects.empty())
+  {
+    return false;
+  }
+
+  // select one random object from the vector of trigger objects
+  int index = rndm.Integer(triggerObjects.size());
+  trigObject = triggerObjects[index];
+  return true;
+}
+
+
+
+
+
+
 
 // -----------------------------------------------------------
 // -----------------------------------------------------------
