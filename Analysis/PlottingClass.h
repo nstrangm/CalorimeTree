@@ -32,6 +32,7 @@
 #include <vector>
 #include <time.h>
 #include "TDatabasePDG.h"
+#include "TGraphPolar.h"
 #include "../Analysis/Logging.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -42,6 +43,23 @@
 double StdTextSize = 65;
 double TitleSizeScaling = 1.2;
 
+// convert TH1 to TGraphPolar.h
+TGraphPolar *TH1ToTGraphPolar(TH1 *h, TString name = "")
+{
+  const int n = h->GetNbinsX();
+  Double_t theta[n], r[n], theta_err[n], r_err[n];
+  for (int i = 0; i < n; i++)
+  {
+    theta[i] = h->GetBinCenter(i + 1);
+    theta_err[i] = h->GetBinWidth(i + 1) / 2.;
+    r[i] = h->GetBinContent(i + 1);
+    r_err[i] = h->GetBinError(i + 1);
+  }
+  TGraphPolar *g = new TGraphPolar(n, theta, r, theta_err, r_err);
+  g->SetMarkerStyle(20);
+  g->SetName(name);
+  return g;
+}
 class Plotting
 {
 public:

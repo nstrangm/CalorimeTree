@@ -162,11 +162,14 @@ public:
   std::vector<float> *Jet_Px = 0;                 // Run 2
   std::vector<float> *Jet_Py = 0;                 // Run 2
   std::vector<float> *Jet_Pz = 0;                 // Run 2
+  std::vector<float> *Jet_Radius = 0;                // Run     3
   std::vector<float> *Jet_Eta = 0;                // Run     3
   std::vector<float> *Jet_Phi = 0;                // Run     3
   std::vector<float> *Jet_Area = 0;               // Run 2 + 3
   std::vector<unsigned short> *Jet_Nch = 0;       // Run 2
   std::vector<unsigned short> *Jet_Nclus = 0;     // Run 2
+  std::vector<float> *Jet_LeadingTrackPt = 0;     // Run     3
+  std::vector<float> *Jet_PerpConeRho = 0;        // Run     3
   std::vector<unsigned short> *Jet_Nconstits = 0; // Run     3
 
   // ###########################################
@@ -340,15 +343,21 @@ void TreeBuffer::ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns)
     tree->SetBranchAddress("cluster_data_isoraw", &Cluster_IsoCharged3);
     tree->SetBranchAddress("cluster_data_isexotic", &Cluster_IsExotic);
     tree->SetBranchAddress("cluster_data_perpconerho", &Cluster_IsoBckPerp);
+    tree->SetBranchAddress("cluster_data_match_deta", &Cluster_MatchTrackdEta);
+    tree->SetBranchAddress("cluster_data_match_dphi", &Cluster_MatchTrackdPhi);
+    tree->SetBranchAddress("cluster_data_match_p", &Cluster_MatchTrackP);
   }
   if (optns.doJets)
   {
     tree->SetBranchAddress("jet_data_pt", &Jet_Pt);
     tree->SetBranchAddress("jet_data_eta", &Jet_Eta);
     tree->SetBranchAddress("jet_data_phi", &Jet_Phi);
+    tree->SetBranchAddress("jet_data_radius", &Jet_Radius);
     tree->SetBranchAddress("jet_data_energy", &Jet_E);
     tree->SetBranchAddress("jet_data_mass", &Jet_M);
     tree->SetBranchAddress("jet_data_area", &Jet_Area);
+    tree->SetBranchAddress("jet_data_leadingtrackpt", &Jet_LeadingTrackPt);
+    tree->SetBranchAddress("jet_data_perpconerho", &Jet_PerpConeRho);
     tree->SetBranchAddress("jet_data_nconstituents", &Jet_Nconstits);
   }
 }

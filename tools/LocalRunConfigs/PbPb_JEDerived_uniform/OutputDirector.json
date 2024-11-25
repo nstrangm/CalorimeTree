@@ -1,0 +1,16 @@
+{ "OutputDirector": {
+    "debug_mode": true,
+    "resfile": "AO2D",
+    "OutputDescriptors": [
+      {
+        "table": "AOD/GJCHJET/0"
+      },
+      {
+        "table": "AOD/GJEVENT/0"
+      },
+      {
+        "table": "AOD/GJGAMMA/0"
+      }
+    ],
+    "ntfmerge": 1
+  } }

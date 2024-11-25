@@ -25,10 +25,12 @@ if __name__ == "__main__":
     parser.add_argument("--output", help="The output directory. If empty, then inputdir/converted will be used", default="")
     parser.add_argument("--filename", help="The input filename", default="AO2D.root")
     parser.add_argument("--nFilesPerJob", help="The number of files to convert per job", default=1)
+    parser.add_argument("--config", help="The config file to use", default="treeCutsBerkeley.yaml")
     args = parser.parse_args()
 
     input_dir = Path(args.input)
     output_dir = args.output
+    configfile = args.config
 
     # check if input dir is specified
     if not input_dir.exists():
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     if output_dir == "":
         log.info(f"No output directory specified. Using {input_dir / 'converted'}")
         output_dir = input_dir / "converted"
-
+    output_dir = Path(output_dir)
    
     # create output directory if it does not exist
     if not output_dir.exists():
@@ -50,9 +52,14 @@ if __name__ == "__main__":
     # find recursively all files in the input directory
     files = glob.glob(str(input_dir / "**" / args.filename), recursive=True)
     # make sure none of the paths contains the word "converted"
-    files = [f for f in files if "converted" not in f]
+    files = [f for f in files if "converted" not in f]    # print all files
+
+    # remove all files that are not called AO2D.root
+    files = [f for f in files if "AO2D.root" in f]
+
     log.info(f"Found {len(files)} files to convert")
-    # print all files
+
+
     
     # split the files into chunks each containing nFilesPerJob
     nFilesPerJob = int(args.nFilesPerJob)
@@ -63,7 +70,7 @@ if __name__ == "__main__":
     tmpdir = input_dir / "tmp"
 
     # create a empty file to store a list of all output files with touch
-    outputfileslist = output_dir / "GammaTreeList.txt"
+    outputfileslist = output_dir / "BerkeleyTreeList.txt"
     os.system(f"touch {outputfileslist}")
 
 
@@ -90,8 +97,9 @@ if __name__ == "__main__":
         with open(tmpscript, "w") as f:
             f.write("#!/bin/bash\n")
             f.write(f"inputfilelist={tmpfile}\n")
-            f.write(f"outputfile={outputfolder / 'GammaJetTrees.root'}\n")
-            f.write("root -x -q -b \"convertGammaJetRun3Tree.cpp(\\\"$inputfilelist\\\",\\\"$outputfile\\\")\"\n")
+            f.write(f"outputfile={outputfolder / 'BerkeleyTree.root'}\n")
+            f.write(f"configfile={configfile}\n")
+            f.write("root -x -q -b \"writeBerkeleyTree.cpp(\\\"$inputfilelist\\\",\\\"$outputfile\\\",\\\"$configfile\\\")\"\n")
             # append the outputfile to the outputfileslist using sem with lock
             f.write("rm $inputfilelist")
         
@@ -99,7 +107,7 @@ if __name__ == "__main__":
         # submit a job
         log.info(f"Submitting job for chunk {i}")
         # submit a job
-        cmd=f"sbatch {tmpscript}" 
+        cmd=f"sbatch --exclude=pc076 {tmpscript}" 
         # save the job id and run
         slurmJobIDs.append(subprocess.check_output(cmd, shell=True).decode('utf-8').split()[-1])
 
@@ -108,7 +116,7 @@ if __name__ == "__main__":
     with open(filelistmakerscript, "w") as f:
         f.write("#!/bin/bash\n")
         f.write(f"outputdir={output_dir}\n")
-        f.write(f"find {output_dir} -name \"GammaJetTrees.root\" > $outputdir/InputFiles_GammaIsoTree_Run3.txt\n")    
+        f.write(f"find {output_dir} -name \"BerkeleyTree.root\" > $outputdir/InputFiles_BerkeleyTree.txt\n")    
 
 
     # run sbatch with filelistmakerscript after all jobs from slurJobIDs are done
