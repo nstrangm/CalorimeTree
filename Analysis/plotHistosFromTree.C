@@ -971,9 +971,11 @@ void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDi
   hGammaJetCorrelationsSignal->GetAxis(0)->SetRangeUser(TMath::Pi()-0.6,TMath::Pi()+0.6);
   TH1F* hRecoilJetPtSignal = (TH1F*)hGammaJetCorrelationsSignal->Projection(1);
   hRecoilJetPtSignal->SetName("hRecoilJetPtSignal");
+  hRecoilJetPtSignal->Rebin(2);
   hGammaJetCorrelationsReference->GetAxis(0)->SetRangeUser(TMath::Pi()-0.6,TMath::Pi()+0.6);
   TH1F* hRecoilJetPtReference = (TH1F*)hGammaJetCorrelationsReference->Projection(1);
   hRecoilJetPtReference->SetName("hRecoilJetPtReference");
+  hRecoilJetPtReference->Rebin(2);
 
   if (!hRecoilJetPtSignal || !hRecoilJetPtReference) {
     printf("Error: Recoil jet projection failed\n");
@@ -1006,9 +1008,10 @@ void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDi
   hRecoilJetPtRatio->SetName("hRecoilJetPtRatio");
 
   Plotting1D PRecoilJetPtRatio;
+  hRecoilJetPtRatio->GetYaxis()->SetRangeUser(0.01,10);
   PRecoilJetPtRatio.New(hRecoilJetPtRatio);
-  PRecoilJetPtRatio.SetAxisLabel("#bf{#it{p}_{T, ch jet}^{reco} (GeV/#it{c})}", "#frac{d#it{N}^{sig}/d#it{p}_{T, ch jet}^{reco}}{d#it{N}^{ref}/d#it{p}_{T, ch jet}^{reco}}");
-  PRecoilJetPtRatio.Plot(Form("%s/RecoilJetPtRatio.%s", outputDir.Data(), suffix),false,true);
+  PRecoilJetPtRatio.SetAxisLabel("#bf{#it{p}_{T, ch jet}^{reco} (GeV/#it{c})}", "sig / ref");
+  PRecoilJetPtRatio.Plot(Form("%s/RecoilJetPtRatio.%s", outputDir.Data(), suffix),false,false);
 
 
   // plot rho distribution for signal and reference
@@ -1041,11 +1044,10 @@ void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDi
   hIsoGammaRhoPtRatio->SetName("hIsoGammaRhoPtRatio");
 
   Plotting1D PRhoPtRatio;
+  hIsoGammaRhoPtRatio->GetYaxis()->SetRangeUser(0.01,10);
   PRhoPtRatio.New(hIsoGammaRhoPtRatio);
-  PRhoPtRatio.SetAxisLabel("#bf{#it{p}_{T}^{#gamma} (GeV/#it{c})}", "#frac{d#it{N}^{sig}/d#it{p}_{T}^{#gamma}}{d#it{N}^{ref}/d#it{p}_{T}^{#gamma}}");
-  PRhoPtRatio.Plot(Form("%s/RhoPtRatio.%s", outputDir.Data(), suffix),false,true);
-
-  EXIT
+  PRhoPtRatio.SetAxisLabel("#bf{#it{p}_{T}^{#gamma} (GeV/#it{c})}", "sig / ref");
+  PRhoPtRatio.Plot(Form("%s/RhoPtRatio.%s", outputDir.Data(), suffix),false,false);
 }
 
 void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString GammaType, GlobalOptions optns)

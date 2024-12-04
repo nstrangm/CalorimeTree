@@ -58,6 +58,8 @@ void plotTrackingQA(TString inputfile=" /alf/data/calorimetrees/JE_PbPb_AO2D/000
     }
     pTrackEtaProjections.NewLatex(0.9, 0.9, "#bf{ALICE work in progress}; Pb-Pb LHC23zzm; 0-100% central; #it{E}_{clus} > 8 GeV", StdTextSize*0.3, 0.1);
     pTrackEtaProjections.Plot(Form("%s/TrackEtaProjections.pdf",outputfolder.Data()));
+    // ignore
+    
 
     // plot 2D histogram eta phi
     TH2F *hTrackEtaPhi = (TH2F*)trackPtEtaPhi->Projection(1,2);

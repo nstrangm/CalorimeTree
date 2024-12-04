@@ -153,6 +153,8 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     doGGPi0 = runOptions['doGGPi0']
     domPi0 = runOptions['domPi0']
     doPlotting = runOptions['doPlotting']
+    doAnalysisExclGammaJet = runOptions['doAnalysisExclGammaJet']
+    doPlottingExclGammaJet = runOptions['doPlottingExclGammaJet']
 
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
@@ -198,6 +200,18 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
         if result.returncode != 0:
             log.error(result.stderr)
             raise RuntimeError("plotHistosFromTree.C failed")
+    if doAnalysisExclGammaJet:
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q -l ./Analysis/analyseExclGammaJet.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            log.error(result.stderr)
+            raise RuntimeError("analyseExclGammaJet.C failed")
+    if doPlottingExclGammaJet:
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q -l ./Analysis/plotExclGammaJet.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            log.error(result.stderr)
+            raise RuntimeError("plotExclGammaJet.C failed")
 
 def run_multiple_macros(jobs , runOptions):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
@@ -361,11 +375,15 @@ def check_and_create_folder(folder_path):
     else:
         log.info(f"Folder '{folder_path}' already exists.")
 
-def run_debug(doPlotting):
+def run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet):
     process = subprocess.run('root -b -q -x ./Analysis/makeHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\,\\0\\)', shell=True)
     process = subprocess.run('mv DummyDataSet/DummyTrainConfig/Standard/HistosFromTree_0.root DummyDataSet/DummyTrainConfig/Standard/HistosFromTree.root', shell=True)
     if doPlotting:
         process = subprocess.run('root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
+    if doAnalysisExclGammaJet:
+        process = subprocess.run('root -b -q -l ./Analysis/analyseExclGammaJet.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
+    if doPlottingExclGammaJet:
+        process = subprocess.run('root -b -q -l ./Analysis/plotExclGammaJet.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
 
 # Function to parse command line arguments
 def parse_args():
@@ -390,15 +408,17 @@ def main():
     doJets = analysis_config.get('doJets')
     doGGPi0 = analysis_config.get('doGGPi0')
     domPi0 = analysis_config.get('domPi0')
+    doAnalysisExclGammaJet = analysis_config.get('doAnalysisExclGammaJet')
+    doPlottingExclGammaJet = analysis_config.get('doPlottingExclGammaJet')
 
     log.info("Starting the analysis...")
     log.info("Detected options:")
-    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting}")
+    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet}")
 
     
     
     if doDebug:
-        run_debug(doPlotting)
+        run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet)
         exit()
 
     cuts_config = read_yaml('Cuts.yaml')
@@ -486,7 +506,7 @@ def main():
                     if foundCut:
                         check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                         jobs.append((dataset, trainconfig, cut_name, nSplit))
-    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting }
+    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet }
     run_multiple_macros(jobs,runOptions)
 
 

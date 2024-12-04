@@ -4,6 +4,8 @@ doIsoGamma: true
 doJets: true
 doGGPi0: true
 domPi0: true
+doAnalysisExclGammaJet: true
+doPlottingExclGammaJet: true
 
 DummyDataSet:
   isMC: true

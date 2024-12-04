@@ -634,7 +634,7 @@
     "applyCellAbsScale": "0",
     "logWeight": "4.5",
     "exoticCellMinAmplitude": "4",
-    "clusterDefinition": "kV3Default",
+    "clusterDefinition": "kV3Default,kV3NoSplit,kV3Default5x5",
     "useWeightExotic": "0",
     "disableNonLin": "0",
     "exoticCellDiffTime": "1e+06",
@@ -706,13 +706,13 @@
       "jetPtMin": "0.",
       "processClusters": "1",
       "processChargedJets": "1",
-      "clusterDefinition": "10",
       "eventSelections": "sel8",
       "trackMinPt": "0.15",
       "isoR": "0.4",
       "processClearMaps": "1",
       "vertexCut": "10",
-      "triggerMasks": ""
+      "triggerMasks": "",
+      "minClusterETrigger": "0"
     },
     "jet-finder-data-charged": {
       "clusterEtaMax": "0.7",
@@ -764,7 +764,7 @@
       "trackPtMax": "1000",
       "jetEWSPtMin": "0",
       "jetGhostArea": "0.005",
-      "ghostRepeat": "1",
+      "ghostRepeat": "0",
       "vertexZCut": "10",
       "trackEtaMax": "0.9"
     },
