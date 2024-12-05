@@ -291,7 +291,7 @@ void Plotting::NewLatex(const double PositX, const double PositY, TString text, 
     latex->SetTextColor(color);
     latex->SetTextSize(TextSize);
     latex->SetTextAngle(angle);
-    if (PositX > 0.81)
+    if (PositX > 0.7)
       latex->SetTextAlign(32);
     PlottingObjects.push_back(latex);
     DrawOption.push_back("");

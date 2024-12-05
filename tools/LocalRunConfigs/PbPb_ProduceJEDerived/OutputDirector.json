@@ -1,0 +1,37 @@
+{ "OutputDirector": {
+  "debug_mode": true,
+  "resfile": "AO2D",
+  "OutputDescriptors": [
+    {
+      "table": "AOD1/JCLUSTER/0"
+    },
+    {
+      "table": "AOD1/JCLUSTERTRACK/0"
+    },
+    {
+      "table": "AOD1/JCOLLISION/0"
+    },
+    {
+      "table": "AOD1/JCOLLISIONBC/0"
+    },
+    {
+      "table": "AOD1/JDUMMY/0"
+    },
+    {
+      "table": "AOD1/JEMCCOLLISIONLB/0"
+    },
+    {
+      "table": "AOD1/JTRACK/0"
+    },
+    {
+      "table": "AOD1/JBC/0"
+    },
+    {
+      "table": "AOD1/BCCOUNT/0"
+    },
+    {
+      "table": "AOD1/COLLCOUNT/0"
+    }
+  ],
+  "ntfmerge": 1
+} }
