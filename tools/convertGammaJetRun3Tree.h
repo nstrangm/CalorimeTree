@@ -1,6 +1,18 @@
 #ifndef _convertgammajetrun3tree_h_included
 #define _convertgammajetrun3tree_h_included
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+
+#include "TFile.h"
+#include "TTree.h"
+
+
+
 
 // Tree definitions
 Int_t fBuffer_multiplicity;
@@ -8,6 +20,7 @@ Float_t fBuffer_centrality;
 Float_t fBuffer_rho;
 uint16_t fBuffer_eventselection;
 uint32_t fBuffer_alias;
+Int_t fBuffer_occupancy;
 // jet
 std::vector<Float_t> *fBuffer_jet_data_pt;
 std::vector<Float_t> *fBuffer_jet_data_eta;
@@ -23,6 +36,7 @@ std::vector<UShort_t> *fBuffer_jet_data_nconstituents;
 
 // cluster
 std::vector<Float_t> *fBuffer_cluster_data_energy;
+std::vector<Int_t> *fBuffer_cluster_data_definition;
 std::vector<Float_t> *fBuffer_cluster_data_eta;
 std::vector<Float_t> *fBuffer_cluster_data_phi;
 std::vector<Float_t> *fBuffer_cluster_data_m02;

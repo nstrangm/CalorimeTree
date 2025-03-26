@@ -49,13 +49,13 @@ MergedGJ18DandJJ18D:
   label: GJ18D, JJ18D
   TrainConfig1: 101_Charged
   TrainConfig2: 101_Charged
-LHC23zzm_pass4:
+LHC23_PbPb_pass4_calo:
   isMC: false
-  path: /alf/data/calorimetrees/JE_PbPb_AO2D/000006_LHC23zzm_JetPt0_NewTM_PbPb/sorted
+  path: /alf/data/calorimetrees/JE_PbPb_AO2D/0000014_LHC23_PbPb_pass4_calo/sorted
   label: "Run3"
   trainconfigs:
-    Run3-0-10: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone
-    Run3-10-30: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone
-    Run3-30-50: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone
-    Run3-50-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone
-    Run3-0-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone
+    Run3-0-10: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-10-30: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-30-50: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-50-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-0-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06

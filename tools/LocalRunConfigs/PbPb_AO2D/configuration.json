@@ -8,14 +8,25 @@
     "isRun2MC": "-1"
   },
   "bc-selection-task": {
+    "triggerBcShift": "0",
     "ITSROFrameStartBorderMargin": "-1",
-    "checkRunDurationLimits": "0",
-    "triggerBcShift": "999",
+    "ITSROFrameEndBorderMargin": "-1",
     "TimeFrameStartBorderMargin": "-1",
-    "processRun3": "1",
-    "processRun2": "0",
     "TimeFrameEndBorderMargin": "-1",
-    "ITSROFrameEndBorderMargin": "-1"
+    "checkRunDurationLimits": "false",
+    "maxInactiveChipsPerLayer": {
+        "values": [
+            "8",
+            "8",
+            "8",
+            "111",
+            "111",
+            "195",
+            "195"
+        ]
+    },
+    "processRun2": "false",
+    "processRun3": "true"
   },
   "event-selection-task": {
     "TimeRangeVetoOnCollStandard": "10",
@@ -34,6 +45,10 @@
     "FT0CamplPerCollCutVetoOnCollInROF": "5000",
     "TimeRangeVetoOnCollNarrow": "2"
   },
+  "tracks-extra-v002-converter": {
+    "processV000ToV002": "false",
+    "processV001ToV002": "true"
+},
   "multiplicity-table": {
     "processRun3": "1",
     "processRun2": "0",
@@ -634,7 +649,7 @@
     "applyCellAbsScale": "0",
     "logWeight": "4.5",
     "exoticCellMinAmplitude": "4",
-    "clusterDefinition": "kV3Default,kV3NoSplit,kV3Default5x5",
+    "clusterDefinition": "kV3Default",
     "useWeightExotic": "0",
     "disableNonLin": "0",
     "exoticCellDiffTime": "1e+06",
@@ -668,12 +683,12 @@
     "processClearMaps": "1",
     "ccdbPathGrp": "GLO/GRP/GRP",
     "processLcMC": "0",
-    "processEMCalCollisionLabels": "1",
+    "processEMCalCollisionLabels": "0",
     "processD0Collisions": "0",
     "ccdbUrl": "http://alice-ccdb.cern.ch",
     "processMcTrackLabelsWithCollisionAssociator": "0",
     "processCollisionsRun2": "0",
-    "processWithoutEMCalCollisionLabels": "0",
+    "processWithoutEMCalCollisionLabels": "1",
     "processMcClusterLabels": "0",
     "processLcCollisions": "0",
     "processTracksWithCollisionAssociator": "0",
@@ -706,13 +721,13 @@
       "jetPtMin": "0.",
       "processClusters": "1",
       "processChargedJets": "1",
-      "eventSelections": "sel8",
+      "eventSelections": "sel8FullPbPb",
       "trackMinPt": "0.15",
       "isoR": "0.4",
       "processClearMaps": "1",
       "vertexCut": "10",
       "triggerMasks": "",
-      "minClusterETrigger": "0"
+      "minClusterETrigger": "8"
     },
     "jet-finder-data-charged": {
       "clusterEtaMax": "0.7",
@@ -753,14 +768,19 @@
       "processParticleLevelFullJets": "0",
       "clusterEtaMin": "-0.7",
       "jetPtMin": "0",
+      "doEMCALEventSelectionChargedJets": "1",
       "clusterRejectExotics": "1",
       "centralityMin": "-999",
       "jetRadius": {
         "values": [
-          0.2,0.3,0.4,0.5,0.6 
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6
         ]
       },
-      "eventSelections": "sel8",
+      "eventSelections": "sel8FullPbPb",
       "trackPtMax": "1000",
       "jetEWSPtMin": "0",
       "jetGhostArea": "0.005",

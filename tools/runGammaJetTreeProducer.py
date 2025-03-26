@@ -87,7 +87,9 @@ if __name__ == "__main__":
         # submit job
         
         slurm_log = output_dir_chunk / "slurm.log"
+        # os.system(f"cd {output_dir_chunk} && sbatch --partition {partition} --exclusive --exclude=pc051 --output {slurm_log} runcommand.sh")
         os.system(f"cd {output_dir_chunk} && sbatch --partition {partition} --output {slurm_log} runcommand.sh")
+
 
         
 

@@ -83,7 +83,7 @@ public:
   //  Set the relative empty space between hist and the edges aswell as the canvas dimensions in pixels
   void SetMargins(double low = 0.12, double left = 0.1, double up = 0.025, double right = 0.025, int cw = 2000, int ch = 1500, double s = 1. / 3.);
   //   void SetMargins(double low = 0.1, double left = 0.1, double up = 0.02, double right = 0.02, int cw = 800, int ch = 600, double s = 1. / 3.);
-
+   
   void AddEMCalOutline();
   void AddPHOSOutline();
 
@@ -121,7 +121,7 @@ protected:
   //  If no style and or color are set these 10 standard styles and colors are used one after the other
   int AutoStyle[10] = {20, 21, 34, 33, 27, 24, 28, 22, 23, 29};
   int AutoStyleLine[10] = {1, 7, 9, 2, 8, 1, 7, 9, 2, 8};
-  int AutoColor[10] = {kBlue + 1, kRed + 1, kGreen + 2, kBlack, kOrange + 2, kCyan + 3, kTeal - 7, kPink + 2, kYellow + 3, kSpring + 4};
+  int AutoColor[10] = {kBlack, kRed + 1, kGreen + 2, kBlue + 1, kOrange + 2, kCyan + 3, kTeal - 7, kPink + 2, kYellow + 3, kSpring + 4};
   int counter = 0; //  Count up after each added histogram and use e.g. AutoStyle[counter] -> Unique colors and styles
 
   //  Create the legend leg using LegendBorders that will be drawn in Plot()
@@ -1223,6 +1223,7 @@ public:
 
   //  Add histograms to the upper pad
   void New(TH1F *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
+  void New(TH1F h, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
   void New(TH1D *h = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
   void New(TGraphAsymmErrors *g = nullptr, TString label = "", int style = -1, double size = 1, int color = -1, TString opt = "p");
 
@@ -1451,33 +1452,66 @@ void PlottingGrid::Plot(TString name, bool logx, bool logy)
 
   Canvas->SaveAs(name);
   delete Canvas;
+
+
+  // Clear all vectors
+  hists.clear();
+  graphs.clear();
+  funcs.clear();
+  lines.clear();
+  padtex.clear();
+  bFadePad.clear();
+  pads.clear();
+  Fadepads.clear();
+  DrawOption.clear();
+  DrawOptionG.clear();
+  DrawOptionF.clear();
+  LegendLabel.clear();
+  LegendLabelG.clear();
+  LegendLabelF.clear();
+  LegendLabelL.clear();
+  histsinpad.clear();
+
+  // clear all pads and FaadePads
+  for (auto pad : pads) {
+    delete pad;
+  }
+  for (auto fadePad : Fadepads) {
+    delete fadePad;
+  }
+  pads.clear();
+  Fadepads.clear();
 }
 
 void PlottingGrid::New(TH1F *h, TString label, int style, double size, int color, TString opt)
 {
+    if (!h) {
+        FATAL("NewHist was given a nullptr.");
+    }
 
-  if (!h)
-    FATAL("NewHist was given a nullptr.");
+    // Create a clone to take ownership
+    TH1F* hist_clone = (TH1F*)h->Clone();
+    hist_clone->SetStats(0);
+    hist_clone->GetXaxis()->SetTitleSize(TitleSizeScaling * hist_clone->GetXaxis()->GetLabelSize());
+    hist_clone->GetYaxis()->SetTitleSize(TitleSizeScaling * hist_clone->GetYaxis()->GetLabelSize());
+    hist_clone->GetXaxis()->SetTitle(AxisLabel[0]);
+    hist_clone->GetYaxis()->SetTitle(AxisLabel[1]);
+    hist_clone->GetXaxis()->SetTitleOffset(AxisLabelOffset[0]);
+    hist_clone->GetYaxis()->SetTitleOffset(AxisLabelOffset[1]);
+    hist_clone->GetYaxis()->SetMaxDigits(3);
 
-  h->SetStats(0);
-  h->GetXaxis()->SetTitleSize(TitleSizeScaling * h->GetXaxis()->GetLabelSize());
-  h->GetYaxis()->SetTitleSize(TitleSizeScaling * h->GetYaxis()->GetLabelSize());
-  h->GetXaxis()->SetTitle(AxisLabel[0]);
-  h->GetYaxis()->SetTitle(AxisLabel[1]);
-  h->GetXaxis()->SetTitleOffset(AxisLabelOffset[0]);
-  h->GetYaxis()->SetTitleOffset(AxisLabelOffset[1]);
-  h->GetYaxis()->SetMaxDigits(3);
+    if (PadCounter == 1) {
+        DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
+        LegendLabel.push_back(label);
+    }
 
-  if (PadCounter == 1)
-    DrawOption.push_back((opt == "l" || opt == "c") ? opt + " hist" : opt);
-
-  if (PadCounter == 1)
-    LegendLabel.push_back(label);
-
-  SetStyle<TH1 *>(h, style, size, color, opt, counter);
-  h->SetLineWidth(1);
-  histsinpad.push_back(*h);
-  counter++;
+    SetStyle<TH1*>(hist_clone, style, size, color, opt, counter);
+    hist_clone->SetLineWidth(1);
+    
+    histsinpad.push_back(*hist_clone);
+    delete hist_clone;
+    
+    counter++;
 }
 
 void PlottingGrid::New(TGraphAsymmErrors *g, TString label, int style, double size, int color, TString opt)

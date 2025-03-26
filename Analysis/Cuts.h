@@ -16,6 +16,8 @@ class EventCuts
 private:
   float zVtxMin = -10;
   float zVtxMax = 10;
+  int OccupancyMin = 0;
+  int OccupancyMax = 99999;
 
 public:
   EventCuts(GlobalOptions optns);
@@ -25,6 +27,14 @@ public:
 
 EventCuts::EventCuts(GlobalOptions optns)
 {
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+
+  if (!ycut[(std::string)optns.cutString])
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
+  OccupancyMin = chosencut["event_occupancy_min"].IsDefined() ? chosencut["event_occupancy_min"].as<int>() : standardcut["event_occupancy_min"].as<int>();
+  OccupancyMax = chosencut["event_occupancy_max"].IsDefined() ? chosencut["event_occupancy_max"].as<int>() : standardcut["event_occupancy_max"].as<int>();
 }
 
 bool EventCuts::PassedCuts(Event &Event)
@@ -43,6 +53,10 @@ bool EventCuts::PassedCuts(Event &Event)
   {
     passed = false;
     Event.QualityOK = false;
+  }
+  if (Event.Occupancy < OccupancyMin || Event.Occupancy > OccupancyMax)
+  {
+    passed = false;
   }
 
   Event.Selected = true;
@@ -180,6 +194,7 @@ private:
   float DCalHoleEtaPhiMinMax[2][2] = {{0, 0}, {0, 0}};
   float EMin = 0.;
   float EMax = 0.;
+  int ClusterDefinition = 10;
   float TimeMin = -1000;
   float TimeMax = +1000;
   unsigned short NcellsMin = 0;
@@ -247,6 +262,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   // Load NLM cut
   NLMMax = chosencut["gamma_max_NLM"].IsDefined() ? chosencut["gamma_max_NLM"].as<unsigned short>() : standardcut["gamma_max_NLM"].as<unsigned short>();
 
+  ClusterDefinition = chosencut["gamma_ClusterDefinition"].IsDefined() ? chosencut["gamma_ClusterDefinition"].as<int>() : standardcut["gamma_ClusterDefinition"].as<int>();
   // Load min dist to bad channel cut
   DistanceToBadChannelMin = chosencut["gamma_min_distbadch"].IsDefined() ? chosencut["gamma_min_distbadch"].as<float>() : standardcut["gamma_min_distbadch"].as<float>();
 
@@ -330,6 +346,12 @@ bool IsoGammaCuts::PassedClusterCuts(Cluster IsoGamma)
     ((TH2F *)hQADir->FindObject("hpTSpectraAfterSubsequentCuts"))->Fill(0., IsoGamma.Pt(), IsoGamma.EventWeight);
   if (hQADir != nullptr)
     ((TH2F *)hQADir->FindObject("hpTSpectrumLossFromIndividualCuts"))->Fill(0., IsoGamma.Pt(), IsoGamma.EventWeight);
+  // Check cluster definition
+  if (IsoGamma.Definition != ClusterDefinition)
+  {
+    // LOG(Form("Cluster definition %d does not match expected definition %d", IsoGamma.Definition, ClusterDefinition))
+    passed = false;
+  }
   // Check cluster acceptance
   if (!IsoGamma.isInEMCalAcceptance(EMCalEtaPhiMinMax) && !IsoGamma.isInDCalAcceptance(DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax))
   {
@@ -547,7 +569,6 @@ bool DLJetCuts::PassedCuts(Jet Jet)
   {
     passed = false;
   }
-
   if (Jet.Area < AreaMin)
   {
     passed = false;

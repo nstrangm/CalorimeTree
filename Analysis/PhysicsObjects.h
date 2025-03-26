@@ -99,6 +99,7 @@ public:
   float Centrality = 0;
   uint16_t Selection = 0;
   uint32_t Alias = 0;
+  int Occupancy = 0;
 
   unsigned short NPrimaryTracks = 0;
   bool IsTriggered = true;
@@ -117,6 +118,7 @@ public:
 Event::Event(TreeBuffer tree, GlobalOptions optns)
 {
   Rho = tree.Event_Rho;
+  Occupancy = tree.Event_Occupancy;
 
   switch (optns.TreeFormat)
   {
@@ -136,6 +138,7 @@ Event::Event(TreeBuffer tree, GlobalOptions optns)
     Centrality = tree.Event_Centrality;
     Selection = tree.Event_Selection;
     Alias = tree.Event_Alias;
+    Occupancy = tree.Event_Occupancy;
     break;
   case kBerkeleyTree:
   default:
@@ -208,6 +211,7 @@ public:
   bool isInEMCalAcceptance(float EMCalEtaPhiMinMax[2][2]);
   bool isInDCalAcceptance(float DCalEtaPhiMinMax[2][2], float DCalHoleEtaPhiMinMax[2][2]);
   float E = 0;
+  int Definition = 0;
   float EBeforeNL = 0; // To monitor the application of the NL
   float M02 = 0;
   float M02Recalc = 0; // Calculated in 5x5 window - not used for now
@@ -361,6 +365,7 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<Cluster> &IsoGam
       Cluster isoGamma(PtFromPEta(tree.Cluster_E->at(iCluster), tree.Cluster_Eta->at(iCluster)), tree.Cluster_Eta->at(iCluster), tree.Cluster_Phi->at(iCluster));
       isoGamma.EBeforeNL = tree.Cluster_E->at(iCluster);
       isoGamma.E = tree.Cluster_E->at(iCluster);
+      isoGamma.Definition = tree.Cluster_Definition->at(iCluster);
       isoGamma.M02 = tree.Cluster_M02->at(iCluster);
       isoGamma.M20 = tree.Cluster_M20->at(iCluster);
       isoGamma.NCells = tree.Cluster_NCells->at(iCluster);
@@ -442,13 +447,8 @@ class DLJet : public Jet
 public:
   using Jet::Jet;
   ~DLJet() {};
-  float Area = 0;
-  unsigned short Nch = 0;
-  unsigned short Nclus = 0;
-  unsigned short Nconstits = 0;
   float LeadingTrackPt = 0;
   float PerpConeRho = 0;
-  float M = 0;
   bool isInJetAcceptance(float JetEtaPhiMinMax[2][2]);
 };
 
