@@ -50,6 +50,15 @@ TDirectory *DefineEventQAHistograms(TFile *f, GlobalOptions optns)
   hCentralityRhoMultiplicity->Sumw2();
   dir->Add(hCentralityRhoMultiplicity);
 
+  TH1F* hOccupancy = new TH1F("hOccupancy", "hOccupancy", 500, 0, 20000);
+  hOccupancy->GetXaxis()->SetTitle("Occupancy");
+  dir->Add(hOccupancy);
+
+  TH2F* hOccupancyCentrality = new TH2F("hOccupancyCentrality", "hOccupancyCentrality", 100, 0, 100, 500, 0, 20000);
+  hOccupancyCentrality->GetXaxis()->SetTitle("Centrality");
+  hOccupancyCentrality->GetYaxis()->SetTitle("Occupancy");
+  dir->Add(hOccupancyCentrality);
+
 
   return dir;
 }
@@ -176,6 +185,12 @@ TDirectory *DefineIsoGammaQAHistograms(TFile *f, std::string dirname, GlobalOpti
   TH2F *hIsoGammadEtadphi = new TH2F("hIsoGammadEtadphi", "hIsoGammadEtadphi", 100, -0.1, 0.1, 100, -0.1, 0.1);
   TH2F *hIsoGammadEtadphiCut = new TH2F("hIsoGammadEtadphiCut", "hIsoGammadEtadphiCut", 100, -0.1, 0.1, 100, -0.1, 0.1);
   TH2F *hDistanceToBadChannelvsPt = new TH2F("hDistanceToBadChannelvsPt", "hDistanceToBadChannelvsPt", 12, 0.5, 12.5, 100, 0, 100);
+  THnSparseF * hIsoGammadEtadPhiPt = new THnSparseF("hIsoGammadEtadPhiPt", "hIsoGammadEtadPhiPt", 3, new int[3]{100, 100, 300}, new double[3]{-0.1, -0.1, 0}, new double[3]{0.1,0.1, 150});
+  hIsoGammadEtadPhiPt->GetAxis(0)->SetTitle("d#eta");
+  hIsoGammadEtadPhiPt->GetAxis(1)->SetTitle("d#phi");
+  hIsoGammadEtadPhiPt->GetAxis(2)->SetTitle("p_{T} (GeV/#it{c})");
+  hIsoGammadEtadPhiPt->Sumw2();
+  dir->Add(hIsoGammadEtadPhiPt);
 
   if (optns.isMC)
   { // ------------------> MC IsoGammaQA histograms
@@ -288,7 +303,7 @@ TDirectory *DefineJetQAHistograms(TFile *f, std::string dirname, GlobalOptions o
   TH1F *hJetNch = new TH1F("hJetNch", "hNch", 51, -0.5, 50.5);
   TH1F *hJetNclus = new TH1F("hJetNclus", "hNclus", 51, -0.5, 50.5);
   TH1F *hJetNconstits = new TH1F("hJetNconstits", "hNconstits", 201, -0.5, 200.5);
-  THnSparseF *hJetPtEtaPhi = new THnSparseF("hJetPtEtaPhi", "hJetPtEtaPhi", 3, new int[3]{300, 100, 100}, new double[3]{0, -1, 0}, new double[3]{150, 1, 2 * TMath::Pi()});
+  THnSparseF *hJetPtEtaPhi = new THnSparseF("hJetPtEtaPhi", "hJetPtEtaPhi", 3, new int[3]{350, 100, 100}, new double[3]{-50, -1, 0}, new double[3]{150, 1, 2 * TMath::Pi()});
   hJetPtEtaPhi->GetAxis(0)->SetTitle("p_{T} (GeV/c)");
   hJetPtEtaPhi->GetAxis(1)->SetTitle("#eta");
   hJetPtEtaPhi->GetAxis(2)->SetTitle("#phi");
@@ -302,6 +317,13 @@ TDirectory *DefineJetQAHistograms(TFile *f, std::string dirname, GlobalOptions o
   hJetPtEtaZ->GetAxis(2)->SetTitle("z = p_{T}^{leading hadron} / p_{T}^{jet}");
   hJetPtEtaZ->Sumw2();
   dir->Add(hJetPtEtaZ);
+
+  THnSparseF *hJetPtEtaOccupancy = new THnSparseF("hJetPtEtaOccupancy", "hJetPtEtaOccupancy", 3, new int[3]{300, 100, 200}, new double[3]{0, -1, 0}, new double[3]{150, 1, 20000});
+  hJetPtEtaOccupancy->GetAxis(0)->SetTitle("p_{T} (GeV/c)");
+  hJetPtEtaOccupancy->GetAxis(1)->SetTitle("#eta");
+  hJetPtEtaOccupancy->GetAxis(2)->SetTitle("Occupancy");
+  hJetPtEtaOccupancy->Sumw2();
+  dir->Add(hJetPtEtaOccupancy);
 
   // ------------------> MC Jet QA histograms
   if (optns.isMC)
@@ -379,6 +401,17 @@ TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOption
   hIsoGammaJetDeltaPhi2piJetPtGammaPt->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
   hIsoGammaJetDeltaPhi2piJetPtGammaPt->Sumw2();
   dir->Add(hIsoGammaJetDeltaPhi2piJetPtGammaPt);
+
+  int nBinsDeltaDeltaPhi[3] = {100, 100, nBinsJetPt};
+  double minDeltaDeltaPhi[3] = {0, 0, jetPtMinMax[0]};
+  double maxDeltaDeltaPhi[3] = {2*TMath::Pi(), 2,jetPtMinMax[1]};
+
+  THnSparseF *hIsoGammaJetDeltaPhi2piDeltaEtaJetPt = new THnSparseF("hIsoGammaJetDeltaPhi2piDeltaEtaJetPt", "hIsoGammaJetDeltaPhi2piDeltaEtaJetPt", 3, nBinsDeltaDeltaPhi, minDeltaDeltaPhi, maxDeltaDeltaPhi);
+  hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(0)->SetTitle("#Delta#phi = |#phi_{#gamma}-#phi_{jet}|");
+  hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(1)->SetTitle("#Delta#eta = |#eta_{#gamma}-#eta_{jet}|");
+  hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(2)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+  hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->Sumw2();
+  dir->Add(hIsoGammaJetDeltaPhi2piDeltaEtaJetPt);
   return dir;
 }
 
@@ -449,6 +482,8 @@ void fillHistograms(std::vector<Cluster> obj, Event evt,TDirectory *dir, TDirect
       if (obj.at(i).MatchedTrack.P > 0)
       {
         ((TH2F *)QAdir->FindObject("hIsoGammadEtadphi"))->Fill(obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, eventWeight);
+        double coords[3] = {obj.at(i).MatchedTrack.dPhi, obj.at(i).MatchedTrack.dEta, obj.at(i).Pt()};
+        ((THnSparseF *)QAdir->FindObject("hIsoGammadEtadPhiPt"))->Fill(coords, eventWeight);
       }
       ((TH2F *)QAdir->FindObject("hIsoGammaRhoPt"))->Fill(evt.Rho, obj.at(i).Pt(), eventWeight);
 
@@ -527,7 +562,7 @@ void fillHistograms(std::vector<Cluster> obj, Event evt,TDirectory *dir, TDirect
   }
 }
 
-void fillHistograms(std::vector<DLJet> obj, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
+void fillHistograms(std::vector<DLJet> obj, Event evt, TDirectory *dir, TDirectory *QAdir, float eventWeight, GlobalOptions optns)
 {
   for (unsigned long i = 0; i < obj.size(); i++)
   {
@@ -552,6 +587,9 @@ void fillHistograms(std::vector<DLJet> obj, TDirectory *dir, TDirectory *QAdir, 
         double coords[3] = {obj.at(i).Pt(), obj.at(i).Eta(), obj.at(i).LeadingTrackPt / obj.at(i).Pt()};
         ((THnSparseF *)QAdir->FindObject("hJetPtEtaZ"))->Fill(coords, eventWeight);
       }
+      // hJetPtEtaOccupancy
+      double coords[3] = {obj.at(i).Pt(), obj.at(i).Eta(), static_cast<double>(evt.Occupancy)};
+      ((THnSparseF *)QAdir->FindObject("hJetPtEtaOccupancy"))->Fill(coords, eventWeight);
     }
   }
 }
@@ -615,6 +653,10 @@ void fillHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, TDirectory *
     ((THnSparseF *)dir->FindObject("hIsoGammaJetDeltaPhiJetPtGammaPt"))->Fill(coords, eventWeight);
     coords[0] = obj.at(i).DPhi2pi;
     ((THnSparseF *)dir->FindObject("hIsoGammaJetDeltaPhi2piJetPtGammaPt"))->Fill(coords, eventWeight);
+    coords[0] = obj.at(i).DPhi2pi;
+    coords[1] = TMath::Abs(obj.at(i).DEta);
+    coords[2] = obj.at(i).jet->Pt();
+    ((THnSparseF *)dir->FindObject("hIsoGammaJetDeltaPhi2piDeltaEtaJetPt"))->Fill(coords, eventWeight);
   }
   if (optns.doQA)
   {
@@ -665,6 +707,8 @@ void fillHistograms(Event obj, TDirectory *dir, TDirectory *QAdir, float eventWe
     ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(3., (int)(obj.QualityOK));
     ((TH1F *)QAdir->FindObject("hNEventswoWeights"))->Fill(4., (int)(obj.Selected));
     ((THnSparseF *)QAdir->FindObject("hCentralityRhoMultiplicity"))->Fill(obj.Centrality, obj.Rho, obj.Multiplicity, eventWeight);
+    ((TH1F *)QAdir->FindObject("hOccupancy"))->Fill(obj.Occupancy, eventWeight);
+    ((TH2F *)QAdir->FindObject("hOccupancyCentrality"))->Fill(obj.Centrality, obj.Occupancy, eventWeight);
   }
 }
 

@@ -151,12 +151,12 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     {
       saveJetsFromEventInVector(tree, DLJets, optns, dljetCuts.R);
       if (dljetCuts.doUEsubtraction){
-        fillHistograms(DLJets, hDirJetsRaw, hQADirJetsRaw, event.weight, optns);
+        fillHistograms(DLJets, event, hDirJetsRaw, hQADirJetsRaw, event.weight, optns);
         // UE event subtraction
         applyJetPtUESubtraction(DLJets, event, dljetCuts);
       }
       doJetCuts(DLJets, dljetCuts);
-      fillHistograms(DLJets, hDirJets, hQADirJets, event.weight, optns);
+      fillHistograms(DLJets, event, hDirJets, hQADirJets, event.weight, optns);
       if (optns.isMC)
       {
         savePLJetsFromEventInVector(tree, PLJets, optns);

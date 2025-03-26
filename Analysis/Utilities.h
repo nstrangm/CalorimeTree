@@ -124,13 +124,13 @@ void setExpArray(Double_t array[], int nPoints, float min, float max)
     array[i] = x * TMath::Power(10, y * i);
 }
 
-void createDirectory(const char *path)
+void createDirectory(TString path)
 {
   struct stat info;
-  if (stat(path, &info) != 0)
+  if (stat(path.Data(), &info) != 0)
   {
-    if (mkdir(path, 0755) == -1) // Directory does not exist, create it
-      std::cerr << "Error creating directory: " << path << std::endl;
+    if (mkdir(path.Data(), 0755) == -1) // Directory does not exist, create it
+      std::cerr << "Error creating directory: " << path.Data() << std::endl;
   }
   return;
 }

@@ -41,8 +41,9 @@ void extractConfigurationInformation(TString AnalysisDirectory, GlobalOptions &o
 
 }
 
-void plotRecoilJets(TDirectory *dRecoilJets, TString triggerParticle = "IsoPhoton")
+void plotRecoilJets(TDirectory *dRecoilJets, TString triggerParticle, GlobalOptions optns)
 {
+   DLJetCuts jetCuts(optns);
    // create output subdirectory
    TString savePath = Form("%s/%sTrigger", outputDir.Data(), triggerParticle.Data());
    createDirectory(savePath.Data());
@@ -50,12 +51,14 @@ void plotRecoilJets(TDirectory *dRecoilJets, TString triggerParticle = "IsoPhoto
    TString triggerLabel = "";
    if (triggerParticle == "IsoPhoton") triggerLabel = "#gamma_{iso}";
    else if (triggerParticle == "MergedPi0") triggerLabel = "#pi^{0}_{merged}";
-
+   
+   TH2F* hIsoGammaJetDeltaPhiJetPtSignal = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtSignal");
+   TH2F* hIsoGammaJetDeltaPhiJetPtReference = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtReference");
 
    // signal trigger
-   TH2F* hIsoGammaJetDeltaPhiJetPtSignal = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtSignal");
+   TH2F* hIsoGammaJetDeltaPhi2piJetPtSignal = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhi2piJetPtSignal");
    Plotting2D PDeltaPhiJetPtSignal;
-   PDeltaPhiJetPtSignal.New(hIsoGammaJetDeltaPhiJetPtSignal);
+   PDeltaPhiJetPtSignal.New(hIsoGammaJetDeltaPhi2piJetPtSignal);
    PDeltaPhiJetPtSignal.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
    PDeltaPhiJetPtSignal.NewLatex(0.8, 0.9, Form("ALICE work in progress;Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; Ch-particle jets, anti-k_{T}, R=%.1f; signal %s trigger, TT{%.0f,%.0f}", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data(), signalTriggerPt.first, signalTriggerPt.second), StdTextSize, 0.05);
    PDeltaPhiJetPtSignal.SetMargins(0.12, 0.12, 0.025, 0.17);
@@ -64,15 +67,69 @@ void plotRecoilJets(TDirectory *dRecoilJets, TString triggerParticle = "IsoPhoto
    PDeltaPhiJetPtSignal.Plot(Form("%s/DeltaPhiJetPtSignal.%s", savePath.Data(), suffix.Data()), false, false, true);
 
    // reference trigger
-   TH2F* hIsoGammaJetDeltaPhiJetPtReference = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtReference");
+   TH2F* hIsoGammaJetDeltaPhi2piJetPtReference = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhi2piJetPtReference");
    Plotting2D PDeltaPhiJetPtReference;
-   PDeltaPhiJetPtReference.New(hIsoGammaJetDeltaPhiJetPtReference);
+   PDeltaPhiJetPtReference.New(hIsoGammaJetDeltaPhi2piJetPtReference);
    PDeltaPhiJetPtReference.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
    PDeltaPhiJetPtReference.NewLatex(0.8, 0.9, Form("ALICE work in progress;Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; Ch-particle jets, anti-k_{T}, R=%.1f; reference %s trigger, TT{%.0f,%.0f}", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data(), referenceTriggerPt.first, referenceTriggerPt.second), StdTextSize, 0.05);
    PDeltaPhiJetPtReference.SetMargins(0.12, 0.12, 0.025, 0.17);
    PDeltaPhiJetPtReference.NewLine(TMath::Pi()-0.6, -100, TMath::Pi()-0.6, 200, 2, 3, kBlack);
    PDeltaPhiJetPtReference.NewLine(TMath::Pi()+0.6, -100, TMath::Pi()+0.6, 200, 2, 3, kBlack);
    PDeltaPhiJetPtReference.Plot(Form("%s/DeltaPhiJetPtReference.%s", savePath.Data(), suffix.Data()), false, false, true);
+
+   // mirrored histograms - signal trigger
+   TH2F* hIsoGammaJetDeltaPhiJetPtSignalMirrored = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtSignalMirrored");
+   Plotting2D PDeltaPhiJetPtSignalMirrored;
+   PDeltaPhiJetPtSignalMirrored.New(hIsoGammaJetDeltaPhiJetPtSignalMirrored);
+   PDeltaPhiJetPtSignalMirrored.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+   PDeltaPhiJetPtSignalMirrored.NewLatex(0.8, 0.9, Form("ALICE work in progress;Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; Ch-particle jets, anti-k_{T}, R=%.1f; signal %s trigger, TT{%.0f,%.0f}", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data(), signalTriggerPt.first, signalTriggerPt.second), StdTextSize, 0.05);
+   PDeltaPhiJetPtSignalMirrored.SetMargins(0.12, 0.12, 0.025, 0.17);
+   PDeltaPhiJetPtSignalMirrored.NewLine(TMath::Pi()-0.6, -100, TMath::Pi()-0.6, 200, 2, 3, kBlack);
+   PDeltaPhiJetPtSignalMirrored.NewLine(TMath::Pi()+0.6, -100, TMath::Pi()+0.6, 200, 2, 3, kBlack);
+   PDeltaPhiJetPtSignalMirrored.Plot(Form("%s/DeltaPhiJetPtSignalMirrored.%s", savePath.Data(), suffix.Data()), false, false, true);
+
+   // mirrored histograms - reference trigger
+   TH2F* hIsoGammaJetDeltaPhiJetPtReferenceMirrored = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaPhiJetPtReferenceMirrored");
+   Plotting2D PDeltaPhiJetPtReferenceMirrored;
+   PDeltaPhiJetPtReferenceMirrored.New(hIsoGammaJetDeltaPhiJetPtReferenceMirrored);
+   PDeltaPhiJetPtReferenceMirrored.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+   PDeltaPhiJetPtReferenceMirrored.NewLatex(0.8, 0.9, Form("ALICE work in progress;Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; Ch-particle jets, anti-k_{T}, R=%.1f; reference %s trigger, TT{%.0f,%.0f}", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data(), referenceTriggerPt.first, referenceTriggerPt.second), StdTextSize, 0.05);
+   PDeltaPhiJetPtReferenceMirrored.SetMargins(0.12, 0.12, 0.025, 0.17);
+   PDeltaPhiJetPtReferenceMirrored.NewLine(TMath::Pi()-0.6, -100, TMath::Pi()-0.6, 200, 2, 3, kBlack);
+   PDeltaPhiJetPtReferenceMirrored.NewLine(TMath::Pi()+0.6, -100, TMath::Pi()+0.6, 200, 2, 3, kBlack);
+   PDeltaPhiJetPtReferenceMirrored.Plot(Form("%s/DeltaPhiJetPtReferenceMirrored.%s", savePath.Data(), suffix.Data()), false, false, true);
+
+
+   // do the same plots but projected onto deltaPhi in bins of jet pt
+   // Create PlottingGrid for signal trigger deltaPhi projections
+   PlottingGrid PDeltaPhiJetPtGridSignal;
+   PDeltaPhiJetPtGridSignal.SetMargins(0.12, 0.12, 0.05, 0.125);
+   PDeltaPhiJetPtGridSignal.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+   TH1F* hRecoilJetdPhiSignal[nJetPtBins];
+   TH1F* hRecoilJetdPhiReference[nJetPtBins];
+   for (int i = 0; i < nJetPtBins; i++)
+   {
+      int minBin = hIsoGammaJetDeltaPhiJetPtSignal->GetYaxis()->FindBin(jetPtBins[i]);
+      int maxBin = hIsoGammaJetDeltaPhiJetPtSignal->GetYaxis()->FindBin(jetPtBins[i+1]);
+      hRecoilJetdPhiSignal[i] = (TH1F*) hIsoGammaJetDeltaPhiJetPtSignal->ProjectionX(Form("hRecoilJetdPhiSignal_%d", i), minBin, maxBin);
+      PDeltaPhiJetPtGridSignal.New(hRecoilJetdPhiSignal[i], "", -1, 1, kBlack, "hist e");
+      PDeltaPhiJetPtGridSignal.NextPad(Form("%.1f < #it{p}_{T}^{jet} < %.1f GeV/#it{c}", jetPtBins[i], jetPtBins[i+1]));
+   }
+   PDeltaPhiJetPtGridSignal.Plot(Form("%s/DeltaPhiJetPtGridSignal.%s", savePath.Data(), suffix.Data()), false, false);
+
+   // Create PlottingGrid for reference trigger deltaPhi projections
+   PlottingGrid PDeltaPhiJetPtGridReference;
+   PDeltaPhiJetPtGridReference.SetMargins(0.12, 0.12, 0.05, 0.125);
+   PDeltaPhiJetPtGridReference.SetAxisLabel("#Delta#phi", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+   for (int i = 0; i < nJetPtBins; i++)
+   {
+      int minBin = hIsoGammaJetDeltaPhiJetPtReference->GetYaxis()->FindBin(jetPtBins[i]);
+      int maxBin = hIsoGammaJetDeltaPhiJetPtReference->GetYaxis()->FindBin(jetPtBins[i+1]);
+      hRecoilJetdPhiReference[i] = (TH1F*) hIsoGammaJetDeltaPhiJetPtReference->ProjectionX(Form("hRecoilJetdPhiReference_%d", i), minBin, maxBin);
+      PDeltaPhiJetPtGridReference.New(hRecoilJetdPhiReference[i], "", -1, 1, kBlack, "hist e");
+      PDeltaPhiJetPtGridReference.NextPad(Form("%.1f < #it{p}_{T}^{jet} < %.1f GeV/#it{c}", jetPtBins[i], jetPtBins[i+1]));
+   }
+   PDeltaPhiJetPtGridReference.Plot(Form("%s/DeltaPhiJetPtGridReference.%s", savePath.Data(), suffix.Data()), false, false);
 
    // loop over all phi bins in phiBins and get the plots
    for(auto phiBin : phiBins)
@@ -112,6 +169,133 @@ void plotRecoilJets(TDirectory *dRecoilJets, TString triggerParticle = "IsoPhoto
       PRecoilJets.Plot(Form("%s/RecoilJetPt_%.2f_%.2f.%s", savePath.Data(), phiBin.first, phiBin.second, suffix.Data()), false, true);
    }
 
+   // plot the 2D histogram hIsoGammaJetDeltaEtaJetPt
+   TH2F* hIsoGammaJetDeltaEtaJetPt = (TH2F*) dRecoilJets->Get("hIsoGammaJetDeltaEtaJetPt");
+   Plotting2D PDeltaEtaJetPt;
+   PDeltaEtaJetPt.New(hIsoGammaJetDeltaEtaJetPt);
+   PDeltaEtaJetPt.SetAxisLabel("#Delta#eta", "#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+   PDeltaEtaJetPt.Plot(Form("%s/DeltaEtaJetPt.%s", savePath.Data(), suffix.Data()), false, false, true);
+
+  //  Create a PlottingGrid that shows the projection onto deltaEta for different jet pt
+  PlottingGrid PDeltaEtaJetPtGrid;
+   const int nJetPtBins = 7;
+   double jetPtBins[nJetPtBins+1] = {-50, 0, 5,10, 20, 30,40,50};
+   TH1F* hDeltaEtaProjections[nJetPtBins];
+
+   PDeltaEtaJetPtGrid.SetAxisLabel("#bf{#Delta#eta}", "#bf{N_{jets}}");
+   PDeltaEtaJetPtGrid.SetMargins(0.12, 0.12, 0.05, 0.125);
+
+   for (int iPtBin = 0; iPtBin < nJetPtBins; iPtBin++) {
+     int minBin = hIsoGammaJetDeltaEtaJetPt->GetYaxis()->FindBin(jetPtBins[iPtBin]);
+     int maxBin = hIsoGammaJetDeltaEtaJetPt->GetYaxis()->FindBin(jetPtBins[iPtBin + 1]);
+     
+     hDeltaEtaProjections[iPtBin] = (TH1F*)hIsoGammaJetDeltaEtaJetPt->ProjectionX(Form("hDeltaEtaProjection_%d", iPtBin), minBin, maxBin);
+     hDeltaEtaProjections[iPtBin]->SetName(Form("hDeltaEtaProjection_%d", iPtBin));
+
+     PDeltaEtaJetPtGrid.New(hDeltaEtaProjections[iPtBin], "", -1, 1, kBlack, "hist e");
+     PDeltaEtaJetPtGrid.NextPad(Form("%.1f < #it{p}_{T}^{jet} < %.1f GeV/#it{c}", jetPtBins[iPtBin], jetPtBins[iPtBin + 1]));
+   }
+
+   PDeltaEtaJetPtGrid.SetLegend(0.1,0.9,0.1,0.4);
+   PDeltaEtaJetPtGrid.NewLatex(0.9, 0.9, Form("#bf{ALICE work in progress};Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; ch. jets, anti-k_{T}, R=%.1f; %s trigger", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data()), StdTextSize*0.5, 0.06);
+
+   PDeltaEtaJetPtGrid.Plot(Form("%s/DeltaEtaProjections.%s", savePath.Data(), suffix.Data()), false, false);
+
+
+
+
+   TH1F* hRecoilJetPtDEta[10];
+   TH1F* hRecoilJetPtDEtaRebinned[10];
+   // get recoil jet pt for different dEta bins
+   PlottingRatio PRecoilJetPtDEta;
+   PRecoilJetPtDEta.SetMargins(0.1, 0.2, 0.025, 0.025, 2000, 1500, 0.33);
+   PRecoilJetPtDEta.NewRatioLine(-50, 1., 200., 1., 2, 2, kGray + 2);
+
+   double maxY = 0;
+
+   int iEtaBin = 0;
+
+   // get the correct dEta bins ( we need to adapt top boundary according )
+   std::vector<std::pair<double, double>> dEtaBinsCorr;
+   for (auto etaBin : dEtaBins)
+   {
+     float dEtaMax = jetCuts.JetEtaPhiMinMax[0][1] + 0.67;
+      if(etaBin.second > dEtaMax)
+      {
+        etaBin.second = dEtaMax;
+      }
+      dEtaBinsCorr.emplace_back(etaBin.first,etaBin.second);
+   }
+
+
+   for (auto etaBin : dEtaBinsCorr)
+   {
+     hRecoilJetPtDEta[iEtaBin] = (TH1F*) dRecoilJets->Get(Form("hRecoilJetPtDEta_%.2f_%.2f", etaBin.first, etaBin.second));
+     hRecoilJetPtDEta[iEtaBin]->SetName(Form("hRecoilJetPtDEta_%.2f_%.2f", etaBin.first, etaBin.second));
+     hRecoilJetPtDEta[iEtaBin]->GetXaxis()->SetTitle("#it{p}_{T,jet}^{reco} (GeV/#it{c})");
+     hRecoilJetPtDEta[iEtaBin]->GetYaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{2}N}{d#it{p}_{T}^{jet} d#Delta#phi}");
+     if (hRecoilJetPtDEta[iEtaBin]->GetMaximum() > maxY) maxY = hRecoilJetPtDEta[iEtaBin]->GetMaximum();
+    
+     hRecoilJetPtDEtaRebinned[iEtaBin] = (TH1F*) hRecoilJetPtDEta[iEtaBin]->Clone(Form("hRecoilJetPtDEtaRebinned_%.2f_%.2f", etaBin.first, etaBin.second));
+     hRecoilJetPtDEtaRebinned[iEtaBin]->Rebin(4); // even more rebin
+     iEtaBin++;
+   }
+
+   TH1F* hRatiosToLargestdEta[dEtaBinsCorr.size()-1];
+   TH1F* hRatiosToLargestdEtaRebinned[dEtaBinsCorr.size()-1];
+   
+    // Divide all dEta bins by largest dEta bin
+    for (int i = 0; i < dEtaBinsCorr.size()-1; i++) {
+        hRatiosToLargestdEta[i] = (TH1F*) hRecoilJetPtDEta[dEtaBinsCorr.size()-1]->Clone(Form("hRatiosToLargestdEta_%d", i));
+        hRatiosToLargestdEta[i]->Divide(hRecoilJetPtDEta[i], hRecoilJetPtDEta[dEtaBinsCorr.size()-1], 1.0, 1.0);
+        // hRatiosToLargestdEta[i]->GetYaxis()->SetRangeUser(0.5, 4.);
+        hRatiosToLargestdEtaRebinned[i] = (TH1F*) hRecoilJetPtDEtaRebinned[dEtaBinsCorr.size()-1]->Clone(Form("hRatiosToLargestdEtaRebinned_%d", i));
+        hRatiosToLargestdEtaRebinned[i]->Divide(hRecoilJetPtDEtaRebinned[i], hRecoilJetPtDEtaRebinned[dEtaBinsCorr.size()-1], 1.0, 1.0);
+        hRatiosToLargestdEtaRebinned[i]->GetYaxis()->SetRangeUser(0.5, 3.);
+    }
+
+    // Plot dEta bins
+    PRecoilJetPtDEta.SetLegend(0.5, 0.8, 0.6, 0.7, true);
+    PRecoilJetPtDEta.SetLegendR(0.65, 0.9, 0.3, 0.45, true);
+    PRecoilJetPtDEta.SetAxisRange(-50, 201, 8E-4, maxY*1.8, 0., 10.1);
+    PRecoilJetPtDEta.NewLatex(0.9, 0.9, Form("ALICE work in progress;Pb-Pb LHC23zzm; %.0f - %.0f%% centrality; ch. jets, anti-k_{T}, R=%.1f; %s trigger", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data()));
+    PRecoilJetPtDEta.SetAxisLabel("#it{p}_{T} (GeV/#it{c})", "#frac{1}{N_{trig}} #frac{d^{3}N}{d#it{p}_{T, ch jet}^{reco} d#Delta#phi d#Delta#eta}", "ratio to largest #Delta#eta", 1, 1.4);
+
+    // Add histograms to plot
+    for (int i = 0; i < dEtaBinsCorr.size(); i++) {
+        PRecoilJetPtDEta.New(hRecoilJetPtDEta[i], Form("%.2f < #Delta#eta < %.2f", dEtaBinsCorr[i].first, dEtaBinsCorr[i].second), 20+i, 2, fancyColors[i], "p");
+    }
+
+    // Plot ratios
+    for (int i = 0; i < dEtaBinsCorr.size()-1; i++) {
+        PRecoilJetPtDEta.NewRatio(hRatiosToLargestdEta[i], Form("%.2f < #Delta#eta < %.2f", dEtaBinsCorr[i].first, dEtaBinsCorr[i].second), 20+i, 2, fancyColors[i], "p");
+    }
+
+    PRecoilJetPtDEta.Plot(Form("%s/RecoilJetPtDEta.%s", savePath.Data(), suffix.Data()), false, true);
+    
+
+    //Do a 1D plot of only the ratios
+    Plotting1D PRecoilJetPtDEtaRatios;
+    for (int i = 0; i < dEtaBinsCorr.size()-1; i++) {
+        PRecoilJetPtDEtaRatios.New(hRatiosToLargestdEtaRebinned[i], Form("%.2f < #Delta#eta < %.2f", dEtaBinsCorr[i].first, dEtaBinsCorr[i].second), 20+i, 2, fancyColors[i], "p");
+    }
+    PRecoilJetPtDEtaRatios.Plot(Form("%s/RecoilJetPtDEtaRatiosRebinned.%s", savePath.Data(), suffix.Data()), false, false);
+   
+    
+    // Plot recoil jet yield as a function of phi
+    TGraphAsymmErrors* gRecoilJetPtIntegralPhi[recoilJetPtBinsIntegration.size()];
+    for (int i = 0; i < recoilJetPtBinsIntegration.size(); i++) {
+        gRecoilJetPtIntegralPhi[i] = (TGraphAsymmErrors*) dRecoilJets->Get(Form("gRecoilJetPtIntegralPhi_%.2f_%.2f", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second));
+    }
+    Plotting1D PRecoilJetPtPhi[recoilJetPtBinsIntegration.size()];
+    for (int i = 0; i < recoilJetPtBinsIntegration.size(); i++) {
+        TString jetPtLabel = Form("%.0f < #it{p}_{T}^{jet} < %.0f GeV/#it{c}", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second);
+        PRecoilJetPtPhi[i].SetMargins(0.12, 0.17, 0.025, 0.025, 2000, 1500, 0.33);
+        PRecoilJetPtPhi[i].New(gRecoilJetPtIntegralPhi[i]);
+        PRecoilJetPtPhi[i].SetAxisLabel("#Delta#phi", "#frac{1}{N_{trig}} #frac{N}{d#Delta#phi}",1.,1.4); // TODO: check axis labels
+        PRecoilJetPtPhi[i].NewLatex(0.2, 0.9, Form("ALICE work in progress;Pb-Pb LHC23; %.0f - %.0f%% centrality; ch. jets, anti-k_{T}, R=%.1f; %s trigger; %s", centralityRange.first, centralityRange.second, jetRadius, triggerLabel.Data(), jetPtLabel.Data()));
+        PRecoilJetPtPhi[i].Plot(Form("%s/RecoilJetPtPhi_%d.%s", savePath.Data(), i, suffix.Data()), false, false);
+    }
 
 
 }
@@ -233,8 +417,8 @@ void plotExclGammaJet(TString AnalysisDirectory, bool isDebugRun = false)
   TDirectory *dRecoilJet_MergedPi0s = fIn->GetDirectory("RecoilJet_MergedPi0s");
   TDirectory *dPurity_Photons = fIn->GetDirectory("Purity_Photons");
 
-  plotRecoilJets(dRecoilJet_Photons, "IsoPhoton");
-  plotRecoilJets(dRecoilJet_MergedPi0s, "MergedPi0");
+  plotRecoilJets(dRecoilJet_Photons, "IsoPhoton",optns);
+  plotRecoilJets(dRecoilJet_MergedPi0s, "MergedPi0",optns);
 
   plotRho(dRho_Photons, "IsoPhoton");
   plotRho(dRho_MergedPi0s, "MergedPi0");

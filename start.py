@@ -10,6 +10,7 @@ from difflib import SequenceMatcher
 import time
 import threading
 import importlib
+from multiprocessing import Process
 
 try:
     importlib.import_module('rich')
@@ -174,7 +175,7 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=long --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q -l ./Analysis/makeHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q ./Analysis/makeHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         # if none of the analysis options are enables, just run a dummy job
         if not (doIsoGamma or doJets or doGGPi0 or domPi0):
             command = f'echo "Dummy job {iJob}. Nothing to see here!" >> {dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log'
@@ -195,19 +196,19 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     if doIsoGamma or doJets or doGGPi0 or domPi0:
         hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
     if doPlotting:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q ./Analysis/plotHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
             raise RuntimeError("plotHistosFromTree.C failed")
     if doAnalysisExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q -l ./Analysis/analyseExclGammaJet.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q ./Analysis/analyseExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
             raise RuntimeError("analyseExclGammaJet.C failed")
     if doPlottingExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q -l ./Analysis/plotExclGammaJet.C\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q ./Analysis/plotExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
@@ -216,10 +217,8 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
 def run_multiple_macros(jobs , runOptions):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
     trainconfig_colors = {}
-
     console = Console()
     bar_columns = {}
-
 
     # Initialize a single Progress object
     with Progress(
@@ -229,7 +228,7 @@ def run_multiple_macros(jobs , runOptions):
         console=console
     ) as progress:
         tasks = {}
-        threads = []
+        processes = []
 
         for job in jobs:
             dataset, trainconfig, cut, nSplit = job[:4]  # Ensure we only unpack the expected number of elements
@@ -254,12 +253,12 @@ def run_multiple_macros(jobs , runOptions):
             task_id = progress.add_task(f"{trainconfig_colors[trainconfig]}{description}[/]", total=100)
             tasks[description] = task_id
 
-            thread = threading.Thread(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress,runOptions))
-            threads.append(thread)
-            thread.start()
+            process = Process(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress, runOptions))
+            processes.append(process)
+            process.start()
 
-        for thread in threads:
-            thread.join()
+        for process in processes:
+            process.join()
 
 
 def check_files_need_distributing(subdirectory, nSplit):
@@ -365,6 +364,33 @@ def compile_makeHistosFromTree():
         log.error("Error message reads:")
         log.exception(result.stderr)
         raise RuntimeError("Compilation failed")
+def compile_plotHistosFromTree():
+    command = 'root -q -b -x ./Analysis/plotHistosFromTree.C+\(\\"\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # if compilation fails, raise an error and print the whole compilation output
+    if result.returncode != 0:
+        log.error("Error compiling plotHistosFromTree.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
+        raise RuntimeError("Compilation failed")
+def compile_analyseExclGammaJet():
+    command = 'root -q -b -x ./Analysis/analyseExclGammaJet.C+\(\\"\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # if compilation fails, raise an error and print the whole compilation output
+    if result.returncode != 0:
+        log.error("Error compiling analyseExclGammaJet.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
+        raise RuntimeError("Compilation failed")
+def compile_plotExclGammaJet():
+    command = 'root -q -b -x ./Analysis/plotExclGammaJet.C+\(\\"\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # if compilation fails, raise an error and print the whole compilation output
+    if result.returncode != 0:
+        log.error("Error compiling plotExclGammaJet.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
+        raise RuntimeError("Compilation failed")
 
 def check_and_create_folder(folder_path):
     # Check if the folder exists
@@ -423,12 +449,19 @@ def main():
 
     cuts_config = read_yaml('Cuts.yaml')
     # count number of lines in file "./Analysis/makeHistosFromTree.C"
-    lines = 0
-    with open("./Analysis/makeHistosFromTree.C") as f:
-        for line in f:
-            lines += 1
-    log.info("Be patient, I am busy compiling {} lines of code ...".format(lines))
+    # lines = 0
+    # with open("./Analysis/makeHistosFromTree.C") as f:
+    #     for line in f:
+    #         lines += 1
+    # log.info("Be patient, I am busy compiling {} lines of code ...".format(lines))
+    log.info("Compiling makeHistosFromTree.C...")
     compile_makeHistosFromTree()
+    log.info("Compiling plotHistosFromTree.C...")
+    compile_plotHistosFromTree()
+    log.info("Compiling analyseExclGammaJet.C...")
+    compile_analyseExclGammaJet()
+    log.info("Compiling plotExclGammaJet.C...")
+    compile_plotExclGammaJet()
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
     log.info(f"Running {nSplit} parallel jobs per variation.")

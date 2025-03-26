@@ -4,11 +4,46 @@
 #include "Utilities.h"
 #include "Cuts.h"
 #include "plotHistosFromTree.h"
+#include "THnSparse.h"
 
 const char *suffix = "pdf";
 
 Int_t GoetheColor[4][2];
 
+void BuildLegendHeader(GlobalOptions optns)
+{
+  // load relevant cuts
+  EventCuts eventCuts(optns);
+  YAML::Node ycut = YAML::LoadFile("Cuts.yaml");
+  if (!ycut[(std::string)optns.cutString])
+    FATAL(Form("Cutstring %s not found in YAML file Cuts.yaml", optns.cutString.Data()))
+  YAML::Node standardcut = ycut["Standard"];
+  YAML::Node chosencut = ycut[(std::string)optns.cutString];
+  double EMin = chosencut["gamma_min_E"].IsDefined() ? chosencut["gamma_min_E"].as<float>() : standardcut["gamma_min_E"].as<float>();
+  
+  TString trainConfig = optns.trainConfig;
+  // extract centrality min and centrality max. Trainconfig has always form Run3-$centMin-$centMax
+  // Tokenize the string
+  std::vector<std::string> tokens;
+  std::stringstream ss(trainConfig.Data());
+  std::string token;
+  while (std::getline(ss, token, '-')) {
+    tokens.push_back(token);
+  }
+  int centMin = 0;
+  int centMax = 100;
+  if(tokens.size() == 3)
+  {
+    centMin = std::stoi(tokens[1]);
+    centMax = std::stoi(tokens[2]);
+  }
+  legendHeader = Form("#bf{ALICE work-in-progress};%s;Centrality: %d-%d%%",optns.dataSet.Data(),centMin,centMax);
+
+  // get jet radius
+  double jetRadius = chosencut["jet_Radius"].IsDefined() ? chosencut["jet_Radius"].as<float>() : standardcut["jet_Radius"].as<float>();
+  TString jetAcceptance = chosencut["jet_Acceptance"].IsDefined() ? chosencut["jet_Acceptance"].as<std::string>() : standardcut["jet_Acceptance"].as<std::string>();
+  legendHeaderJets = Form("%s;Jet Radius: %.2f;Jet Acceptance: %s",legendHeader.Data(),jetRadius,jetAcceptance.Data());
+}
 // Add to plot class?
 void AvoidLogYconflict(TH1 *h, float logymin = 1e-10)
 {
@@ -46,6 +81,8 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
   TH1F* hCentrality = (TH1F*)hCentralityRhoMultiplicity->Projection(0);
   TH1F* hRho = (TH1F*)hCentralityRhoMultiplicity->Projection(1);
   TH1F* hMultiplicity = (TH1F*)hCentralityRhoMultiplicity->Projection(2);
+  TH1F* hOccupancy = (TH1F*)dEventQA->Get("hOccupancy");
+  TH2F* hOccupancyCentrality = (TH2F*)dEventQA->Get("hOccupancyCentrality");
 
 
 
@@ -56,6 +93,7 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
 
   PCentrality.New(hCentrality);
   PCentrality.SetAxisLabel("#bf{Centrality}", "#bf{Counts}");
+  PCentrality.NewLatex(0.8,0.9,legendHeader);
   PCentrality.Plot(Form("%s/Centrality.%s", outputDir, suffix),false, true);
 
   Plotting1D PRho;
@@ -66,19 +104,29 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
   Plotting1D PMultiplicity;
   PMultiplicity.New(hMultiplicity);
   PMultiplicity.SetAxisLabel("#bf{Multiplicity}", "#bf{Counts}");
+  PMultiplicity.NewLatex(0.8,0.9,legendHeader);
   PMultiplicity.Plot(Form("%s/Multiplicity.%s", outputDir, suffix));
   
   TH2F* hRhoVsCentrality = (TH2F*)hCentralityRhoMultiplicity->Projection(1, 0);
   Plotting2D PRhoVsCentrality;
   PRhoVsCentrality.New(hRhoVsCentrality);
   PRhoVsCentrality.SetAxisLabel("#bf{Centrality (%)}", "#bf{#rho (GeV/#it{c})}");
+  PRhoVsCentrality.NewLatex(0.8,0.9,legendHeader);
   PRhoVsCentrality.Plot(Form("%s/RhoVsCentrality.%s", outputDir, suffix),false,false,true);
 
   TH2F* hRhoVsMultiplicity = (TH2F*)hCentralityRhoMultiplicity->Projection(1, 2);
   Plotting2D PRhoVsMultiplicity;
   PRhoVsMultiplicity.New(hRhoVsMultiplicity);
   PRhoVsMultiplicity.SetAxisLabel("#bf{Multiplicity}", "#bf{#rho} (GeV/#it{c})");
+  PRhoVsMultiplicity.NewLatex(0.8,0.9,legendHeader);
   PRhoVsMultiplicity.Plot(Form("%s/RhoVsMultiplicity.%s", outputDir, suffix), true);
+
+  Plotting2D POccupancyCentrality;
+  POccupancyCentrality.New(hOccupancyCentrality);
+  POccupancyCentrality.SetAxisLabel("#bf{Centrality (%)}", "#bf{Occupancy}");
+  POccupancyCentrality.SetAxisRange(0, 100, 0.01, 20000);
+  POccupancyCentrality.NewLatex(0.8,0.9,legendHeader);
+  POccupancyCentrality.Plot(Form("%s/OccupancyCentrality.%s", outputDir, suffix),false,true,false);
 
   // Build an event histogram that has one bin called 0-10% and another called 10-30%,30-50%,50-90% and 0-90%
   TH1F* hCentralityBinned = new TH1F("hCentralityBinned", "Centrality", 5, 0, 5);
@@ -129,9 +177,16 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
     TLatex l;
     l.SetTextSize(0.03);
     // draw labels with the number of events rotated by 90 degrees
-    l.DrawLatex(i-0.5,  1.1 * content, Form("%.0f", content, error));
+    l.DrawLatex(i-0.5,  1.1 * content, Form("%.0f", content));
   }
   cCentralityBinned->SaveAs(Form("%s/CentralityBinned.%s", outputDir, suffix));
+
+  Plotting1D POccupancy;
+  AvoidLogYconflict(hOccupancy);
+  POccupancy.New(hOccupancy);
+  POccupancy.SetAxisLabel("#bf{Occupancy}", "#bf{Counts}");
+  POccupancy.NewLatex(0.9,0.9,legendHeader);
+  POccupancy.Plot(Form("%s/Occupancy.%s", outputDir, suffix),false,true,false);
 
   EXIT
 }
@@ -202,19 +257,15 @@ void plotJets(TDirectory *dJets, GlobalOptions optns)
 
   EXIT
 }
-
 void plotJetQA(TDirectory *dJetQA,TString dirname,GlobalOptions optns)
 {
   ENTER
 
   DLJetCuts jetCuts(optns);
 
-  const char *outputDir = Form("%s/%s", optns.analysisDirPath.Data(), dirname.Data());
+  TString outputDir = Form("%s/%s", optns.analysisDirPath.Data(), dirname.Data());
   createDirectory(outputDir);
 
-  int const nPtBins = 7;
-  Double_t jetPtBins[nPtBins+1] = {10,15,20,30,40,50,150,200};
-  
   // Plot eta phi map of reconstructed jets (DL)
   THnSparseF *hJetPtEtaPhi = (THnSparseF *)dJetQA->Get("hJetPtEtaPhi");
   // axis 0: pT, axis 1: eta, axis 2: phi
@@ -226,48 +277,36 @@ void plotJetQA(TDirectory *dJetQA,TString dirname,GlobalOptions optns)
   PDLEtaPhiMap.AddEMCalOutline();
   PDLEtaPhiMap.AddPHOSOutline();
   PDLEtaPhiMap.SetAxisLabel("#bf{#eta}", "#bf{#phi}");
-  PDLEtaPhiMap.Plot(Form("%s/DLEtaPhiMap.%s", outputDir, suffix));
+  PDLEtaPhiMap.NewLatex(0.8,0.9,legendHeaderJets);
+  PDLEtaPhiMap.Plot(Form("%s/DLEtaPhiMap.%s", outputDir.Data(), suffix));
 
   TH2F* hDLPtvsEta = (TH2F*)hJetPtEtaPhi->Projection(0, 1);
   hDLPtvsEta->SetName("hDLPtvsEta");
   Plotting2D PDLPtvsEta;
   PDLPtvsEta.SetMargins(0.12, 0.12, 0.05, 0.125);
   PDLPtvsEta.New(hDLPtvsEta);
+  PDLPtvsEta.NewLatex(0.8,0.9,legendHeaderJets);
   PDLPtvsEta.SetAxisLabel("#bf{#eta}", "#bf{#it{p}_{T} (GeV/#it{c})}");
-  PDLPtvsEta.Plot(Form("%s/DLPtvsEta.%s", outputDir, suffix));
+  PDLPtvsEta.Plot(Form("%s/DLPtvsEta.%s", outputDir.Data(), suffix));
   
-  // create eta projections
-  // PlottingGrid PDLEtaProjections;
-  // PDLEtaProjections.SetMargins(0.12, 0.12, 0.05, 0.125);
-  // PDLEtaProjections.SetAxisLabel("#bf{#eta}", "#bf{Counts}");
-  // TH1F* hDLEta[nPtBins];
-  // for (int i = 0; i < nPtBins; i++)
-  // {
-  //   // set range of hPtEtaPhi to the current pT bin
-  //   int minbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i]);
-  //   int maxbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i + 1]);
-  //   hJetPtEtaPhi->GetAxis(0)->SetRange(minbin, maxbin);
-  //   hDLEta[i] = (TH1F*)hJetPtEtaPhi->Projection(1);
-  //   hDLEta[i]->SetName(Form("hDLEta_%d", i));
-  //   PDLEtaProjections.New(hDLEta[i],"",-1,1,kBlack,"hist");
-  //   PDLEtaProjections.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
-  // }
-  // PDLEtaProjections.Plot(Form("%s/DLEtaProjections.%s", outputDir, suffix));
-
-  TCanvas* cDLEtaProjections = new TCanvas("cDLEtaProjections", "cDLEtaProjections", 800, 800);
-  cDLEtaProjections->Divide(2, 4);
-  for (int i = 0; i < nPtBins; i++)
+  PlottingGrid PDLEtaProjections;
+  PDLEtaProjections.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PDLEtaProjections.SetAxisLabel("#bf{#eta}", "#bf{Norm. Counts}");
+  TH1F* hDLEta[nJetPtBins];
+  for (int i = 0; i < nJetPtBins; i++)
   {
-    // set range of hPtEtaPhi to the current pT bin
     int minbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i]);
     int maxbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i + 1]);
     hJetPtEtaPhi->GetAxis(0)->SetRange(minbin, maxbin);
-    TH1F* hDLEta = (TH1F*)hJetPtEtaPhi->Projection(1);
-    hDLEta->SetName(Form("hDLEta_%d", i));
-    cDLEtaProjections->cd(i+1);
-    hDLEta->Draw();
+    hDLEta[i] = (TH1F*)hJetPtEtaPhi->Projection(1)->Clone(Form("hDLEta_%d", i));
+    hDLEta[i]->Scale(1./hDLEta[i]->Integral());
+    PDLEtaProjections.New(hDLEta[i],"",-1,1,kBlack,"hist");
+    PDLEtaProjections.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
+    // reset the range
+    hJetPtEtaPhi->GetAxis(0)->UnZoom();
   }
-  cDLEtaProjections->SaveAs(Form("%s/DLEtaProjections.%s", outputDir, suffix));
+  PDLEtaProjections.NewLatex(0.9,0.9,legendHeaderJets,StdTextSize*0.5,0.06*1.8);
+  PDLEtaProjections.Plot(Form("%s/DLEtaProjections.%s", outputDir.Data(), suffix));
   
 
   hJetPtEtaPhi->GetAxis(0)->SetRange(0, hJetPtEtaPhi->GetAxis(0)->GetNbins()-1);
@@ -276,45 +315,28 @@ void plotJetQA(TDirectory *dJetQA,TString dirname,GlobalOptions optns)
   Plotting2D PDLPtvsPhi;
   PDLPtvsPhi.New(hDLPtvsPhi);
   PDLPtvsPhi.SetAxisLabel("#bf{#phi}", "#bf{#it{p}_{T} (GeV/#it{c})}");
-  PDLPtvsPhi.Plot(Form("%s/DLPtvsPhi.%s", outputDir, suffix),false,false,true);
+  PDLPtvsPhi.NewLatex(0.8,0.9,legendHeaderJets);
+  PDLPtvsPhi.Plot(Form("%s/DLPtvsPhi.%s", outputDir.Data(), suffix),false,false,true);
 
-  // create phi projections
-  // {
-  // PlottingGrid PDLPhiProjections;
-  // PDLPhiProjections.SetMargins(0.12, 0.12, 0.05, 0.125);
-  // PDLPhiProjections.SetAxisLabel("#bf{#phi}", "#bf{Counts}");
-  // TH1F* hDLPhi[nPtBins];
-  // for (int i = 0; i < nPtBins; i++)
-  // {
-  //   // set range of hPtEtaPhi to the current pT bin
-  //   int minbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i]);
-  //   int maxbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i + 1]);
-  //   hJetPtEtaPhi->GetAxis(0)->SetRange(minbin, maxbin);
-  //   hDLPhi[i] = (TH1F*)hJetPtEtaPhi->Projection(2);
-  //   hDLPhi[i]->SetName(Form("hDLPhi_%d", i));
-  //   PDLPhiProjections.New(hDLPhi[i],"",-1,1,kBlack,"hist");
-  //   PDLPhiProjections.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
-  // }
-  // PDLPhiProjections.Plot(Form("%s/DLPhiProjections.%s", outputDir, suffix));
-  // }
-
-  TCanvas* cDLPhiProjections = new TCanvas("cDLPhiProjections", "cDLPhiProjections", 800, 800);
-  cDLPhiProjections->Divide(2, 4);
-  for (int i = 0; i < nPtBins; i++)
+  PlottingGrid PDLPhiProjections;
+  PDLPhiProjections.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PDLPhiProjections.SetAxisLabel("#bf{#phi}", "#bf{Counts}");
+  TH1F* hDLPhi[nJetPtBins];
+  for (int i = 0; i < nJetPtBins; i++)
   {
-    // set range of hPtEtaPhi to the current pT bin
     int minbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i]);
     int maxbin = hJetPtEtaPhi->GetAxis(0)->FindBin(jetPtBins[i + 1]);
     hJetPtEtaPhi->GetAxis(0)->SetRange(minbin, maxbin);
-    TH1F* hDLPhi = (TH1F*)hJetPtEtaPhi->Projection(2);
-    hDLPhi->SetName(Form("hDLPhi_%d", i));
-    cDLPhiProjections->cd(i+1);
-    hDLPhi->Draw();
+    hDLPhi[i] = (TH1F*)hJetPtEtaPhi->Projection(2)->Clone(Form("hDLPhi_%d", i));
+    hDLPhi[i]->Scale(1./hDLPhi[i]->Integral());
+    PDLPhiProjections.New(hDLPhi[i],"",-1,1,kBlack,"hist");
+    PDLPhiProjections.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
+    // reset the range
+    hJetPtEtaPhi->GetAxis(0)->UnZoom();
   }
-  cDLPhiProjections->SaveAs(Form("%s/DLPhiProjectionsTest.%s", outputDir, suffix));
+  PDLPhiProjections.NewLatex(0.9,0.9,legendHeaderJets,StdTextSize*0.5,0.06*1.8);
+    PDLPhiProjections.Plot(Form("%s/DLPhiProjections.%s", outputDir.Data(), suffix));
 
-
-  
   // reset all ranges
   hJetPtEtaPhi->GetAxis(0)->SetRange(0,hJetPtEtaPhi->GetAxis(0)->GetNbins());
   hJetPtEtaPhi->GetAxis(1)->SetRange(0,hJetPtEtaPhi->GetAxis(1)->GetNbins());
@@ -326,20 +348,23 @@ void plotJetQA(TDirectory *dJetQA,TString dirname,GlobalOptions optns)
   AvoidLogYconflict(hDLPt);
   PDLPt.New(hDLPt);
   PDLPt.SetAxisLabel("#bf{#it{p}_{T} (GeV/#it{c})}", "#bf{Counts}");
-  PDLPt.Plot(Form("%s/DLPt.%s", outputDir, suffix),false,true);
+  PDLPt.NewLatex(0.9,0.9,legendHeaderJets);
+  PDLPt.Plot(Form("%s/DLPt.%s", outputDir.Data(), suffix),false,true);
   // Plot N constituents
   TH1F* hDLConst = (TH1F*)dJetQA->Get("hJetNconstits");
   Plotting1D PDLConst;
   PDLConst.New(hDLConst, "", -1, 1, kBlack, "hist");
   PDLConst.SetAxisLabel("#bf{N constituents}", "#bf{Counts}");
-  PDLConst.Plot(Form("%s/DLConst.%s", outputDir, suffix));
+  PDLConst.NewLatex(0.9,0.9,legendHeaderJets);
+  PDLConst.Plot(Form("%s/DLConst.%s", outputDir.Data(), suffix));
 
   // Jet Area
   TH1F* hDLArea = (TH1F*)dJetQA->Get("hJetArea");
   Plotting1D PDLArea;
   PDLArea.New(hDLArea, "", -1, 1, kBlack, "hist");
   PDLArea.SetAxisLabel("#bf{Area}", "#bf{Counts}");
-  PDLArea.Plot(Form("%s/DLArea.%s", outputDir, suffix));
+  PDLArea.NewLatex(0.9,0.9,legendHeaderJets);
+  PDLArea.Plot(Form("%s/DLArea.%s", outputDir.Data(), suffix));
 
   // Figures related to leading hadron pt
 
@@ -352,7 +377,52 @@ void plotJetQA(TDirectory *dJetQA,TString dirname,GlobalOptions optns)
   Plotting2D PDLZvsPt;
   PDLZvsPt.New(hDLZvsPt);
   PDLZvsPt.SetAxisLabel("#bf{#it{p}_{T} (GeV/#it{c})}", "#bf{z = #it{p}_{T}^{leading hadron} / #it{p}_{T}^{jet}}");
-  PDLZvsPt.Plot(Form("%s/DLZvsPt.%s", outputDir, suffix),false,false,true);
+  PDLZvsPt.NewLatex(0.8,0.9,legendHeaderJets);
+  PDLZvsPt.Plot(Form("%s/DLZvsPt.%s", outputDir.Data(), suffix),false,false,true);
+
+  // plot plot jet eta for different occupancies 
+  DEBUG
+
+  THnSparseF* hJetPtEtaOccupancy = (THnSparseF *)dJetQA->Get("hJetPtEtaOccupancy");
+  TH1F* hJetEta[nJetPtBins][nBinsOccupancy];
+  TH1F* hJetEtaAllOcc[nJetPtBins];
+  PlottingGrid PDLJetEtaOccupancy;
+  PDLJetEtaOccupancy.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PDLJetEtaOccupancy.SetAxisLabel("#bf{#eta}", "#bf{norm counts}");
+  // PDLJetEtaOccupancy.SetLegend(0.1,0.9,0.1,0.4);
+  // PDLJetEtaOccupancy.NewLatex(0.9,0.9,legendHeaderJets);
+
+  for (int i = 0; i < nJetPtBins; i++)
+  {
+    int minbin = hJetPtEtaOccupancy->GetAxis(0)->FindBin(jetPtBins[i]);
+    int maxbin = hJetPtEtaOccupancy->GetAxis(0)->FindBin(jetPtBins[i + 1]);
+    hJetPtEtaOccupancy->GetAxis(0)->SetRange(minbin, maxbin);
+    hJetEtaAllOcc[i] = (TH1F*)hJetPtEtaOccupancy->Projection(1)->Clone(Form("hJetEtaAllOcc_%d", i));
+    hJetEtaAllOcc[i]->Scale(1. / hJetEtaAllOcc[i]->Integral());
+    PDLJetEtaOccupancy.New(hJetEtaAllOcc[i],"all occupancies", 1, 1, kBlack, "hist");
+    hJetPtEtaOccupancy->GetAxis(0)->UnZoom();
+    for (int j = 0; j < nBinsOccupancy; j++)
+    {
+      int minOcc = hJetPtEtaOccupancy->GetAxis(2)->FindBin(binsOccupancy[j]);
+      int maxOcc = hJetPtEtaOccupancy->GetAxis(2)->FindBin(binsOccupancy[j + 1]);
+      hJetPtEtaOccupancy->GetAxis(0)->SetRange(minbin, maxbin);
+      hJetPtEtaOccupancy->GetAxis(2)->SetRange(minOcc, maxOcc);
+      hJetEta[i][j] = (TH1F*)hJetPtEtaOccupancy->Projection(1)->Clone(Form("hJetEta_%d_%d", i, j));
+      if(hJetEta[i][j]->Integral() > 0)
+        hJetEta[i][j]->Scale(1. / hJetEta[i][j]->Integral());
+      PDLJetEtaOccupancy.New(hJetEta[i][j],Form("%.0f < occupancy < %.0f", binsOccupancy[j], binsOccupancy[j + 1]), 1, 1, fancyColors[j], "hist");      // add a legend
+      
+      // reset the range
+      hJetPtEtaOccupancy->GetAxis(0)->UnZoom();
+      hJetPtEtaOccupancy->GetAxis(1)->UnZoom();
+      hJetPtEtaOccupancy->GetAxis(2)->UnZoom();
+    }
+    PDLJetEtaOccupancy.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
+  }
+  PDLJetEtaOccupancy.SetLegend(0.1,0.9,0.1,0.4);
+  PDLJetEtaOccupancy.NewLatex(0.9,0.9,legendHeaderJets, StdTextSize*0.5, 0.06*1.8);
+  PDLJetEtaOccupancy.Plot(Form("%s/DLJetEtaOccupancy.%s", outputDir.Data(), suffix));
+    
 
   EXIT
 }
@@ -377,6 +447,7 @@ void plotGammas(TDirectory *dIsoGammas, TString GammaType, GlobalOptions optns)
   Plotting2D PIsoVsM02;
   PIsoVsM02.SetAxisLabel("#bf{#sigma^{2}_{long}}", "#bf{Isolation (GeV/#it{c})}");
   PIsoVsM02.New(hIsoVsM02);
+  PIsoVsM02.NewLatex(0.8,0.9,legendHeader);
   PIsoVsM02.Plot(Form("%s/IsoVsM02.%s", outputDir.Data(), suffix), false, false, true);
 
   TH2F* hM02VsPt = (TH2F*)hIsoGammaIsovsM02vsPt->Projection(2, 1);
@@ -385,6 +456,7 @@ void plotGammas(TDirectory *dIsoGammas, TString GammaType, GlobalOptions optns)
   Plotting2D PM02VsPt;
   PM02VsPt.SetAxisLabel("#bf{#sigma^{2}_{long}}", "#bf{#it{p}_{T} (GeV/#it{c})}");
   PM02VsPt.New(hM02VsPt);
+  PM02VsPt.NewLatex(0.8,0.9,legendHeader);
   PM02VsPt.Plot(Form("%s/M02VsPt.%s", outputDir.Data(), suffix), false, false, true);
 
   PlottingGrid PM02Projections;
@@ -404,6 +476,8 @@ void plotGammas(TDirectory *dIsoGammas, TString GammaType, GlobalOptions optns)
     PM02Projections.New(hM02[i],"",-1,1,kBlack,"hist e");
     PM02Projections.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", ptBins[i], ptBins[i + 1]));
   }
+  PM02Projections.SetLegend(0.1,0.9,0.1,0.4);
+  PM02Projections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
   PM02Projections.Plot(Form("%s/M02Projections.%s", outputDir.Data(), suffix));
 
 }
@@ -652,6 +726,8 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
       PM02Grid.New(hM02vspTSliceBackground[i], "Background");
       PM02Grid.NextPad(Form("%.1f < #it{p}_{T} (GeV/c) < %.1f", SlicesPt.at(i), SlicesPt.at(i + 1)));
     }
+    PM02Grid.SetLegend(0.1,0.9,0.1,0.4);
+    PM02Grid.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
     PM02Grid.Plot(Form("%s/M02_SignalBackgroundSig_Grid.%s", outputDir.Data(), suffix), kFALSE, kFALSE);
 
     //
@@ -670,6 +746,7 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
     float integralE = hIsoGammaE->Integral(1, hIsoGammaE->GetNbinsX());
     hIsoGammaE->Scale(1. / integralE);
     AvoidLogYconflict(hIsoGammaE);
+    PIsoGammaE.NewLatex(0.9,0.9,legendHeader,StdTextSize,0.06);
     PIsoGammaE.New(hIsoGammaE, "Data");
 
     // M02
@@ -758,26 +835,32 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
   PIsoGammaM02.SetAxisLabel("#bf{#it{#sigma}_{long}^{2}}", "#bf{Normalized counts}", 1., 1.3);
   PIsoGammaM02.SetAxisRange(0., 2.,1E-3,0.3);
   PIsoGammaM02.SetLegend(0.4, 0.7, 0.65, 0.85, true);
-  PIsoGammaM02.NewLatex(0.9, 0.9, "ALICE work in progress;2018 data, #sqrt{s} = 13 TeV", StdTextSize, 0.04);
   PIsoGammaM02.SetMargins(0.11, 0.11, 0.025, 0.025, 1750, 1750);
-  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix), kFALSE, kTRUE, true);
+  PIsoGammaM02.NewLatex(0.8,0.9,legendHeader);
+  PIsoGammaM02.Plot(Form("%s/IsoGammaM02.%s", outputDir.Data(), suffix), kFALSE, kFALSE, true);
 
   PIsoGammaM20.SetAxisLabel("#bf{#it{M20}}", "#bf{log(dN/dM20)}");
+  PIsoGammaM20.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaM20.Plot(Form("%s/IsoGammaM20.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaPx.SetAxisLabel("#bf{#it{p_x}(GeV/#it{c})}", "#bf{log(dN/Px GeV/c)}");
+  PIsoGammaPx.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaPx.Plot(Form("%s/IsoGammaPx.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaPy.SetAxisLabel("#bf{#it{p_y}(GeV/#it{c})}", "#bf{log(dN/Py GeV/c)}");
+  PIsoGammaPy.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaPy.Plot(Form("%s/IsoGammaPy.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaIsoChargedCorrected.SetAxisLabel("#bf{#it{p}^{iso, corrected}_{T} (GeV/#it{c})}", "#bf{N_{iso #gamma}}", 0.9);
+  PIsoGammaIsoChargedCorrected.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaIsoChargedCorrected.Plot(Form("%s/IsoGammaIsoChargedCorrected.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaPz.SetAxisLabel("#bf{#it{p_z}(GeV/#it{c})}", "#bf{dN/p_{z} (GeV/c)}");
+  PIsoGammaPz.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaPz.Plot(Form("%s/IsoGammaPz.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   PIsoGammaIsoCharged.SetAxisLabel("#bf{#it{p^{iso}_{T}}(GeV/#it{c})}", "#bf{dN/p_{T}^{iso} (GeV/c)}");
+  PIsoGammaIsoCharged.NewLatex(0.8,0.9,legendHeader);
   PIsoGammaIsoCharged.Plot(Form("%s/IsoGammaIsoCharged.%s", outputDir.Data(), suffix), kFALSE, kTRUE);
 
   TH2F *hIsoGammaEtaPhi = (TH2F *)dIsoGammaQA->Get("hIsoGammaEtaPhi");
@@ -787,6 +870,7 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
   PEtaPhiMap.AddEMCalOutline();
   PEtaPhiMap.AddPHOSOutline();
   PEtaPhiMap.SetAxisLabel("#bf{#eta}", "#bf{#phi}");
+  PEtaPhiMap.NewLatex(0.8,0.9,legendHeader);
   PEtaPhiMap.Plot(Form("%s/EtaPhiMap.%s", outputDir.Data(), suffix));
 
   // get ThNSparse to get energy dependence
@@ -821,7 +905,11 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
     PGammaPhiProjections.New(hIsoGammaPhiProjections[iPtBin], "", -1, 1, kBlack, "hist e");
     PGammaPhiProjections.NextPad(Form("%.1f < #it{p}_{T}^{cluster} < %.1f GeV/#it{c}", ptBins[iPtBin], ptBins[iPtBin + 1]));
   }
+  PGammaEtaProjections.SetLegend(0.1,0.9,0.1,0.4);
+  PGammaEtaProjections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
   PGammaEtaProjections.Plot(Form("%s/EtaProjections.%s", outputDir.Data(), suffix), false, false);
+  PGammaPhiProjections.SetLegend(0.1,0.9,0.1,0.4);
+  PGammaPhiProjections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
   PGammaPhiProjections.Plot(Form("%s/PhiProjections.%s", outputDir.Data(), suffix), false, false);
 
   // plot cluster time
@@ -852,6 +940,8 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
     // put label on plot with mean and sigma of time distribution
     PTimeProjections.NextPad(Form("%.1f < #it{p}_{T}^{cluster} < %.1f GeV/#it{c}", ptBins[iPtBin], ptBins[iPtBin + 1]));
   }
+  PTimeProjections.SetLegend(0.1,0.9,0.1,0.4);
+  PTimeProjections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
   PTimeProjections.Plot(Form("%s/TimeProjections.%s", outputDir.Data(), suffix), false, false);
 
   // NCells
@@ -860,6 +950,7 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
   PNCellsPt.SetMargins(0.12, 0.12, 0.05, 0.125);
   PNCellsPt.New(hIsoGammaNCellsPt);
   PNCellsPt.SetAxisLabel("#bf{N_{cells}}", "#bf{#it{p}_{T}^{cluster} (GeV/#it{c})}");
+  PNCellsPt.NewLatex(0.8,0.9,legendHeader);
   PNCellsPt.Plot(Form("%s/NCellsPt.%s", outputDir.Data(), suffix));
 
   // projections
@@ -877,6 +968,8 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
     PNCellsProjections.New(hIsoGammaNCells[iPtBin], "", -1, 1, kBlack, "hist e");
     PNCellsProjections.NextPad(Form("%.1f < #it{p}_{T}^{cluster} < %.1f GeV/#it{c}", ptBins[iPtBin], ptBins[iPtBin + 1]));
   }
+  PNCellsProjections.SetLegend(0.1,0.9,0.1,0.4);
+  PNCellsProjections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
   PNCellsProjections.Plot(Form("%s/NCellsProjections.%s", outputDir.Data(), suffix), false, false);
 
   // plot individual and subsequen rejections of cuts
@@ -884,14 +977,52 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
   TH2F *hpTSpectrumLossFromIndividualCuts = (TH2F *)dIsoGammaQA->Get("hpTSpectrumLossFromIndividualCuts");
   Plotting2D PPtSpectrumLossFromIndividualCuts;
   PPtSpectrumLossFromIndividualCuts.New(hpTSpectrumLossFromIndividualCuts);
+  PPtSpectrumLossFromIndividualCuts.NewLatex(0.8,0.9,legendHeader);
   PPtSpectrumLossFromIndividualCuts.Plot(Form("%s/pTSpectrumLossFromIndividualCuts.%s", outputDir.Data(), suffix),false,false,true);
 
   // hpTSpectraAfterSubsequentCuts
   TH2F *hpTSpectraAfterSubsequentCuts = (TH2F *)dIsoGammaQA->Get("hpTSpectraAfterSubsequentCuts");
   Plotting2D PPtSpectraAfterSubsequentCuts;
   PPtSpectraAfterSubsequentCuts.New(hpTSpectraAfterSubsequentCuts);
+  PPtSpectraAfterSubsequentCuts.NewLatex(0.8,0.9,legendHeader);
   PPtSpectraAfterSubsequentCuts.Plot(Form("%s/pTSpectraAfterSubsequentCuts.%s", outputDir.Data(), suffix),false,false,true);
 
+  // plot integrated dEta and dPhi distributions
+  TH2F* hIsoGammadEtadPhi = (TH2F *)dIsoGammaQA->Get("hIsoGammadEtadphi");
+  Plotting2D PdEtadPhi;
+  PdEtadPhi.New(hIsoGammadEtadPhi);
+  PdEtadPhi.SetAxisLabel("#bf{#Delta#eta}", "#bf{#Delta#phi}");
+  PdEtadPhi.NewLatex(0.8,0.9,legendHeader);
+  PdEtadPhi.Plot(Form("%s/dEtadPhi.%s", outputDir.Data(), suffix),false,false,true);
+
+  // plot differential dEta and dPhi distributions
+  THnSparseF *hIsoGammadEtadPhiPt = (THnSparseF *)dIsoGammaQA->Get("hIsoGammadEtadPhiPt");
+  // do projections in bins of pt
+  TH1F* hIsoGammaTMdEtaProjections[nPtBins];
+  TH1F* hIsoGammaTMdPhiProjections[nPtBins];
+  for (int iPtBin = 0; iPtBin < nPtBins; iPtBin++)
+  {
+    int minBin = hIsoGammadEtadPhiPt->GetAxis(2)->FindBin(ptBins[iPtBin]);
+    int maxBin = hIsoGammadEtadPhiPt->GetAxis(2)->FindBin(ptBins[iPtBin + 1]);
+    hIsoGammadEtadPhiPt->GetAxis(2)->SetRange(minBin, maxBin);
+    hIsoGammaTMdEtaProjections[iPtBin] = (TH1F*)hIsoGammadEtadPhiPt->Projection(0);
+    hIsoGammaTMdEtaProjections[iPtBin]->SetName(Form("hIsoGammaTMdEtaProjections_%d", iPtBin));
+    hIsoGammaTMdPhiProjections[iPtBin] = (TH1F*)hIsoGammadEtadPhiPt->Projection(1);
+    hIsoGammaTMdPhiProjections[iPtBin]->SetName(Form("hIsoGammaTMdPhiProjections_%d", iPtBin));
+  }
+
+  // Plot a grid where eta and phi curve are plotted in different colors for each pad
+  PlottingGrid PdEtadPhiProjections;
+  PdEtadPhiProjections.SetAxisLabel("#bf{#Delta#eta}", "#bf{N_{clusters}}");
+  PdEtadPhiProjections.SetMargins(0.12, 0.12, 0.05, 0.125);
+  for (int iPtBin = 0; iPtBin < nPtBins; iPtBin++) {
+    PdEtadPhiProjections.New(hIsoGammaTMdEtaProjections[iPtBin], "d#eta", -1, 1, kBlack, "hist e");
+    PdEtadPhiProjections.New(hIsoGammaTMdPhiProjections[iPtBin], "d#phi", -1, 1, kRed, "hist e same");
+    PdEtadPhiProjections.NextPad(Form("%.1f < #it{p}_{T}^{cluster} < %.1f GeV/#it{c}", ptBins[iPtBin], ptBins[iPtBin + 1]));
+  }
+  PdEtadPhiProjections.SetLegend(0.1,0.9,0.1,0.4);
+  PdEtadPhiProjections.NewLatex(0.9,0.9,legendHeader,StdTextSize*0.5,0.06*1.8);
+  PdEtadPhiProjections.Plot(Form("%s/dEtadPhiProjections.%s", outputDir.Data(), suffix), false, false);
 
   
 
@@ -1274,8 +1405,14 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
             GoetheColor[iC][iH] = ColorCode;
         }
     }
+  TString fancyColorHex[8] = {"#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5", "#ffa300", "#dc0ab4", "#b3d4ff"};
+  for (int i = 0; i < 8; i++){
+      fancyColors[i] = TColor::GetColor(fancyColorHex[i]);
+  }
 
   GlobalOptions optns(AnalysisDirectory, isDebugRun);
+
+  BuildLegendHeader(optns);
 
   TString inputFilePath = Form("%s/HistosFromTree.root", AnalysisDirectory.Data());
 
@@ -1308,9 +1445,16 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     TDirectory *dJetQA = (TDirectory *)fIn->Get("JetQA");
     TDirectory *dJetQARaw = (TDirectory *)fIn->Get("JetQARaw");
     if(dJetQA) plotJetQA(dJetQA, "Jets" ,optns);
-    else WARN("Dir JetQA not found. Skipping");
+    // if(dJetQA) plotJetQATest1(dJetQA, "JetsTest1" ,optns);
+    // if(dJetQA) plotJetQATest2(dJetQA, "JetsTest2" ,optns);
+    // if(dJetQA) plotJetQATest3(dJetQA, "JetsTest3" ,optns);
+    // else WARN("Dir JetQA not found. Skipping");
     if(dJetQARaw) plotJetQA(dJetQARaw, "JetsRaw" ,optns);
-    else WARN("Dir JetQARaw not found. Skipping");
+    // else WARN("Dir JetQARaw not found. Skipping");
+    // if(dJetQARaw) plotJetQATest1(dJetQARaw, "JetsTest1" ,optns);
+    // if(dJetQARaw) plotJetQATest2(dJetQARaw, "JetsTest2" ,optns);
+    // if(dJetQARaw) plotJetQATest3(dJetQARaw, "JetsTest3" ,optns);
+    // else WARN("Dir JetQA not found. Skipping");
 
   }
   

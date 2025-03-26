@@ -91,7 +91,7 @@ int listTreeBranches(TChain *tree)
   INFO(Form("Your tree %s contains the following %d branches:%s\n", tree->GetName(), branchList->GetEntries(), sBranchList.Data()))
   if (sBranchList.Contains(", Event_NPrimaryTracks, Event_IsTriggered, Event_ZVertex, Event_Quality, Event_NotAccepted, "))
     return kRun2Tree;
-  else if (sBranchList.Contains("event_multiplicity, event_centrality, event_rho, event_eventselection, event_alias")) // Add Run3 tree specific branches here
+  else if (sBranchList.Contains("event_multiplicity, event_centrality, event_rho, event_eventselection, event_occupancy, event_alias")) // Add Run3 tree specific branches here
     return kRun3Tree;
   else if (sBranchList.Contains("Berkely")) // Add Berkely tree specific branches here
     return kBerkeleyTree;
@@ -124,6 +124,7 @@ public:
   float Event_Centrality = 0;              // Run     3
   uint16_t Event_Selection = 0;            // Run     3
   uint32_t Event_Alias = 0;                // Run     3
+  int Event_Occupancy = 0;                  // Run 3
 
   // -------------- Cluster branches ---------------
   std::vector<float> *Cluster_E = 0;                    // Run 2 + 3
@@ -154,7 +155,7 @@ public:
   std::vector<bool> *Cluster_MatchTrackIsConv = 0;      // Run 2
   std::vector<bool> *Cluster_IsExotic = 0;              // Run     3
   std::vector<float> *Cluster_DistanceToBadChannel = 0; // Run 2 Also available in run3 but as ushort and not used currently -> Omitted for now
-
+  std::vector<Int_t> *Cluster_Definition = 0;           // Run 3
   // -------------- Jet branches ---------------
   std::vector<float> *Jet_Pt = 0;                 // Run     3
   std::vector<float> *Jet_E = 0;                  // Run     3
@@ -330,9 +331,11 @@ void TreeBuffer::ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns)
   tree->SetBranchAddress("event_rho", &Event_Rho);
   tree->SetBranchAddress("event_eventselection", &Event_Selection);
   tree->SetBranchAddress("event_alias", &Event_Alias);
+  tree->SetBranchAddress("event_occupancy", &Event_Occupancy);
   if (optns.doIsoGamma)
   {
     tree->SetBranchAddress("cluster_data_energy", &Cluster_E);
+    tree->SetBranchAddress("cluster_data_definition", &Cluster_Definition);
     tree->SetBranchAddress("cluster_data_eta", &Cluster_Eta);
     tree->SetBranchAddress("cluster_data_phi", &Cluster_Phi);
     tree->SetBranchAddress("cluster_data_m02", &Cluster_M02);

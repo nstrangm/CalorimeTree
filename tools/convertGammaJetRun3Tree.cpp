@@ -1,4 +1,16 @@
 #include "convertGammaJetRun3Tree.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TLeaf.h"
+#include "TKey.h"
+#include "TDirectory.h"
+#include "TROOT.h"
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
 
 // flat trees
 // event prpoperties tree
@@ -18,6 +30,8 @@ void createTree() {
                         "event_rho/F");
     outputTree->Branch("event_eventselection", &fBuffer_eventselection,
                         "event_eventselection/s");
+    outputTree->Branch("event_occupancy", &fBuffer_occupancy,
+                        "event_occupancy/I");
     outputTree->Branch("event_alias", &fBuffer_alias);
     outputTree->Branch("jet_data_pt", &fBuffer_jet_data_pt);
     outputTree->Branch("jet_data_eta", &fBuffer_jet_data_eta);
@@ -30,6 +44,7 @@ void createTree() {
     outputTree->Branch("jet_data_perpconerho", &fBuffer_jet_data_perpconerho);
     outputTree->Branch("jet_data_nconstituents", &fBuffer_jet_data_nconstituents);
     outputTree->Branch("cluster_data_energy", &fBuffer_cluster_data_energy);
+    outputTree->Branch("cluster_data_definition", &fBuffer_cluster_data_definition);
     outputTree->Branch("cluster_data_eta", &fBuffer_cluster_data_eta);
     outputTree->Branch("cluster_data_phi", &fBuffer_cluster_data_phi);
     outputTree->Branch("cluster_data_m02", &fBuffer_cluster_data_m02);
@@ -59,6 +74,7 @@ void clearBuffers(){
     fBuffer_jet_data_perpconerho->clear();
     fBuffer_jet_data_nconstituents->clear();
     fBuffer_cluster_data_energy->clear();
+    fBuffer_cluster_data_definition->clear();
     fBuffer_cluster_data_eta->clear();
     fBuffer_cluster_data_phi->clear();
     fBuffer_cluster_data_m02->clear();
@@ -115,7 +131,7 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
       fBuffer_rho = tEvents->GetBranch("fRho")->GetLeaf("fRho")->GetValue();
       fBuffer_eventselection = tEvents->GetBranch("fEventSel")->GetLeaf("fEventSel")->GetValue();
       fBuffer_alias = tEvents->GetBranch("fAlias")->GetLeaf("fAlias")->GetValue();
-
+      fBuffer_occupancy = tEvents->GetBranch("fOccupancy")->GetLeaf("fOccupancy")->GetValue();
       // 
 
       // loop over jets for this event
@@ -138,6 +154,7 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
         for (int k = 0; k < clusterMap[collisionID].size(); k++) {
             tClusters->GetEntry(clusterMap[collisionID].at(k));
             fBuffer_cluster_data_energy->push_back(tClusters->GetBranch("fEnergy")->GetLeaf("fEnergy")->GetValue());
+            fBuffer_cluster_data_definition->push_back(tClusters->GetBranch("fDefinition")->GetLeaf("fDefinition")->GetValue());
             fBuffer_cluster_data_eta->push_back(tClusters->GetBranch("fEta")->GetLeaf("fEta")->GetValue());
             fBuffer_cluster_data_phi->push_back(tClusters->GetBranch("fPhi")->GetLeaf("fPhi")->GetValue());
             fBuffer_cluster_data_m02->push_back(tClusters->GetBranch("fM02")->GetLeaf("fM02")->GetValue());

@@ -10,7 +10,7 @@
 # --nThreads: Number of threads to use for downloading
 # ---------------------------------------------
 # Example usage:
-# python downloadHyperloop.py --inputfilelist=/path/to/inputfilelist.txt --outputfolder=/path/to/outputfolder --filename=AO2D.root --isDerived=True --nThreads 4
+# python downloadHyperloop.py --inputfilelist=/path/to/inputfilelist.txt --outputfolder=/path/to/outputfolder --filename=AO2D.root --nThreads 4
 
 import sys
 import os
@@ -83,7 +83,37 @@ def createFileList(folder, filename):
     with open(f'{folder}/fullInputList_{filenameNoEnding}.txt', 'w') as f:
         for file in files:
             f.write(file + '\n')
+
+# 
+def check_if_AOD_folder_present(path, file):
+    """
+    Check if the given path has a subfolder called AOD that contains the specified file.
     
+    Args:
+        path (str): The alien path to check
+        file (str): The filename to look for in the AOD subfolder
+        
+    Returns:
+        bool: True if the AOD subfolder exists and contains the file, False otherwise
+    """
+    try:
+        # Check if AOD subfolder exists and contains the specified file
+        result = subprocess.run(f'alien_find {path}/AOD {file} -c 1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        
+        # If we found at least one file, return True
+        if result.returncode == 0 and result.stdout.decode('utf-8').strip():
+            log.info(f"Found AOD subfolder with {file} in {path}")
+            return True
+        else:
+            log.info(f"No AOD subfolder with {file} found in {path}")
+            return False
+    except subprocess.CalledProcessError as e:
+        log.warning(f"Error checking for AOD subfolder in {path}: {e}")
+        return False
+    except subprocess.TimeoutExpired:
+        log.warning(f"Timeout while checking for AOD subfolder in {path}")
+        return False
+   
 
 def downloadHyperloop(inputfilelist, outputfolder, filename):
     # create output folder if it doesn't exist
@@ -107,27 +137,17 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
     
     # loop over list of inputpaths and print them
     downloadpaths = []
-    hasAODFolder = True
-    log.info(f"Checking if there is an /AOD folder in the path ...")
-    try:
-        checkPathOut = subprocess.check_output(f'alien_find {path}/AOD {file}', shell=True).decode('utf-8').split('\n')
-        log.info(f"Found /AOD folder in the path.")
-    except:
-        checkPathOut = []
-        hasAODFolder = False
-        log.info(f"No /AOD folder found in the path.")
-
     totDownloads = len(inputpaths)*len(inputfiles)
     log.info(f"Searching for {totDownloads} directories for files to download...")
     with Progress() as progress:
         search_task = progress.add_task("[green]Searching for files...", total=totDownloads,refresh_per_second=1)
-        for path in inputpaths:
+        for i, path in enumerate(inputpaths):
             # run bash command and store output
+            if check_if_AOD_folder_present(path, inputfiles[0]):
+                path = f"{path}/AOD"
             for file in inputfiles:
                 if file == "":
                     continue
-                if hasAODFolder:
-                    path = f"{path}/AOD"
                 try:
                     downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
                 except subprocess.CalledProcessError as e:
@@ -136,15 +156,15 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
                 progress.update(search_task, advance=1)
 
     # find the biggest number of slashes in the downloadpaths. This we do as a dirty hack to really only get those files that are in the lowest level
-    number_of_slashes = 0
-    for path in downloadpaths:
-        if path == "":
-            continue
-        if path.count('/') > number_of_slashes:
-            number_of_slashes = path.count('/')
+    # number_of_slashes = 0
+    # for path in downloadpaths:
+    #     if path == "":
+    #         continue
+    #     if path.count('/') > number_of_slashes:
+    #         number_of_slashes = path.count('/')
     # remove everything that has less slashes than the biggest number of slashes
     log.info(f"Search complete. Found {len(downloadpaths)} files to download.")
-    downloadpaths = [x for x in downloadpaths if x.count('/') == number_of_slashes]
+    # downloadpaths = [x for x in downloadpaths if x.count('/') == number_of_slashes]
     log.info(f"Removed potential dublicates. Found {len(downloadpaths)} files to download.")
    
     # do multithreading download

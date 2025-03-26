@@ -2,12 +2,16 @@
 ###################################################################################################
 Standard:
 
+  event_occupancy_min: 0
+  event_occupancy_max: 1000
+
   # ----------------------------> Cluster Cuts
   #RapidityCut
   gamma_max_rapidity: 0.8
 
   # Acceptance cuts
   gamma_Acceptance: EMC
+  gamma_ClusterDefinition: 10 # V3
 
   #Cluster energy
   gamma_min_E: 8.
@@ -29,7 +33,7 @@ Standard:
   mPi0_max_M02: 20.
 
   #Cluster-track matching (like in Run 2)
-  gamma_doTrackMatching: false
+  gamma_doTrackMatching: true
   gamma_min_MatchDeta: -0.05
   gamma_max_MatchDeta: 0.05
   gamma_min_MatchDphi: -0.05
@@ -67,7 +71,51 @@ Standard:
   trigger_ref_ptmax: 10
   event_signal_fraction: 0.9
 
+GammaV1: #V1 clustrizer for testing
+  gamma_ClusterDefinition: 0
 
+NoOccupancyCut: #No occupancy cut
+  jet_Radius: 0.4
+  event_occupancy_min: 0
+  event_occupancy_max: 999999
+NoOccupancyCut_R02: #No occupancy cut
+  jet_Radius: 0.2
+  event_occupancy_min: 0
+  event_occupancy_max: 999999
+NoOccupancyCut_R03: #No occupancy cut
+  jet_Radius: 0.3
+  event_occupancy_min: 0
+  event_occupancy_max: 999999
+NoOccupancyCut_R05: #No occupancy cut
+  jet_Radius: 0.5
+  event_occupancy_min: 0
+  event_occupancy_max: 999999
+NoOccupancyCut_R06: #No occupancy cut
+  jet_Radius: 0.6
+  event_occupancy_min: 0
+  event_occupancy_max: 999999
+Occupancy5000: #Occupancy cut
+  event_occupancy_min: 0
+  event_occupancy_max: 5000
+Occupancy8000: #Occupancy cut
+  event_occupancy_min: 0
+  event_occupancy_max: 8000
+
+AreaCut_R02:
+  jet_Radius: 0.2
+  jet_MinArea: 0.05
+AreaCut_R03:
+  jet_Radius: 0.3
+  jet_MinArea: 0.15
+AreaCut_R04:
+  jet_Radius: 0.4
+  jet_MinArea: 0.2
+AreaCut_R05:
+  jet_Radius: 0.5
+  jet_MinArea: 0.4
+AreaCut_R06:
+  jet_Radius: 0.6
+  jet_MinArea: 0.8
 
 # No Cuts - all cuts fully open
 ###################################################################################################
@@ -119,13 +167,50 @@ JetRadius_R06:
 JetRadius_R04_PerpCone:
   jet_UEEstimationMethod: PerpCone
 
-    
+JetRadius_R02_RestrictedAcceptance:
+  jet_Acceptance: TPC_Fiducial_Restricted
+  jet_Radius: 0.2
 
 Cluster_E_max_increased:
   gamma_max_E: 220.
 
 Cluster_E_max_decreased:
   cluster_max_E: 180.
+
+
+R02_RefTTVariation1:
+  jet_Radius: 0.2
+  trigger_ref_ptmin: 10
+  trigger_ref_ptmax: 12
+R02_RefTTVariation2:
+  jet_Radius: 0.2
+  trigger_ref_ptmin: 12
+  trigger_ref_ptmax: 14
+R02_RefTTVariation3:
+  jet_Radius: 0.2
+  trigger_ref_ptmin: 14
+  trigger_ref_ptmax: 16
+R02_SigTTVariation1:
+  jet_Radius: 0.2
+  trigger_sig_ptmin: 40
+  trigger_sig_ptmax: 60
+R02_SigTTVariation2:
+  jet_Radius: 0.2
+  trigger_sig_ptmin: 60
+  trigger_sig_ptmax: 80
+R02_SigTTVariation3:
+  jet_Radius: 0.2
+  trigger_sig_ptmin: 10
+  trigger_sig_ptmax: 20
+R04_SigTTVariation1:
+  jet_Radius: 0.4
+  trigger_sig_ptmin: 60
+  trigger_sig_ptmax: 80
+R04_SigTTVariation2:
+  jet_Radius: 0.4
+  trigger_sig_ptmin: 80
+  trigger_sig_ptmax: 100
+
 
 
 # IsoOnly - Only isolation cut applied

@@ -74,9 +74,9 @@ if __name__ == "__main__":
             for centMin, centMax in centralities:
                 cutstring = f"event_centrality >= {centMin} && event_centrality < {centMax}"
                 outputfile = folder / f"GammaJetTree_Split_{centMin}_{centMax}.root"
-                f.write(f"root -x -q -b \"{workDir}/eventsorting.cpp(\\\"{file}\\\", \\\"{outputfile}\\\", \\\"{cutstring}\\\")\"\n")
+                f.write(f"root -q -b \"{workDir}/eventsorting_cpp.so(\\\"{file}\\\", \\\"{outputfile}\\\", \\\"{cutstring}\\\")\"\n")
         # send job to slurm
-        cmd = f"sbatch {job_script}"
+        cmd = f"sbatch -p long {job_script}"
         slurmJobIDs.append(subprocess.check_output(cmd, shell=True).decode('utf-8').split()[-1])
         log.info(f"Submitted job for {file} with id {slurmJobIDs[-1]}")
 

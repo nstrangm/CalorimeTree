@@ -160,9 +160,9 @@ void getRhoDistributions(TDirectory *dSignal, TDirectory *dReference, TString la
 
 }
 
-void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TString label)
+void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TString label, GlobalOptions optns)
 {
-
+    DLJetCuts jetCuts(optns);
     // choose nTriggersSignal and nTriggersReference depending on label
     double nTriggersSignal = 0;
     double nTriggersReference = 0;
@@ -179,42 +179,96 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
     // create outputfolder for recoil jet
     TDirectory *dRecoilJet = fOut->mkdir(Form("RecoilJet_%s", label.Data()));
 
-    // get THnSparseF for signal and reference
-    THnSparseF *hIsoGammaJetDeltaPhiJetPtGammaPt = (THnSparseF*)dSignal->Get("hIsoGammaJetDeltaPhi2piJetPtGammaPt");
-    hIsoGammaJetDeltaPhiJetPtGammaPt->SetName("hIsoGammaJetDeltaPhiJetPtGammaPtSignal");
-    THnSparseF *hIsoGammaJetDeltaPhiJetPtGammaPtReference = (THnSparseF*)dReference->Get("hIsoGammaJetDeltaPhi2piJetPtGammaPt");
+    // get THnSparseF for signal and reference (0 to 2pi)
+    THnSparseF *hIsoGammaJetDeltaPhi2piJetPtGammaPtSignal = (THnSparseF*)dSignal->Get("hIsoGammaJetDeltaPhi2piJetPtGammaPt");
+    hIsoGammaJetDeltaPhi2piJetPtGammaPtSignal->SetName("hIsoGammaJetDeltaPhi2piJetPtGammaPtSignal");
+    THnSparseF *hIsoGammaJetDeltaPhi2piJetPtGammaPtReference = (THnSparseF*)dReference->Get("hIsoGammaJetDeltaPhi2piJetPtGammaPt");
+    hIsoGammaJetDeltaPhi2piJetPtGammaPtReference->SetName("hIsoGammaJetDeltaPhi2piJetPtGammaPtReference");
+
+    // get THnSparseF for signal and reference (0 to pi)
+    THnSparseF *hIsoGammaJetDeltaPhiJetPtGammaPtSignal = (THnSparseF*)dSignal->Get("hIsoGammaJetDeltaPhiJetPtGammaPt");
+    hIsoGammaJetDeltaPhiJetPtGammaPtSignal->SetName("hIsoGammaJetDeltaPhiJetPtGammaPtSignal");
+    THnSparseF *hIsoGammaJetDeltaPhiJetPtGammaPtReference = (THnSparseF*)dReference->Get("hIsoGammaJetDeltaPhiJetPtGammaPt");
     hIsoGammaJetDeltaPhiJetPtGammaPtReference->SetName("hIsoGammaJetDeltaPhiJetPtGammaPtReference");
 
-    // do projection onto Jet and DeltaPhi axis
-    TH2F *hIsoGammaJetDeltaPhiJetPtSignal = (TH2F*)hIsoGammaJetDeltaPhiJetPtGammaPt->Projection(1,0);
+    // do projection onto Jet and DeltaPhi axis (0, pi)
+    TH2F *hIsoGammaJetDeltaPhiJetPtSignal = (TH2F*)hIsoGammaJetDeltaPhiJetPtGammaPtSignal->Projection(1,0);
     hIsoGammaJetDeltaPhiJetPtSignal->SetName("hIsoGammaJetDeltaPhiJetPtSignal");
     TH2F *hIsoGammaJetDeltaPhiJetPtReference = (TH2F*)hIsoGammaJetDeltaPhiJetPtGammaPtReference->Projection(1,0);
     hIsoGammaJetDeltaPhiJetPtReference->SetName("hIsoGammaJetDeltaPhiJetPtReference");
 
+    // do projection onto Jet and DeltaPhi axis (0, 2pi)
+    TH2F *hIsoGammaJetDeltaPhi2piJetPtSignal = (TH2F*)hIsoGammaJetDeltaPhi2piJetPtGammaPtSignal->Projection(1,0);
+    hIsoGammaJetDeltaPhi2piJetPtSignal->SetName("hIsoGammaJetDeltaPhi2piJetPtSignal");
+    TH2F *hIsoGammaJetDeltaPhi2piJetPtReference = (TH2F*)hIsoGammaJetDeltaPhi2piJetPtGammaPtReference->Projection(1,0);
+    hIsoGammaJetDeltaPhi2piJetPtReference->SetName("hIsoGammaJetDeltaPhi2piJetPtReference");
+
+    // get mirrored histograms (0, 2pi)
+    TH2F *hIsoGammaJetDeltaPhiJetPtSignalMirrored = mirrorTH2F(hIsoGammaJetDeltaPhiJetPtSignal);
+    TH2F *hIsoGammaJetDeltaPhiJetPtReferenceMirrored = mirrorTH2F(hIsoGammaJetDeltaPhiJetPtReference);
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->SetName("hIsoGammaJetDeltaPhiJetPtSignalMirrored");
+    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->SetName("hIsoGammaJetDeltaPhiJetPtReferenceMirrored");
+
+
     // normalize by number of triggers 
     // rebin in pt by factor 4 in y axis
-    hIsoGammaJetDeltaPhiJetPtSignal->RebinY(4);
+    hIsoGammaJetDeltaPhiJetPtSignal->RebinY(4); // 0 to pi
     hIsoGammaJetDeltaPhiJetPtReference->RebinY(4);
+    hIsoGammaJetDeltaPhi2piJetPtSignal->RebinY(4); // 0 to 2pi
+    hIsoGammaJetDeltaPhi2piJetPtReference->RebinY(4);
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->RebinY(4); // 0 to 2pi mirrored from 0 to pi
+    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->RebinY(4);
 
     double dPt = hIsoGammaJetDeltaPhiJetPtSignal->GetYaxis()->GetBinWidth(1);
     double dPhi = hIsoGammaJetDeltaPhiJetPtSignal->GetXaxis()->GetBinWidth(1);
     hIsoGammaJetDeltaPhiJetPtSignal->Scale(1./(nTriggersSignal*dPt*dPhi));
     hIsoGammaJetDeltaPhiJetPtReference->Scale(1./(nTriggersReference*dPt*dPhi));
+    dPt = hIsoGammaJetDeltaPhiJetPtSignalMirrored->GetYaxis()->GetBinWidth(1);
+    dPhi = hIsoGammaJetDeltaPhiJetPtSignalMirrored->GetXaxis()->GetBinWidth(1);
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->Scale(1./(nTriggersSignal*dPt*dPhi));
+    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->Scale(1./(nTriggersReference*dPt*dPhi));
+    dPt = hIsoGammaJetDeltaPhi2piJetPtSignal->GetYaxis()->GetBinWidth(1);
+    dPhi = hIsoGammaJetDeltaPhi2piJetPtSignal->GetXaxis()->GetBinWidth(1);
+    hIsoGammaJetDeltaPhi2piJetPtSignal->Scale(1./(nTriggersSignal*dPt*dPhi));
+    hIsoGammaJetDeltaPhi2piJetPtReference->Scale(1./(nTriggersReference*dPt*dPhi));
     
     hIsoGammaJetDeltaPhiJetPtSignal->GetXaxis()->SetTitle("#Delta#phi");
     hIsoGammaJetDeltaPhiJetPtSignal->GetYaxis()->SetTitle("#it{p}_{T, ch jet}^{reco} (GeV/#it{c})");
     hIsoGammaJetDeltaPhiJetPtSignal->GetZaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{3}N}{d#it{p}_{T, ch jet}^{reco} d#Delta#phi}");
-
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->GetXaxis()->SetTitle("#Delta#phi");
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->GetYaxis()->SetTitle("#it{p}_{T, ch jet}^{reco} (GeV/#it{c})");
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->GetZaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{3}N}{d#it{p}_{T, ch jet}^{reco} d#Delta#phi}");
+    hIsoGammaJetDeltaPhi2piJetPtSignal->GetXaxis()->SetTitle("#Delta#phi");
+    hIsoGammaJetDeltaPhi2piJetPtSignal->GetYaxis()->SetTitle("#it{p}_{T, ch jet}^{reco} (GeV/#it{c})");
+    hIsoGammaJetDeltaPhi2piJetPtSignal->GetZaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{3}N}{d#it{p}_{T, ch jet}^{reco} d#Delta#phi}");
 
     // write all histograms of interest to dRecoilJet
     dRecoilJet->cd();
     hIsoGammaJetDeltaPhiJetPtSignal->Write("hIsoGammaJetDeltaPhiJetPtSignal");
     hIsoGammaJetDeltaPhiJetPtReference->Write("hIsoGammaJetDeltaPhiJetPtReference");
+    hIsoGammaJetDeltaPhi2piJetPtSignal->Write("hIsoGammaJetDeltaPhi2piJetPtSignal");
+    hIsoGammaJetDeltaPhi2piJetPtReference->Write("hIsoGammaJetDeltaPhi2piJetPtReference");
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->Write("hIsoGammaJetDeltaPhiJetPtSignalMirrored");
+    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->Write("hIsoGammaJetDeltaPhiJetPtReferenceMirrored");
 
-    // project the two dimensional distributions ontot the jet pt axis
+    // arrays for integration in phi ranges
+    double phiBinsMid[phiBins.size() - 1 ];
+    double phiBinsUpError[phiBins.size() - 1 ];
+    double phiBinsDownError[phiBins.size() - 1 ];
+    for(int i=1; i<phiBins.size(); i++)
+    {
+      phiBinsMid[i-1] = phiBins[i].first + (phiBins[i].second - phiBins[i].first)/2;
+      phiBinsUpError[i-1] = TMath::Abs(phiBins[i].first - phiBins[i].second)/2;
+      phiBinsDownError[i-1] = TMath::Abs(phiBins[i].second - phiBins[i].first)/2;
+    }
+    double ptIntegralPhi[recoilJetPtBinsIntegration.size()][phiBins.size() - 1 ];
+    double ptIntegralErrorPhi[recoilJetPtBinsIntegration.size()][phiBins.size() - 1 ];
+
     // do projections in phi bins
+    int iPhiBin = 0;
     for(auto &phiBin : phiBins)
     {
+      // now use histograms from 0 to pi
       hIsoGammaJetDeltaPhiJetPtSignal->GetXaxis()->SetRangeUser(phiBin.first, phiBin.second);
       hIsoGammaJetDeltaPhiJetPtReference->GetXaxis()->SetRangeUser(phiBin.first, phiBin.second);
       TH1F* hRecoilJetPtSignal = (TH1F*) hIsoGammaJetDeltaPhiJetPtSignal->ProjectionY();
@@ -240,7 +294,21 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       TH1F* hRecoilJetPtSignal_Subtracted = (TH1F*)hRecoilJetPtSignal->Clone(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetPtSignal_Subtracted->Add(hRecoilJetReferenceScaled, -1);
       hRecoilJetPtSignal_Subtracted->SetName(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
-      
+
+      for (int i=0; i<recoilJetPtBinsIntegration.size(); i++){
+        // check if phi min and phi max are the first of phiBins. Then we should continue because this is always the back-to-back integrated bin
+        if(iPhiBin == 0) continue;
+
+        double ptIntegral, ptIntegralError;
+        int binMin = hRecoilJetPtSignal_Subtracted->FindBin(recoilJetPtBinsIntegration[i].first);
+        int binMax = hRecoilJetPtSignal_Subtracted->FindBin(recoilJetPtBinsIntegration[i].second);
+        ptIntegral = hRecoilJetPtSignal_Subtracted->IntegralAndError(binMin, binMax, ptIntegralError);
+        // phi min and max
+        ptIntegralPhi[i][iPhiBin-1] = ptIntegral;
+        ptIntegralErrorPhi[i][iPhiBin-1] = ptIntegralError;
+      }
+
+
       // write all histograms of interest to dRecoilJet
       dRecoilJet->cd();
       hRecoilJetPtSignal->Write(Form("hRecoilJetPtSignal_%.2f_%.2f", phiBin.first, phiBin.second));
@@ -249,7 +317,106 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       hRecoilJetReferenceScaled->Write(Form("hRecoilJetReferenceScaled_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetPtSignal_Subtracted->Write(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
       fCRefFit->Write(Form("fCRefFit_%.2f_%.2f", phiBin.first, phiBin.second));
+
+      iPhiBin++;
     }
+
+    // write recoil jet signal subtracted phi graphs to dRecoilJet
+    dRecoilJet->cd();
+    
+    // create TGraphAsymmErrors for each recoil jetpt integrations
+    TGraphAsymmErrors* gRecoilJetPtIntegralPhi[recoilJetPtBinsIntegration.size()];
+    for(int i=0; i<recoilJetPtBinsIntegration.size(); i++){
+      gRecoilJetPtIntegralPhi[i] = new TGraphAsymmErrors(phiBins.size() - 1, phiBinsMid, ptIntegralPhi[i], phiBinsDownError, phiBinsUpError, ptIntegralErrorPhi[i], ptIntegralErrorPhi[i]);
+      gRecoilJetPtIntegralPhi[i]->SetName(Form("gRecoilJetPtIntegralPhi_%.2f_%.2f", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second));
+      gRecoilJetPtIntegralPhi[i]->Write(Form("gRecoilJetPtIntegralPhi_%.2f_%.2f", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second));
+    }
+
+    // Study of correlations with rapidity gaps
+    THnSparseF *hIsoGammaJetDeltaPhi2piDeltaEtaJetPt = (THnSparseF*)dSignal->Get("hIsoGammaJetDeltaPhi2piDeltaEtaJetPt");
+    // axis 0: DeltaPhi axis 1: DeltaEta axis 2: jet pt
+    dPt = hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(2)->GetBinWidth(1);
+    dPhi = hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(0)->GetBinWidth(1);
+    double dEta = hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(1)->GetBinWidth(1);
+
+    // select events that are back to back in phi (which is phibin 0)
+    hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(0)->SetRangeUser(phiBins[0].first, phiBins[0].second);
+
+    // project onto dEta and jet pt
+    TH2F* hIsoGammaJetDeltaEtaJetPt = (TH2F*)hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->Projection(2,1);
+    hIsoGammaJetDeltaEtaJetPt->SetName("hIsoGammaJetDeltaEtaJetPt");
+    hIsoGammaJetDeltaEtaJetPt->GetXaxis()->SetTitle("#Delta#eta");
+    hIsoGammaJetDeltaEtaJetPt->GetYaxis()->SetTitle("#it{p}_{T}^{jet} (GeV/#it{c})");
+    hIsoGammaJetDeltaEtaJetPt->GetZaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{3}N}{d#Delta#eta d#it{p}_{T}^{jet} d#Delta#phi}");
+    hIsoGammaJetDeltaEtaJetPt->Scale(1./(nTriggersSignal*dPt*dPhi*dEta));
+
+    // loop over dEta bins and do projections
+    dRecoilJet->cd();
+    hIsoGammaJetDeltaEtaJetPt->Write("hIsoGammaJetDeltaEtaJetPt");
+
+    TH1F* hRecoilJetPtDEta[dEtaBins.size()-1];
+    TH1F* hRecoilJetPtDEtaRatio[dEtaBins.size()-1];
+    TH1F* hRecoilJetPtDEtaScaled[dEtaBins.size()-1];
+    TH1F* hRecoilJetPtDEtaSubtracted[dEtaBins.size()-1];
+    TF1* fRecoilJetPtDEtaRatioFit[dEtaBins.size()-1];
+    int i = 0;
+     for (auto dEtaBin : dEtaBins) {
+      // select events in this dEta bin
+      float dEtaMax = jetCuts.JetEtaPhiMinMax[0][1] + 0.67;
+      if(dEtaBin.second > dEtaMax)
+      {
+        dEtaBin.second = dEtaMax;
+      }
+
+      hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(1)->SetRangeUser(dEtaBin.first, dEtaBin.second);
+      double dEtaWidth = dEtaBin.second - dEtaBin.first;
+      // project onto jet pt
+      hRecoilJetPtDEta[i] = (TH1F*)hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->Projection(2);
+      hRecoilJetPtDEta[i]->SetName(Form("hRecoilJetPtDEta_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      hRecoilJetPtDEta[i]->GetXaxis()->SetTitle("#it{p}_{T}^{jet} (GeV/#it{c})");
+      hRecoilJetPtDEta[i]->GetYaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{2}N}{d#it{p}_{T}^{jet} d#Delta#phi d#Delta#eta}");
+      hRecoilJetPtDEta[i]->Rebin(4);
+      dPt = hRecoilJetPtDEta[i]->GetXaxis()->GetBinWidth(1);
+      hRecoilJetPtDEta[i]->Scale(1./(nTriggersSignal*dPt*dPhi*dEtaWidth));
+
+      // write histogram to directory
+      dRecoilJet->cd();
+      hRecoilJetPtDEta[i]->Write(Form("hRecoilJetPtDEta_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      i++;
+     }
+
+    for (int i = 0; i < dEtaBins.size()-1; i++) {
+      auto dEtaBin = dEtaBins[i];
+      // select events in this dEta bin
+      float dEtaMax = jetCuts.JetEtaPhiMinMax[0][1] + 0.67;
+      if(dEtaBin.second > dEtaMax)
+      {
+        dEtaBin.second = dEtaMax;
+      }
+
+      // reset axis range
+      hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(1)->UnZoom();
+
+      hRecoilJetPtDEtaRatio[i] = (TH1F*)hRecoilJetPtDEta[i]->Clone(Form("hRecoilJetPtDEtaRatio_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      hRecoilJetPtDEtaRatio[i]->Divide(hRecoilJetPtDEta[i], hRecoilJetPtDEta[dEtaBins.size()-1]);
+      hRecoilJetPtDEtaRatio[i]->Write(Form("hRecoilJetPtDEtaRatio_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+       
+      // fit the ratio with a pol0
+      fRecoilJetPtDEtaRatioFit[i] = new TF1(Form("fRecoilJetPtDEtaRatioFit_%.2f_%.2f", dEtaBin.first, dEtaBin.second), "pol0", 0, 100);
+      hRecoilJetPtDEtaRatio[i]->Fit(fRecoilJetPtDEtaRatioFit[i], "R0");
+      fRecoilJetPtDEtaRatioFit[i]->Write(Form("fRecoilJetPtDEtaRatioFit_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      
+      // scale the distributions with 1/fRecoilJetPtDEtaRatioFit->GetParameter(0)
+      hRecoilJetPtDEtaScaled[i] = (TH1F*)hRecoilJetPtDEta[i]->Clone(Form("hRecoilJetPtDEtaScaled_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      hRecoilJetPtDEtaScaled[i]->Scale(1./fRecoilJetPtDEtaRatioFit[i]->GetParameter(0));
+      hRecoilJetPtDEtaScaled[i]->Write(Form("hRecoilJetPtDEtaScaled_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+
+      hRecoilJetPtDEtaSubtracted[i] = (TH1F*)hRecoilJetPtDEtaScaled[i]->Clone(Form("hRecoilJetPtDEtaSubtracted_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+      hRecoilJetPtDEtaSubtracted[i]->Add(hRecoilJetPtDEta[dEtaBins.size()-1], -1);
+      hRecoilJetPtDEtaSubtracted[i]->Write(Form("hRecoilJetPtDEtaSubtracted_%.2f_%.2f", dEtaBin.first, dEtaBin.second));
+    }
+
+
 
 }
 
@@ -490,8 +657,8 @@ void analyseExclGammaJet(TString AnalysisDirectory, bool isDebugRun = false)
   getRhoDistributions(dTriggerPhotonsSignalQA, dTriggerPhotonsReferenceQA, "Photons");
   getRhoDistributions(dTriggerMergedPi0sSignalQA, dTriggerMergedPi0sReferenceQA, "MergedPi0s");
 
-  getRecoilJetPtDistributions(dTriggerGammaJetCorrelationsSignal, dTriggerGammaJetCorrelationsReference, "Photons");
-  getRecoilJetPtDistributions(dTriggerMergedPi0JetCorrelationsSignal, dTriggerMergedPi0JetCorrelationsReference, "MergedPi0s");
+  getRecoilJetPtDistributions(dTriggerGammaJetCorrelationsSignal, dTriggerGammaJetCorrelationsReference, "Photons", optns);
+  getRecoilJetPtDistributions(dTriggerMergedPi0JetCorrelationsSignal, dTriggerMergedPi0JetCorrelationsReference, "MergedPi0s", optns);
 
   // purity calculation needs to be called with none isolated photons
   processPurity(dGammas,"Photons", optns);

@@ -117,5 +117,12 @@ void SetAcceptance(TString JetAcceptance, float JetEtaPhiMinMax[2][2], float Fid
     JetEtaPhiMinMax[0][1] = 1E3;
     JetEtaPhiMinMax[1][0] = -1E3;
     JetEtaPhiMinMax[1][1] = 1E3;
+  // cut for testing purposes that severely restricts the jet acceptance to avoid detector effects
+  // should be only used with R =0.2
+  } else if(JetAcceptance == "TPC_Fiducial_Restricted"){
+    JetEtaPhiMinMax[0][0] = -0.7;
+    JetEtaPhiMinMax[0][1] = -0.5;
+    JetEtaPhiMinMax[1][0] = 0.;
+    JetEtaPhiMinMax[1][1] = 2*3.1416;
   }
 }
