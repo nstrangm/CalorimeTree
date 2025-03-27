@@ -156,7 +156,6 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     doPlotting = runOptions['doPlotting']
     doAnalysisExclGammaJet = runOptions['doAnalysisExclGammaJet']
     doPlottingExclGammaJet = runOptions['doPlottingExclGammaJet']
-
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
             for iJob, process in processes:
@@ -411,6 +410,9 @@ def run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet):
     if doPlottingExclGammaJet:
         process = subprocess.run('root -b -q -l ./Analysis/plotExclGammaJet.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
 
+def run_combineExclGammaJet(analysis_directory, config_yaml):
+    process = subprocess.run(f'root -x -q -b ./Analysis/combineExclGammaJet.C\(\\"{analysis_directory}\\"\,\\"{config_yaml}\\"\)', shell=True, check=True)
+
 # Function to parse command line arguments
 def parse_args():
     parser = argparse.ArgumentParser(description='Script for processing datasets.')
@@ -436,10 +438,10 @@ def main():
     domPi0 = analysis_config.get('domPi0')
     doAnalysisExclGammaJet = analysis_config.get('doAnalysisExclGammaJet')
     doPlottingExclGammaJet = analysis_config.get('doPlottingExclGammaJet')
-
+    doCombineExclGammaJet = analysis_config.get('doCombineExclGammaJet')
     log.info("Starting the analysis...")
     log.info("Detected options:")
-    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet}")
+    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet} | doCombineExclGammaJet: {doCombineExclGammaJet}")
 
     
     
@@ -448,20 +450,20 @@ def main():
         exit()
 
     cuts_config = read_yaml('Cuts.yaml')
-    # count number of lines in file "./Analysis/makeHistosFromTree.C"
-    # lines = 0
-    # with open("./Analysis/makeHistosFromTree.C") as f:
-    #     for line in f:
-    #         lines += 1
-    # log.info("Be patient, I am busy compiling {} lines of code ...".format(lines))
-    log.info("Compiling makeHistosFromTree.C...")
-    compile_makeHistosFromTree()
-    log.info("Compiling plotHistosFromTree.C...")
-    compile_plotHistosFromTree()
-    log.info("Compiling analyseExclGammaJet.C...")
-    compile_analyseExclGammaJet()
-    log.info("Compiling plotExclGammaJet.C...")
-    compile_plotExclGammaJet()
+    
+    # only compile what is needed for the selected options
+    if doIsoGamma or doJets or doGGPi0 or domPi0:
+        log.info("Compiling makeHistosFromTree.C...")
+        compile_makeHistosFromTree()
+    if doPlotting:
+        log.info("Compiling plotHistosFromTree.C...")
+        compile_plotHistosFromTree()
+    if doAnalysisExclGammaJet:
+        log.info("Compiling analyseExclGammaJet.C...")
+        compile_analyseExclGammaJet()
+    if doPlottingExclGammaJet:
+        log.info("Compiling plotExclGammaJet.C...")
+        compile_plotExclGammaJet()
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
     log.info(f"Running {nSplit} parallel jobs per variation.")
@@ -541,6 +543,11 @@ def main():
                         jobs.append((dataset, trainconfig, cut_name, nSplit))
     runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet }
     run_multiple_macros(jobs,runOptions)
+
+    # combine excl gamma jet
+    if doCombineExclGammaJet:
+        curDir = os.getcwd()
+        run_combineExclGammaJet(curDir, args.config)
 
 
 if __name__ == "__main__":
