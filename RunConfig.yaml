@@ -6,6 +6,7 @@ doGGPi0: true
 domPi0: true
 doAnalysisExclGammaJet: true
 doPlottingExclGammaJet: true
+doCombineExclGammaJet: true
 
 DummyDataSet:
   isMC: true

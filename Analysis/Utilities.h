@@ -28,6 +28,7 @@ public:
   bool doJets = false;
   bool domPi0 = false;
   bool doGGPi0 = false;
+  bool doCombineExclGammaJet = false;
   GlobalOptions(TString AnalysisDirectory, int jobId);
   // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
   ~GlobalOptions() {};
@@ -69,6 +70,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
   doJets = config["doJets"].as<bool>();
   domPi0 = config["domPi0"].as<bool>();
   doGGPi0 = config["doGGPi0"].as<bool>();
+  doCombineExclGammaJet = config["doCombineExclGammaJet"].as<bool>();
 
   if (!config[(std::string)dataSet])
     FATAL(Form("Dataset %s not found in YAML file RunConfig.yaml", dataSet.Data()))
@@ -133,6 +135,142 @@ void createDirectory(TString path)
       std::cerr << "Error creating directory: " << path.Data() << std::endl;
   }
   return;
+}
+
+// define centrality enums
+enum CentralityEnum{
+  k0_10,
+  k10_30,
+  k30_50,
+  k50_90,
+  k0_90
+};
+enum JetRadiusEnum{
+  kR02,
+  kR03,
+  kR04,
+  kR05,
+  kR06
+};
+
+class FilePath{
+  public:
+    TString filePath;
+    FilePath(TString filePath);
+    // centralit enum
+    CentralityEnum centrality;
+    JetRadiusEnum jetRadius;
+};
+// Extract the centrality and jet radius from the filePath. The string is expected to be in the format of "Run3-0-10/JetRadius_R02/ExclGammaJet.root"
+FilePath::FilePath(TString filePath){
+  this->filePath = filePath;
+  // Extract centrality from the file path
+  if (filePath.Contains("Run3-0-10")) {
+    centrality = k0_10;
+  } else if (filePath.Contains("Run3-10-30")) {
+    centrality = k10_30;
+  } else if (filePath.Contains("Run3-30-50")) {
+    centrality = k30_50;
+  } else if (filePath.Contains("Run3-50-90")) {
+    centrality = k50_90;
+  } else if (filePath.Contains("Run3-0-90")) {
+    centrality = k0_90;
+  } else {
+    std::cerr << "Unknown centrality in file path: " << filePath.Data() << std::endl;
+  }
+  
+  // Extract jet radius from the file path
+  if (filePath.Contains("JetRadius_R02") || filePath.Contains("R02_")) {
+    jetRadius = kR02;
+  } else if (filePath.Contains("JetRadius_R03") || filePath.Contains("R03_")) {
+    jetRadius = kR03;
+  } else if (filePath.Contains("JetRadius_R04") || filePath.Contains("R04_")) {
+    jetRadius = kR04;
+  } else if (filePath.Contains("JetRadius_R05") || filePath.Contains("R05_")) {
+    jetRadius = kR05;
+  } else if (filePath.Contains("JetRadius_R06") || filePath.Contains("R06_")) {
+    jetRadius = kR06;
+  } else if (filePath.Contains("Standard")) {
+    jetRadius = kR04; // Default radius for Standard configuration
+  } else {
+    std::cerr << "Unknown jet radius in file path: " << filePath.Data() << std::endl;
+  }
+  
+}
+
+class CombineExclGammaJetOptions{
+  public:
+    TString dataset;
+    std::vector<TString> jetRadiusFolders;
+    std::vector<GlobalOptions> jetRadiusOptions; // also store global options to retrieve used cuts
+    std::vector<TString> centralityFolders;
+    TString analysisDirPath; 
+    CombineExclGammaJetOptions(TString AnalysisDirectory, TString configYaml);
+    std::vector<FilePath> inputFiles;
+    TString GetInputFilePath(CentralityEnum centrality, JetRadiusEnum jetRadius){
+      for (auto inputFile : inputFiles){
+        if (inputFile.centrality == centrality && inputFile.jetRadius == jetRadius){
+          return inputFile.filePath;
+        }
+      }
+      return "";
+    }
+    TFile* GetRootFile(CentralityEnum centrality, JetRadiusEnum jetRadius){
+      return TFile::Open(GetInputFilePath(centrality, jetRadius).Data());
+    }
+    ~CombineExclGammaJetOptions() {};
+    void printOptions();
+};
+
+CombineExclGammaJetOptions::CombineExclGammaJetOptions(TString AnalysisDirectory, TString configYaml){
+  analysisDirPath = AnalysisDirectory;
+  YAML::Node config = YAML::LoadFile(configYaml.Data());
+  YAML::Node combineExclGammaJetConfig = config["combineExclGammaJet"];
+  dataset = combineExclGammaJetConfig["dataset"].as<string>().c_str();
+  // Load jetRadiusFolders from comma separated list in YAML
+  std::string jetRadiusFoldersStr = combineExclGammaJetConfig["jetRadiusFolders"].as<string>();
+  std::stringstream ss(jetRadiusFoldersStr);
+  std::string folder;
+  
+  // Parse comma-separated values into vector
+  while (std::getline(ss, folder, ',')) {
+    jetRadiusFolders.push_back(TString(folder.c_str()));
+  }
+  
+  // Load centralityFolders from comma separated list in YAML
+  std::string centralityFoldersStr = combineExclGammaJetConfig["centralityFolders"].as<string>();
+  std::stringstream ss2(centralityFoldersStr);
+  
+  // Parse comma-separated values into vector
+  while (std::getline(ss2, folder, ',')) {
+    centralityFolders.push_back(TString(folder.c_str()));
+  }
+  
+  // loop over all jet radius folders and centrality folders and create a FilePath object for each
+  for (auto jetRadiusFolder : jetRadiusFolders){
+    // ugly workaround but only store for one centrality folder 
+    // centrality does not matter for the global options
+    // which we will only use in this case to get the trigger cuts
+    TString jetRadiusFolderPath =  dataset + "/" + centralityFolders[0] + "/" + jetRadiusFolder;
+    INFO(Form("Jet Radius Folder: %s", jetRadiusFolderPath.Data()));
+    jetRadiusOptions.emplace_back(GlobalOptions(jetRadiusFolderPath,0));
+    for (auto centralityFolder : centralityFolders){
+      inputFiles.push_back(FilePath(dataset + "/" + centralityFolder + "/" + jetRadiusFolder + "/ExclGammaJet.root"));
+    }
+  }
+}
+
+void CombineExclGammaJetOptions::printOptions(){
+  INFO(Form("Dataset: %s", dataset.Data()));
+  INFO(Form("Analysis Directory: %s", analysisDirPath.Data()));
+  INFO(Form("Jet Radius Folders:"));
+  for (auto folder : jetRadiusFolders){
+    INFO(Form("  %s", folder.Data()));
+  }
+  INFO(Form("Centrality Folders:"));
+  for (auto folder : centralityFolders){
+    INFO(Form("  %s", folder.Data()));
+  }
 }
 
 #endif
