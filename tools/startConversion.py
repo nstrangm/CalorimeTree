@@ -71,10 +71,12 @@ if __name__ == "__main__":
         file_dir = file_path.parent
         dpl_config_path = file_dir / "dpl-config.json"
         
-        if dpl_config_path.exists():
-            filtered_files.append(file)
-        else:
-            log.info(f"Skipping {file} as dpl-config.json not found in the same directory")
+        filtered_files.append(file)
+
+        # if dpl_config_path.exists():
+        #     filtered_files.append(file)
+        # else:
+        #     log.info(f"Skipping {file} as dpl-config.json not found in the same directory")
     
     # Update the files list with only the valid ones
     files = filtered_files
@@ -125,7 +127,7 @@ if __name__ == "__main__":
             f.write("#!/bin/bash\n")
             f.write(f"inputfilelist={tmpfile}\n")
             f.write(f"outputfile={outputfolder / 'GammaJetTrees.root'}\n")
-            f.write("root -q -b \"convertGammaJetRun3Tree.cpp+(\\\"$inputfilelist\\\",\\\"$outputfile\\\")\"\n")
+            f.write("root -x -q -b \"convertGammaJetRun3Tree.cpp(\\\"$inputfilelist\\\",\\\"$outputfile\\\")\"\n")
             # append the outputfile to the outputfileslist using sem with lock
             f.write("rm $inputfilelist")
         
@@ -133,7 +135,7 @@ if __name__ == "__main__":
         # submit a job
         log.info(f"Submitting job for chunk {i}")
         # submit a job
-        cmd=f"sbatch --partition=long {tmpscript}" 
+        cmd=f"sbatch --partition=short {tmpscript}" 
         # save the job id and run
         slurmJobIDs.append(subprocess.check_output(cmd, shell=True).decode('utf-8').split()[-1])
 

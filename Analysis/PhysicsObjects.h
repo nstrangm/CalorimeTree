@@ -1,11 +1,15 @@
 #ifndef _PHYSICSOBJECTS_
 #define _PHYSICSOBJECTS_
 
+#define bitcheck(var, nbit) ((var) & (static_cast<uint32_t>(1) << (nbit)))
 #include "TreeUtilities.h"
 #include "Logging.h"
 #include "MCUtils.h"
 #include "Geometry.h"
 #include "TVector2.h"
+#include "TriggerAliases.h"
+
+// definition of trigger 
 
 class PhysicsObject
 {
@@ -98,7 +102,7 @@ public:
   int Multiplicity = 0;
   float Centrality = 0;
   uint16_t Selection = 0;
-  uint32_t Alias = 0;
+  uint32_t Alias;
   int Occupancy = 0;
 
   unsigned short NPrimaryTracks = 0;
@@ -110,7 +114,11 @@ public:
   unsigned short NotAccepted = 0;
 
   bool Selected = false;
-
+  bool IsTriggerAlias(triggerAliases triggerAlias)
+  {
+    // check if bit position triggerAlias of Alias is 1
+    return bitcheck(Alias, triggerAlias);
+  }
   // MC properties
   float weight = 1.;
 };
@@ -393,18 +401,18 @@ void saveClustersFromEventInVector(TreeBuffer tree, std::vector<Cluster> &IsoGam
 // ########################################################################################################################
 // ###### ToDo: Check whether this is run3 and if so do not apply a correction since this is done online already! #########
 // ########################################################################################################################
-void calculateIsolation(std::vector<Cluster> &IsoGammas, Event &Event, bool useRhoInsteadOfPerpCone)
+void calculateIsolation(std::vector<Cluster> &IsoGammas, Event &Event, bool useRhoInsteadOfPerpCone, float isoR)
 {
   for (int iGamma = 0; iGamma < (int)IsoGammas.size(); iGamma++)
   {
     Cluster *isoGamma = &IsoGammas.at(iGamma);
 
     // Calculate corrected isolation pT subtracting backperp mult by cone area.
-    float IsoChargedAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4)) - (isoGamma->IsoBckPerp * TMath::Pi() * 0.4 * 0.4);
+    float IsoChargedAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, isoR)) - (isoGamma->IsoBckPerp * TMath::Pi() * isoR * isoR);
 
     if (useRhoInsteadOfPerpCone)
     {
-      float IsoBckPerpAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, 0.4))- (Event.Rho * TMath::Pi() * 0.4 * 0.4);
+      float IsoBckPerpAcceptanceCorrected = (isoGamma->IsoCharged / CalculateIsoCorrectionFactor(isoGamma->Eta(), 0.8, isoR))- (Event.Rho * TMath::Pi() * isoR * isoR);
     }
     else
     {
@@ -469,7 +477,7 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, Global
     }
     else if (optns.TreeFormat == kRun3Tree)
     {
-      if (abs(tree.Jet_Radius->at(iJet) - R) > 1E-6)
+      if (abs(tree.Jet_Radius->at(iJet) - R) > 0.01)
         continue;
       DLJet jet(tree.Jet_Pt->at(iJet), tree.Jet_Eta->at(iJet), tree.Jet_Phi->at(iJet));
       jet.Area = tree.Jet_Area->at(iJet);

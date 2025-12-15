@@ -47,6 +47,7 @@ class FilePair:
         return f"Source: {self.source}, Destination: {self.destination}"
 
 def downloadAlien(downloadpairs,task,progress,verbose=False):
+    failedPairs = list()
     for downloadpair in downloadpairs:
         alienpath = downloadpair.source
         localpath = downloadpair.destination
@@ -58,8 +59,9 @@ def downloadAlien(downloadpairs,task,progress,verbose=False):
         except subprocess.CalledProcessError as e:
             log.error(f"Failed to download {alienpath} to {localpath}")
             log.error(e)
-            return 0
+            failedPairs.append(downloadpair)
         progress.update(task, advance=1)
+    log.info(f"Failed to download {len(failedPairs)} files.")
     return 1
     
         
@@ -113,7 +115,26 @@ def check_if_AOD_folder_present(path, file):
     except subprocess.TimeoutExpired:
         log.warning(f"Timeout while checking for AOD subfolder in {path}")
         return False
-   
+
+def check_if_merged_file_present(path, file):
+    """
+    Check if the given path contains a merged file for the whole job.
+    """
+    try:
+        result = subprocess.run(f'alien_find {path} {file} -c 1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        if result.returncode == 0 and result.stdout.decode('utf-8').strip():
+            log.info(f"Found merged file for {file} in {path}")
+            return True
+        else:
+            log.info(f"No merged file for {file} found in {path}")
+            return False
+    except subprocess.CalledProcessError as e:
+        log.warning(f"Error checking for merged file in {path}: {e}")
+        return False
+    except subprocess.TimeoutExpired:
+        log.warning(f"Timeout while checking for merged file in {path}")
+        return False
+    
 
 def downloadHyperloop(inputfilelist, outputfolder, filename):
     # create output folder if it doesn't exist
@@ -143,17 +164,23 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
         search_task = progress.add_task("[green]Searching for files...", total=totDownloads,refresh_per_second=1)
         for i, path in enumerate(inputpaths):
             # run bash command and store output
+            aodfolderpresent = False
             if check_if_AOD_folder_present(path, inputfiles[0]):
                 path = f"{path}/AOD"
+                aodfolderpresent = True
             for file in inputfiles:
-                if file == "":
+                if not aodfolderpresent and check_if_merged_file_present(path, file):
+                    downloadpaths += [path + "/" + file]
                     continue
-                try:
-                    downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
-                except subprocess.CalledProcessError as e:
-                    log.error(f"Failed to find {file} in {path}")
-                    log.error(e)
-                progress.update(search_task, advance=1)
+                else:
+                    if file == "":
+                        continue
+                    try:
+                        downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
+                    except subprocess.CalledProcessError as e:
+                        log.error(f"Failed to find {file} in {path}")
+                        log.error(e)
+                    progress.update(search_task, advance=1)
 
     # find the biggest number of slashes in the downloadpaths. This we do as a dirty hack to really only get those files that are in the lowest level
     # number_of_slashes = 0

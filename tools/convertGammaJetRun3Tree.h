@@ -15,10 +15,10 @@
 
 
 // Tree definitions
-Int_t fBuffer_multiplicity;
+Float_t fBuffer_multiplicity;
 Float_t fBuffer_centrality;
 Float_t fBuffer_rho;
-uint16_t fBuffer_eventselection;
+uint8_t fBuffer_eventselection;
 uint32_t fBuffer_alias;
 Int_t fBuffer_occupancy;
 // jet
@@ -44,9 +44,9 @@ std::vector<Float_t> *fBuffer_cluster_data_m20;
 std::vector<UShort_t> *fBuffer_cluster_data_ncells;
 std::vector<Float_t> *fBuffer_cluster_data_time;
 std::vector<Bool_t> *fBuffer_cluster_data_isexotic;
-std::vector<UShort_t> *fBuffer_cluster_data_distancebadchannel;
+std::vector<Float_t> *fBuffer_cluster_data_distancebadchannel;
 std::vector<UShort_t> *fBuffer_cluster_data_nlm;
-std::vector<Float_t> *fBuffer_cluster_data_isoraw;
+std::vector<Float_t> *fBuffer_cluster_data_isoraw; 
 std::vector<Float_t> *fBuffer_cluster_data_perpconerho;
 std::vector<Float_t> *fBuffer_cluster_data_match_deta;
 std::vector<Float_t> *fBuffer_cluster_data_match_dphi;

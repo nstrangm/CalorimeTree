@@ -48,6 +48,11 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TDirectory *hQADirTriggerGammaJetCorrelationsSignal = DefineGammaJetQAHistograms(fOut, "TriggerGammaJetCorrelationSignalQA", optns);
   TDirectory *hDirTriggerGammaJetCorrelationsReference = DefineGammaJetHistograms(fOut, "TriggerGammaJetCorrelationsReference", optns);
   TDirectory *hQADirTriggerGammaJetCorrelationsReference = DefineGammaJetQAHistograms(fOut, "TriggerGammaJetCorrelationReferenceQA", optns);
+  // histograms for jets with exclusive trigger photons
+  TDirectory *hDirJetsWithPhotonSignalTrigger = DefineJetHistograms(fOut, "JetsWithPhotonSignalTrigger" ,optns);
+  TDirectory *hDirJetsWithPhotonReferenceTrigger = DefineJetHistograms(fOut, "JetsWithPhotonReferenceTrigger" ,optns);
+  TDirectory *hQADirJetsWithPhotonSignalTrigger = DefineJetQAHistograms(fOut, "JetQAWithPhotonSignalTrigger" ,optns);
+  TDirectory *hQADirJetsWithPhotonReferenceTrigger = DefineJetQAHistograms(fOut, "JetQAWithPhotonReferenceTrigger" ,optns);
 
   // histograms for exclusive trigger merged pi0s
   TDirectory *hDirTriggerMergedPi0sSignal = DefineIsoGammaHistograms(fOut, "TriggerMergedPi0sSignal", optns);
@@ -58,6 +63,11 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TDirectory *hQADirTriggerMergedPi0JetCorrelationsSignal = DefineGammaJetQAHistograms(fOut, "TriggerMergedPi0JetCorrelationSignalQA", optns);
   TDirectory *hDirTriggerMergedPi0JetCorrelationsReference = DefineGammaJetHistograms(fOut, "TriggerMergedPi0JetCorrelationsReference", optns);
   TDirectory *hQADirTriggerMergedPi0JetCorrelationsReference = DefineGammaJetQAHistograms(fOut, "TriggerMergedPi0JetCorrelationReferenceQA", optns);
+
+  TDirectory *hDirJetsWithMergedPi0SignalTrigger = DefineJetHistograms(fOut, "JetsWithMergedPi0SignalTrigger" ,optns);
+  TDirectory *hDirJetsWithMergedPi0ReferenceTrigger = DefineJetHistograms(fOut, "JetsWithMergedPi0ReferenceTrigger" ,optns);
+  TDirectory *hQADirJetsWithMergedPi0SignalTrigger = DefineJetQAHistograms(fOut, "JetQAWithMergedPi0SignalTrigger" ,optns);
+  TDirectory *hQADirJetsWithMergedPi0ReferenceTrigger = DefineJetQAHistograms(fOut, "JetQAWithMergedPi0ReferenceTrigger" ,optns);
 
   // Load the cuts:
   EventCuts eventCuts(optns);
@@ -106,15 +116,15 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
     PrintProgress(iEvent, tree.NEvents, 1000, jobId == 0);
     Event event(tree, optns);
+    fillHistograms(event, hDirEvents, hQADirEvents, event.weight, eventCuts, optns);
     if (!eventCuts.PassedCuts(event))
       continue;
-    fillHistograms(event, hDirEvents, hQADirEvents, event.weight, optns);
 
     // ###################### Isolated Gammas ######################
     if (optns.doIsoGamma)
     {
       saveClustersFromEventInVector(tree, IsoGammas, optns); // Load all clusters
-      calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone);
+      calculateIsolation(IsoGammas, event, isoGammaCuts.useRhoInsteadOfPerpCone, isoGammaCuts.IsolationConeRadius);
       if (optns.isMC)
       {
         saveGenPhotonsFromEventInVector(tree, GammaGens, optns); // Load generated photons.
@@ -133,18 +143,6 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       fillHistograms(IsoGammas,event, hDirIsoGammas, hQADirIsoGammas, event.weight, optns, isoGammaCuts); // Fill hists (cluster cuts and isolated)
     }
 
-    // ###################### Exclusive Trigger Photon Particle Selection ######################
-    if (exclusiveTriggerPhotonSelection.doExclusiveSelections)
-    {
-      isSigEventGamma = exclusiveTriggerPhotonSelection.isSignalEvent();
-      bool found = exclusiveTriggerPhotonSelection.getTriggerParticle(IsoGammas, trigIsoPhoton);
-      if(found)
-        triggerIsoPhotons.push_back(trigIsoPhoton);
-      if(isSigEventGamma)
-        fillHistograms(triggerIsoPhotons,event, hDirTriggerPhotonsSignal, hQADirTriggerPhotonsSignal, event.weight, optns, isoGammaCuts);
-      else
-        fillHistograms(triggerIsoPhotons,event, hDirTriggerPhotonsReference, hQADirTriggerPhotonsReference, event.weight, optns, isoGammaCuts);
-    }
 
     // ###################### Jets ######################
     if (optns.doJets)
@@ -163,6 +161,28 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         mapPLtoDLjets(DLJets, PLJets, dljetCuts.R);
         // TODO: Do I need PL jet cuts?
         fillHistograms(PLJets, hDirJets, hQADirJets, event.weight, optns);
+      }
+    }
+
+    // ###################### Exclusive Trigger Photon Particle Selection ######################
+    if (exclusiveTriggerPhotonSelection.doExclusiveSelections)
+    {
+      isSigEventGamma = exclusiveTriggerPhotonSelection.isSignalEvent();
+      bool found = exclusiveTriggerPhotonSelection.getTriggerParticle(IsoGammas, trigIsoPhoton);
+      if(found)
+        triggerIsoPhotons.push_back(trigIsoPhoton);
+      if(isSigEventGamma)
+        fillHistograms(triggerIsoPhotons,event, hDirTriggerPhotonsSignal, hQADirTriggerPhotonsSignal, event.weight, optns, isoGammaCuts);
+      else
+        fillHistograms(triggerIsoPhotons,event, hDirTriggerPhotonsReference, hQADirTriggerPhotonsReference, event.weight, optns, isoGammaCuts);
+      
+      // Fill new JET histograms that are only for events where a signal trigger particle was found
+      // cuts were already applied in main track loop
+      if(isSigEventGamma && found && optns.doJets){
+        fillHistograms(DLJets, event, hDirJetsWithPhotonSignalTrigger, hQADirJetsWithPhotonSignalTrigger , event.weight, optns);
+      }
+      else if(!isSigEventGamma && found && optns.doJets){
+        fillHistograms(DLJets, event, hDirJetsWithPhotonReferenceTrigger, hQADirJetsWithPhotonReferenceTrigger , event.weight, optns);
       }
     }
 
@@ -185,6 +205,15 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
         fillHistograms(triggermPi0s,event, hDirTriggerMergedPi0sSignal, hQADirTriggerMergedPi0sSignal, event.weight, optns, isoGammaCuts);
       else
         fillHistograms(triggermPi0s,event, hDirTriggerMergedPi0sReference, hQADirTriggerMergedPi0sReference, event.weight, optns, isoGammaCuts);
+      
+      // Fill new JET histograms that are only for events where a signal trigger particle was found
+      // cuts were already applied in main track loop
+      if(isSigEventmPi0 && found && optns.doJets){
+          fillHistograms(DLJets, event, hDirJetsWithMergedPi0SignalTrigger, hQADirJetsWithMergedPi0SignalTrigger , event.weight, optns);
+      }
+      else if(!isSigEventmPi0 && found && optns.doJets){
+        fillHistograms(DLJets, event, hDirJetsWithMergedPi0ReferenceTrigger, hQADirJetsWithMergedPi0ReferenceTrigger , event.weight, optns);
+      }
     }
 
     // ###################### GammaGamma Pi0s ######################
@@ -232,6 +261,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       else{
         fillHistograms(triggerGammaJetPairs, hDirTriggerGammaJetCorrelationsReference, hQADirTriggerGammaJetCorrelationsReference, event.weight, optns);
       }
+
     }
 
     // ###################### Trigger Merged Pi0 - Jet Correlations ######################

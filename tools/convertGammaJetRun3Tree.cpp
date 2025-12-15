@@ -23,7 +23,7 @@ using namespace std;
 void createTree() {
   outputTree = new TTree("eventTree", "eventTree");
   outputTree->Branch("event_multiplicity", &fBuffer_multiplicity,
-                     "event_multiplicity/I");
+                     "event_multiplicity/F");
     outputTree->Branch("event_centrality", &fBuffer_centrality,
                      "event_centrality/F");
     outputTree->Branch("event_rho", &fBuffer_rho,

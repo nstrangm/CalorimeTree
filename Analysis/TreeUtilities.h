@@ -120,7 +120,7 @@ public:
   float Event_ZVertex = 0;                 // Run 2
   unsigned short Event_Quality = 0;        // Run 2
   unsigned short Event_NotAccepted = 0;    // Run 2
-  int Event_Multiplicity = 0;              // Run     3
+  Float_t Event_Multiplicity = 0;              // Run     3
   float Event_Centrality = 0;              // Run     3
   uint16_t Event_Selection = 0;            // Run     3
   uint32_t Event_Alias = 0;                // Run     3
