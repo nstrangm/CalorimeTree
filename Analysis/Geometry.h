@@ -98,6 +98,25 @@ void SetAcceptance(TString ClusterAcceptance, float EMCalEtaPhiMinMax[2][2], flo
   DCalHoleEtaPhiMinMax[0][1] = 0.23;
   DCalHoleEtaPhiMinMax[1][0] = 4.57;
   DCalHoleEtaPhiMinMax[1][1] = 5.58;
+  } else if(ClusterAcceptance == "EMC_Only"){
+    // EMCal
+  EMCalEtaPhiMinMax[0][0] = -0.67;
+  EMCalEtaPhiMinMax[0][1] = 0.67;
+  EMCalEtaPhiMinMax[1][0] = 1.4;
+  EMCalEtaPhiMinMax[1][1] = 3.28;
+
+   // workaround since always dcal and EMCal are checked
+   // set dcal acceptance to the same values as EMC
+  DCalEtaPhiMinMax[0][0] = -0.67;
+  DCalEtaPhiMinMax[0][1] = 0.67;
+  DCalEtaPhiMinMax[1][0] = 1.4;
+  DCalEtaPhiMinMax[1][1] = 3.28;
+
+  // set dcal hole to something that will never be fulfilled
+  DCalHoleEtaPhiMinMax[0][0] = 1E3;
+  DCalHoleEtaPhiMinMax[0][1] = 2E3;
+  DCalHoleEtaPhiMinMax[1][0] = 1E3;
+  DCalHoleEtaPhiMinMax[1][1] = 2E3;
   }
 }
 

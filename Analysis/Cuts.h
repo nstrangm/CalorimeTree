@@ -20,6 +20,8 @@ private:
   int OccupancyMax = 99999;
 
 public:
+  int GetOccupancyMin() {return OccupancyMin;};
+  int GetOccupancyMax() {return OccupancyMax;};
   EventCuts(GlobalOptions optns);
   ~EventCuts() {};
   bool PassedCuts(Event &Event);
@@ -59,7 +61,7 @@ bool EventCuts::PassedCuts(Event &Event)
     passed = false;
   }
 
-  Event.Selected = true;
+  Event.Selected = passed;
   return passed;
 }
 
@@ -78,6 +80,7 @@ private:
 
   float pTisoCorrectedMax = 0;
   float RapidityMax = 0;
+  float IsolationConeRadius = 0;
   TDirectory *hQADir = nullptr;
 
 public:
@@ -103,6 +106,7 @@ GammaGenCuts::GammaGenCuts(GlobalOptions optns)
   SetAcceptance(ClusterAcceptance, EMCalEtaPhiMinMax, DCalEtaPhiMinMax, DCalHoleEtaPhiMinMax);
   // Load Isolation cut
   pTisoCorrectedMax = chosencut["gamma_max_ptiso"].IsDefined() ? chosencut["gamma_max_ptiso"].as<float>() : standardcut["gamma_max_ptiso"].as<float>();
+  IsolationConeRadius = chosencut["gamma_iso_R"].IsDefined() ? chosencut["gamma_iso_R"].as<float>() : standardcut["gamma_iso_R"].as<float>();
   RapidityMax = chosencut["gamma_max_rapidity"].IsDefined() ? chosencut["gamma_max_rapidity"].as<float>() : standardcut["gamma_max_rapidity"].as<float>();
   
   LOG(Form("Gen Gamma %s Acceptance: %.2f < EMCal_Eta < %.2f | %.2f < EMCal_Phi < %.2f | %.2f < DCal_Eta < %.2f | %.2f < DCal_Phi < %.2f | %.2f < DCalHole_Eta < %.2f | %.2f < DCalHole_Phi < %.2f", ClusterAcceptance.Data(), EMCalEtaPhiMinMax[0][0], EMCalEtaPhiMinMax[0][1], EMCalEtaPhiMinMax[1][0], EMCalEtaPhiMinMax[1][1], DCalEtaPhiMinMax[0][0], DCalEtaPhiMinMax[0][1], DCalEtaPhiMinMax[1][0], DCalEtaPhiMinMax[1][1], DCalHoleEtaPhiMinMax[0][0], DCalHoleEtaPhiMinMax[0][1], DCalHoleEtaPhiMinMax[1][0], DCalHoleEtaPhiMinMax[1][1]))
@@ -219,6 +223,7 @@ public:
   bool useRhoInsteadOfPerpCone = true;
   int NonLinMode = 1;
   bool applyNonLin = false; // Apply NonLinearity in CalorimeTree only if not already done in AnalysisTask
+  float IsolationConeRadius = 0;
   bool PassedShowerShapeCuts(Cluster IsoGamma);
   bool PassedIsoGammaCuts(Cluster IsoGamma);
   bool PassedClusterCuts(Cluster IsoGamma);
@@ -291,6 +296,7 @@ IsoGammaCuts::IsoGammaCuts(GlobalOptions optns, TDirectory *hQADirIsoGammas)
   // Load Isolation cut
   const char* maxptiso = bmerged ? "mPi0_max_ptiso" : "gamma_max_ptiso";
   pTisoCorrectedMax = chosencut[maxptiso].IsDefined() ? chosencut[maxptiso].as<float>() : standardcut[maxptiso].as<float>();
+  IsolationConeRadius = chosencut["gamma_iso_R"].IsDefined() ? chosencut["gamma_iso_R"].as<float>() : standardcut["gamma_iso_R"].as<float>();
 
   useRhoInsteadOfPerpCone = chosencut["useRhoInsteadOfPerpCone"].IsDefined() ? chosencut["useRhoInsteadOfPerpCone"].as<bool>() : standardcut["useRhoInsteadOfPerpCone"].as<bool>();
 

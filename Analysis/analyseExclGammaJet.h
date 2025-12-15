@@ -15,13 +15,18 @@ TFile* fOut = nullptr;
 // phi bins for analysis. First bin always has to be back to back
 // std::vector<std::pair<double, double>> phiBins = {{TMath::Pi()-0.6, TMath::Pi()+0.6}, {1.57,2.07}, {2.61,2.76},{3.02,3.14}};
 // finer phi bins
-std::vector<std::pair<double, double>> phiBins = {{TMath::Pi()-0.6, TMath::Pi()+0.6}, {1.57,2.07},{2.08,2.22},{2.23,2.37},{2.38,2.52},{2.53,2.67},{2.68,2.82},{2.83,2.97},{2.98,3.12}};
+std::vector<std::pair<double, double>> phiBins = {{TMath::Pi()-0.6, TMath::Pi()+0.6}, {1.57,2.07},{2.08,2.22},{2.23,2.37},{2.38,2.52},{2.53,2.67},{2.68,2.82},{2.83,2.97},{2.98,3.14}};
 
 std::vector<std::pair<double, double>> dEtaBins = {{0.0, 0.5},{0.5,1}, {1, 1.3}};
-std::pair<double, double> cRefFitRange = {-50, 0};
+std::pair<double, double> cRefFitRange = {-50, 10};
+double minFitInterval = 10;
 
-std::vector<std::pair<double, double>> recoilJetPtBinsIntegration = {{20,30},{30,40},{40,50}};
+std::vector<std::pair<double, double>> recoilJetPtBinsIntegration = {{5,10},{10,15},{15,20},{20,30},{30,40},{40,50}};
 
+const int nCoarseJetPtBins = 14;
+double coarseJetPtBins[nCoarseJetPtBins+1] = {0,10,20,30,40,50,60,70,80,100,120,140,160,180,200};
+// const int nCoarseJetPtBins = 15;
+// double coarseJetPtBins[nCoarseJetPtBins+1] = {0,5,10,15,20,30,40,50,60,70,80,100,120,140,160,180};
 // cuts for ABCD purity calculation
 struct Region
 {
@@ -72,7 +77,4 @@ TH2F* mirrorTH2F(TH2F* h)
   }
   return hMirrored;
 }
-
-
-
 #endif //_ANALYSEEXCLGAMMAJET_H_

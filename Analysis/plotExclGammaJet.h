@@ -11,6 +11,8 @@ std::pair<double, double> referenceTriggerPt;
 
 TString outputDir;
 TString suffix = "pdf";
+TString dataset = "";
+TString datasetLabel = "";
 
 const Int_t nPtBins = 9;
 Double_t ptBins[nPtBins+1] = {10, 15, 20, 25 ,30, 40, 50, 60,70,80};

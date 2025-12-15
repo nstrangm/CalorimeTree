@@ -42,10 +42,11 @@ Standard:
 
   gamma_max_Fplus: 0.97 #Cluster exotic removal
   gamma_max_ptiso: 1.5 #Cluster isolation
+  gamma_iso_R: 0.2 # isolation cone radius
   mPi0_max_ptiso: 100 #Cluster isolation
 
   gamma_applyNonLin: false
-  useRhoInsteadOfPerpCone: false
+  useRhoInsteadOfPerpCone: true
 
   # additional settings used for the photon entering pi0->
   gPi0_min_M02: 0.1
@@ -103,19 +104,40 @@ Occupancy8000: #Occupancy cut
 
 AreaCut_R02:
   jet_Radius: 0.2
-  jet_MinArea: 0.05
+  jet_MinArea: 0.066
 AreaCut_R03:
   jet_Radius: 0.3
   jet_MinArea: 0.15
 AreaCut_R04:
   jet_Radius: 0.4
-  jet_MinArea: 0.2
+  jet_MinArea: 0.266
 AreaCut_R05:
   jet_Radius: 0.5
-  jet_MinArea: 0.4
+  jet_MinArea: 0.416
 AreaCut_R06:
   jet_Radius: 0.6
-  jet_MinArea: 0.8
+  jet_MinArea: 0.59
+
+WideTime_R02:
+  jet_Radius: 0.2
+  gamma_min_time: -80
+  gamma_max_time: 80
+WideTime_R03:
+  jet_Radius: 0.3
+  gamma_min_time: -80
+  gamma_max_time: 80
+WideTime_R04:
+  jet_Radius: 0.4
+  gamma_min_time: -80
+  gamma_max_time: 80
+WideTime_R05:
+  jet_Radius: 0.5
+  gamma_min_time: -80
+  gamma_max_time: 80
+WideTime_R06:
+  jet_Radius: 0.6
+  gamma_min_time: -80
+  gamma_max_time: 80
 
 # No Cuts - all cuts fully open
 ###################################################################################################
@@ -177,7 +199,21 @@ Cluster_E_max_increased:
 Cluster_E_max_decreased:
   cluster_max_E: 180.
 
-
+Cluster_Acceptance_EMC_Only_R02:
+  gamma_Acceptance: EMC_Only
+  jet_Radius: 0.2
+Cluster_Acceptance_EMC_Only_R03:
+  gamma_Acceptance: EMC_Only
+  jet_Radius: 0.3
+Cluster_Acceptance_EMC_Only_R04:
+  gamma_Acceptance: EMC_Only
+  jet_Radius: 0.4
+Cluster_Acceptance_EMC_Only_R05:
+  gamma_Acceptance: EMC_Only
+  jet_Radius: 0.5
+Cluster_Acceptance_EMC_Only_R06:
+  gamma_Acceptance: EMC_Only
+  jet_Radius: 0.6
 R02_RefTTVariation1:
   jet_Radius: 0.2
   trigger_ref_ptmin: 10

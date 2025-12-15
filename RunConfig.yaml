@@ -60,3 +60,35 @@ LHC23_PbPb_pass4_calo:
     Run3-30-50: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
     Run3-50-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
     Run3-0-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+LHC23_PbPb_pass4_IsoR02_calo:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_PbPb_AO2D/0000015_LHC23_PbPb_pass4_calo_IsoR02/sorted
+  label: "Run3"
+  trainconfigs:
+    Run3-0-10: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-10-30: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-30-50: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-50-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-0-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+LHC24ar_PbPb_pass4_IsoR02_calo:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_PbPb_AO2D/0000016_LHC24ar_PbPb_pass4_calo_IsoR02/sorted
+  label: "Run3"
+  trainconfigs:
+    Run3-0-10: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-10-30: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-30-50: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-50-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+    Run3-0-90: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+LHC25ae_OO_cpass0_calo_IsoR02:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_OO_AO2D/451418_LHC25ae_OO_cpass0_calo_IsoR02/sorted
+  label: "Run3"
+  trainconfigs:
+    Run3-0-100: Standard
+LHC24aq_pp_pass1_calo_IsoR02:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_pp_AO2D/395609_LHC24aq_PbPb_pass1_calo_IsoR02_MergedTest/converted
+  label: "Run3"
+  trainconfigs:
+    Run3: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06

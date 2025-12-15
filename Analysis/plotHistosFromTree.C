@@ -70,7 +70,7 @@ void SetTitleAndLabels(TH1 *h, const char *title)
   return;
 }
 
-void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
+void plotEventQA(TDirectory* dEvent, TDirectory* dEventQA, GlobalOptions optns)
 {
   ENTER
 
@@ -84,6 +84,27 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
   TH1F* hOccupancy = (TH1F*)dEventQA->Get("hOccupancy");
   TH2F* hOccupancyCentrality = (TH2F*)dEventQA->Get("hOccupancyCentrality");
 
+  TH1F* hNEvents = (TH1F*)dEvent->Get("hNEvents");
+  // AvoidLogYconflict(hNEvents);
+  TH1F* hNEventswoWeights = (TH1F*)dEvent->Get("hNEventswoWeights");
+  // AvoidLogYconflict(hNEventswoWeights);
+
+ 
+
+  Plotting1D PNEvents;
+  PNEvents.New(hNEvents,"",-1,1,kBlack,"hist");
+  PNEvents.SetAxisLabel("#bf{Events}", "#bf{Counts}");
+  PNEvents.NewLatex(0.8,0.9,Form("%s;%.2e accepted events",legendHeader.Data(),hNEvents->GetBinContent(6)));
+  // Add number of entries above each bin in exponential notation
+  PNEvents.Plot(Form("%s/NEvents.%s", outputDir, suffix));
+
+  Plotting1D PNEventswoWeights;
+  PNEventswoWeights.New(hNEventswoWeights,"",-1,1,kBlack,"hist");
+  PNEventswoWeights.SetAxisLabel("#bf{Events}", "#bf{Counts}");
+  PNEventswoWeights.NewLatex(0.8,0.9,legendHeader);
+  PNEventswoWeights.Plot(Form("%s/NEventswoWeights.%s", outputDir, suffix));
+  
+  
 
 
   Plotting1D PCentrality;
@@ -109,6 +130,7 @@ void plotEventQA(TDirectory* dEventQA, GlobalOptions optns)
   
   TH2F* hRhoVsCentrality = (TH2F*)hCentralityRhoMultiplicity->Projection(1, 0);
   Plotting2D PRhoVsCentrality;
+  PRhoVsCentrality.SetAxisRange(-2, 100, 0, 105);
   PRhoVsCentrality.New(hRhoVsCentrality);
   PRhoVsCentrality.SetAxisLabel("#bf{Centrality (%)}", "#bf{#rho (GeV/#it{c})}");
   PRhoVsCentrality.NewLatex(0.8,0.9,legendHeader);
@@ -987,6 +1009,92 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
   PPtSpectraAfterSubsequentCuts.NewLatex(0.8,0.9,legendHeader);
   PPtSpectraAfterSubsequentCuts.Plot(Form("%s/pTSpectraAfterSubsequentCuts.%s", outputDir.Data(), suffix),false,false,true);
 
+  // plot the same figure but integrated over all pt, simply stating the number of clusters on the y-axis
+  TH1F *hpTSpectrumLossFromIndividualCutsIntegrated = (TH1F *)hpTSpectrumLossFromIndividualCuts->ProjectionX();
+  // manual plotting to assure proper bin labels
+  TCanvas* chPtSpectrumLossFromIndividualCutsIntegrated = new TCanvas("chPtSpectrumLossFromIndividualCutsIntegrated", "Pt Spectrum Loss From Individual Cuts Integrated", 1200, 800);
+  chPtSpectrumLossFromIndividualCutsIntegrated->SetLogy(true);
+  // label each x-axis bin manually
+  for (int i = 0; i < hpTSpectrumLossFromIndividualCutsIntegrated->GetNbinsX(); i++) {
+    TString binLabel = hpTSpectrumLossFromIndividualCuts->GetXaxis()->GetBinLabel(i);
+    hpTSpectrumLossFromIndividualCutsIntegrated->GetXaxis()->SetBinLabel(i, binLabel);
+  }
+  // change x axsis label size
+  // hpTSpectrumLossFromIndividualCutsIntegrated->GetXaxis()->SetLabelSize(0.03);
+  // change y axsis label size
+  hpTSpectrumLossFromIndividualCutsIntegrated->GetYaxis()->SetTitle("counts");
+  hpTSpectrumLossFromIndividualCutsIntegrated->GetYaxis()->SetLabelSize(0.03);
+  hpTSpectrumLossFromIndividualCutsIntegrated->Draw("hist,e");
+  // Add text labels with number of entries for each bin
+  TLatex latex;
+  latex.SetTextSize(0.03);
+  latex.SetTextColor(kBlack);
+  latex.SetTextAlign(22); // Center alignment
+  
+  for (int i = 1; i <= hpTSpectrumLossFromIndividualCutsIntegrated->GetNbinsX(); i++) {
+    double binContent = hpTSpectrumLossFromIndividualCutsIntegrated->GetBinContent(i);
+    double binCenter = hpTSpectrumLossFromIndividualCutsIntegrated->GetBinCenter(i);
+    double binTop = binContent * 1.15; // Position text slightly above the data point
+    
+    // Only show text if there are entries
+    if (binContent > 0) {
+      // Format with comma separators for thousands
+      TString entryText;
+      if (binContent >= 1000000) {
+        entryText = TString::Format("%.1fM", binContent/1000000.0);
+      } else if (binContent >= 1000) {
+        entryText = TString::Format("%.1fk", binContent/1000.0);
+      } else {
+        entryText = TString::Format("%.0f", binContent);
+      }
+      
+      latex.DrawLatex(binCenter, binTop, entryText);
+    }
+  }
+  
+  chPtSpectrumLossFromIndividualCutsIntegrated->SaveAs(Form("%s/pTSpectrumLossFromIndividualCutsIntegrated.%s", outputDir.Data(), suffix));
+
+  // plot the same figure but integrated over all pt, simply stating the number of clusters on the y-axis
+ 
+  TH1F *hpTSpectraAfterSubsequentCutsIntegrated = (TH1F *)hpTSpectraAfterSubsequentCuts->ProjectionX();
+  // manual plotting to assure proper bin labels
+  TCanvas* chPtSpectraAfterSubsequentCutsIntegrated = new TCanvas("chPtSpectraAfterSubsequentCutsIntegrated", "Pt Spectra After Subsequent Cuts Integrated", 1200, 800);
+  chPtSpectraAfterSubsequentCutsIntegrated->SetLogy(true);
+  // label each x-axis bin manually
+  for (int i = 0; i < hpTSpectraAfterSubsequentCutsIntegrated->GetNbinsX(); i++) {
+    TString binLabel = hpTSpectraAfterSubsequentCuts->GetXaxis()->GetBinLabel(i);
+    hpTSpectraAfterSubsequentCutsIntegrated->GetXaxis()->SetBinLabel(i, binLabel);
+  }
+  // change x axsis label size
+  // hpTSpectraAfterSubsequentCutsIntegrated->GetXaxis()->SetLabelSize(0.03);
+  // change y axsis label size
+  hpTSpectraAfterSubsequentCutsIntegrated->GetYaxis()->SetTitle("counts");
+  hpTSpectraAfterSubsequentCutsIntegrated->GetYaxis()->SetLabelSize(0.03);
+  hpTSpectraAfterSubsequentCutsIntegrated->Draw("hist,e");
+  // Add text labels with number of entries for each bin
+   for (int i = 1; i <= hpTSpectraAfterSubsequentCutsIntegrated->GetNbinsX(); i++) {
+    double binContent = hpTSpectraAfterSubsequentCutsIntegrated->GetBinContent(i);
+    double binCenter = hpTSpectraAfterSubsequentCutsIntegrated->GetBinCenter(i);
+    double binTop = binContent * 1.15; // Position text slightly above the data point
+    
+    // Only show text if there are entries
+    if (binContent > 0) {
+      // Format with comma separators for thousands
+      TString entryText;
+      if (binContent >= 1000000) {
+        entryText = TString::Format("%.1fM", binContent/1000000.0);
+      } else if (binContent >= 1000) {
+        entryText = TString::Format("%.1fk", binContent/1000.0);
+      } else {
+        entryText = TString::Format("%.0f", binContent);
+      }
+      
+      latex.DrawLatex(binCenter, binTop, entryText);
+    }
+  }
+  
+  chPtSpectraAfterSubsequentCutsIntegrated->SaveAs(Form("%s/pTSpectraAfterSubsequentCutsIntegrated.%s", outputDir.Data(), suffix));
+
   // plot integrated dEta and dPhi distributions
   TH2F* hIsoGammadEtadPhi = (TH2F *)dIsoGammaQA->Get("hIsoGammadEtadphi");
   Plotting2D PdEtadPhi;
@@ -1028,10 +1136,10 @@ void plotGammaQA(TDirectory *dIsoGammaQA, TString GammaType, GlobalOptions optns
 
 
 
-  EXIT
+  EXIT 
 }
 
-void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDirectory *dGammaJetReference, TDirectory *dGammaSignal, TDirectory *dGammaSignalQA, TDirectory *dGammaReference, TDirectory *dGammaReferenceQA, TString GammaType, GlobalOptions optns)
+void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDirectory* dGammaJetSignalQA, TDirectory *dGammaJetReference, TDirectory* dGammaJetReferenceQA, TDirectory *dGammaSignal, TDirectory *dGammaSignalQA, TDirectory *dGammaReference, TDirectory *dGammaReferenceQA, TString GammaType, GlobalOptions optns)
 {
   ENTER
   ExclusiveTriggerParticleSelection exclusiveTriggerParticleSelection(optns);
@@ -1179,6 +1287,88 @@ void plotExclusiveSelectionGammaJetCorrelations(TDirectory *dGammaJetSignal, TDi
   PRhoPtRatio.New(hIsoGammaRhoPtRatio);
   PRhoPtRatio.SetAxisLabel("#bf{#it{p}_{T}^{#gamma} (GeV/#it{c})}", "sig / ref");
   PRhoPtRatio.Plot(Form("%s/RhoPtRatio.%s", outputDir.Data(), suffix),false,false);
+
+  // QA of only the eta distribution of recoiling jets!
+  // Step 1: Get the distributions for signal and reference
+   THnSparseF* hJetEtaPtDeltaPhiSignal = (THnSparseF*)dGammaJetSignalQA->Get("hJetEtaPtDeltaPhi");
+   hJetEtaPtDeltaPhiSignal->SetName("hJetEtaPtDeltaPhiSignal");
+   THnSparseF* hJetEtaPtDeltaPhiReference = (THnSparseF*)dGammaJetReferenceQA->Get("hJetEtaPtDeltaPhi");
+   hJetEtaPtDeltaPhiReference->SetName("hJetEtaPtDeltaPhiReference");
+   hJetEtaPtDeltaPhiSignal->Scale(1./hGammaPtSignal->Integral());
+   hJetEtaPtDeltaPhiReference->Scale(1./hGammaPtReference->Integral());
+
+  // Step 2: restrict the deltaPhi range to be larger than pi
+  hJetEtaPtDeltaPhiSignal->GetAxis(2)->SetRangeUser(0.5*TMath::Pi(), (3./2)*TMath::Pi());
+  hJetEtaPtDeltaPhiReference->GetAxis(2)->SetRangeUser(0.5*TMath::Pi(), (3./2)*TMath::Pi());
+
+
+  PlottingGrid PRecoilJetEtaPt;
+  PRecoilJetEtaPt.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PRecoilJetEtaPt.SetAxisLabel("#bf{#eta}", "#bf{counts / N_{trig}}");
+  PRecoilJetEtaPt.SetLegend(0.1, 0.9, 0.1, 0.6);
+
+  TH1F* hDLEtaRecoilSignal[nJetPtBins];
+  TH1F* hDLEtaRecoilReference[nJetPtBins];
+  for (int i = 0; i < nJetPtBins; i++)
+  {
+    int minbin = hJetEtaPtDeltaPhiSignal->GetAxis(1)->FindBin(jetPtBins[i]);
+    int maxbin = hJetEtaPtDeltaPhiSignal->GetAxis(1)->FindBin(jetPtBins[i + 1]);
+    hJetEtaPtDeltaPhiSignal->GetAxis(1)->SetRange(minbin, maxbin);
+    hDLEtaRecoilSignal[i] = (TH1F*)hJetEtaPtDeltaPhiSignal->Projection(0)->Clone(Form("hDLEtaRecoilSignal_%d", i));
+    hDLEtaRecoilSignal[i]->Scale(1./hDLEtaRecoilSignal[i]->Integral());
+    PRecoilJetEtaPt.New(hDLEtaRecoilSignal[i],"sigal trigger",-1,1,kBlack,"hist");
+    int minBin = hJetEtaPtDeltaPhiReference->GetAxis(1)->FindBin(jetPtBins[i]);
+    int maxBin = hJetEtaPtDeltaPhiReference->GetAxis(1)->FindBin(jetPtBins[i + 1]);
+    hJetEtaPtDeltaPhiReference->GetAxis(1)->SetRange(minBin, maxBin);
+    hDLEtaRecoilReference[i] = (TH1F*)hJetEtaPtDeltaPhiReference->Projection(0)->Clone(Form("hDLEtaRecoilReference_%d", i));
+    hDLEtaRecoilReference[i]->Scale(1./hDLEtaRecoilReference[i]->Integral());
+    PRecoilJetEtaPt.New(hDLEtaRecoilReference[i],"reference trigger",-1,1,kBlue,"hist");
+    PRecoilJetEtaPt.NextPad(Form("%.0f < #it{p}_{T} < %.0f GeV/#it{c}", jetPtBins[i], jetPtBins[i + 1]));
+    // reset the range
+    hJetEtaPtDeltaPhiSignal->GetAxis(1)->UnZoom();
+    hJetEtaPtDeltaPhiReference->GetAxis(1)->UnZoom();
+  }
+  PRecoilJetEtaPt.NewLatex(0.1,0.9,Form("%s; 1/2#pi < #Delta#phi < 3/2#pi",legendHeaderJets.Data()),StdTextSize*0.5,0.06*1.8);
+  PRecoilJetEtaPt.Plot(Form("%s/RecoilJetEtaPt.%s", outputDir.Data(), suffix));
+
+
+  // Study of back-to-back jets as a function of number of jet constituents
+  // get hJetEtaPtConstBackToBack for signal and reference
+  THnSparseF* hJetEtaPtConstBackToBackSignal = (THnSparseF*)dGammaJetSignalQA->Get("hJetEtaPtConstBackToBack");
+  THnSparseF* hJetEtaPtConstBackToBackReference = (THnSparseF*)dGammaJetReferenceQA->Get("hJetEtaPtConstBackToBack");
+  hJetEtaPtConstBackToBackSignal->Scale(1./hGammaPtSignal->Integral());
+  hJetEtaPtConstBackToBackReference->Scale(1./hGammaPtReference->Integral());
+
+  // restrict for an exemplary pt region jetExamplePtRange
+  int minBinJetPt = hJetEtaPtConstBackToBackSignal->GetAxis(1)->FindBin(jetExamplePtRange.first);
+  int maxBinJetPt = hJetEtaPtConstBackToBackSignal->GetAxis(1)->FindBin(jetExamplePtRange.second);
+  hJetEtaPtConstBackToBackSignal->GetAxis(1)->SetRange(minBinJetPt, maxBinJetPt);
+  hJetEtaPtConstBackToBackReference->GetAxis(1)->SetRange(minBinJetPt, maxBinJetPt);
+
+  PlottingGrid PRecoilJetEtaConstituents;
+  PRecoilJetEtaConstituents.SetMargins(0.12, 0.12, 0.05, 0.125);
+  PRecoilJetEtaConstituents.SetAxisLabel("#bf{#eta}", "#bf{counts / N_{trig}}");
+  PRecoilJetEtaConstituents.SetLegend(0.1, 0.9, 0.1, 0.4);
+
+  TH1F* hJetEtaPtConstBackToBackSignalProjection[nJetConstituentBins];
+  TH1F* hJetEtaPtConstBackToBackReferenceProjection[nJetConstituentBins];
+  for (int i = 0; i < nJetConstituentBins; i++)
+  {
+    int minBinJetConstituents = hJetEtaPtConstBackToBackSignal->GetAxis(2)->FindBin(jetConstituentBins[i]);
+    int maxBinJetConstituents = hJetEtaPtConstBackToBackSignal->GetAxis(2)->FindBin(jetConstituentBins[i + 1]);
+    hJetEtaPtConstBackToBackSignal->GetAxis(2)->SetRange(minBinJetConstituents, maxBinJetConstituents);
+    hJetEtaPtConstBackToBackReference->GetAxis(2)->SetRange(minBinJetConstituents, maxBinJetConstituents);
+    hJetEtaPtConstBackToBackSignalProjection[i] = (TH1F*)hJetEtaPtConstBackToBackSignal->Projection(0)->Clone(Form("hJetEtaPtConstBackToBackSignalProjection_%d", i));
+    hJetEtaPtConstBackToBackReferenceProjection[i] = (TH1F*)hJetEtaPtConstBackToBackReference->Projection(0)->Clone(Form("hJetEtaPtConstBackToBackReferenceProjection_%d", i));
+    PRecoilJetEtaConstituents.New(hJetEtaPtConstBackToBackSignalProjection[i],"signal",-1,1,kRed+1,"hist");
+    PRecoilJetEtaConstituents.New(hJetEtaPtConstBackToBackReferenceProjection[i],"reference",-1,1,kBlue+1,"hist");
+    PRecoilJetEtaConstituents.NextPad(Form("%.0f < N_{constituents} < %.0f", jetConstituentBins[i], jetConstituentBins[i + 1]));
+    // reset the range
+    hJetEtaPtConstBackToBackSignal->GetAxis(2)->UnZoom();
+    hJetEtaPtConstBackToBackReference->GetAxis(2)->UnZoom();
+  }
+  PRecoilJetEtaConstituents.NewLatex(0.1,0.9,Form("%s; 1/2#pi < #Delta#phi < 3/2#pi; %.1f < #it{p}_{T}^{jet} < %.1f GeV/#it{c}",legendHeaderJets.Data(), jetExamplePtRange.first, jetExamplePtRange.second),StdTextSize*0.5,0.06*1.8);
+  PRecoilJetEtaConstituents.Plot(Form("%s/RecoilJetEtaConstituents.%s", outputDir.Data(), suffix));
 }
 
 void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString GammaType, GlobalOptions optns)
@@ -1279,6 +1469,7 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString Gamm
   THnSparseF* hIsoGammaJetDeltaPhi2piJetPtGammaPt = (THnSparseF*)dGammaJetCorrelations->Get("hIsoGammaJetDeltaPhi2piJetPtGammaPt");
 
   TH1F* hJetGammaDeltaPhi2piProjections[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hJetGammaDeltaPhi2piProjectionsShifted[nPtBinsCoarse][nPtBinsCoarse];
   TGraphPolar* gJetGammaDeltaPhi2piProjections[nPtBinsCoarse][nPtBinsCoarse];
   for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
   {
@@ -1293,7 +1484,8 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString Gamm
       hIsoGammaJetDeltaPhi2piJetPtGammaPt->GetAxis(2)->SetRange(minBinGammaPt, maxBinGammaPt);
 
       hJetGammaDeltaPhi2piProjections[iJetPtBin][iGammaPtBin] = (TH1F*)hIsoGammaJetDeltaPhi2piJetPtGammaPt->Projection(0);
-      
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin] = shiftDeltaPhiRange(hJetGammaDeltaPhi2piProjections[iJetPtBin][iGammaPtBin], -0.5*TMath::Pi());
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->SetName(Form("hJetGammaDeltaPhi2piProjectionsShifted_%d_%d",iJetPtBin,iGammaPtBin));
       
     }
   }
@@ -1323,6 +1515,49 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString Gamm
     }
   }
   cJetGammaDeltaPhi2pi->SaveAs(Form("%s/JetGammaDeltaPhiPtProjections_2pi.%s", outputDir.Data(), suffix));
+
+  // delta phi distribution shifter by -0.5pi 
+  TCanvas* cJetGammaDeltaPhi2piShifted = new TCanvas("cJetGammaDeltaPhi2piShifted", "cJetGammaDeltaPhi2piShifted", 800, 800);
+  cJetGammaDeltaPhi2piShifted->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  TLine* piLineShiftedDashed[nPtBinsCoarse][nPtBinsCoarse];
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iGammaPtBin = 0; iGammaPtBin < nPtBinsCoarse; iGammaPtBin++)
+    {
+      cJetGammaDeltaPhi2piShifted->cd(iJetPtBin * nPtBinsCoarse + iGammaPtBin + 1);
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->Rebin(4);
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#gamma} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iGammaPtBin], ptBinsCoarse[iGammaPtBin + 1]));
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetXaxis()->SetTitle("#Delta#phi");
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetYaxis()->SetTitle("dN/d#Delta#phi");
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->SetLineColor(kBlack);
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->SetMarkerColor(kBlack);
+      hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->Draw("hist e");
+
+      // draw a dashed gray line at pi/2
+      piLineShiftedDashed[iJetPtBin][iGammaPtBin] = new TLine(TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMinimum(), TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMaximum());
+      piLineShiftedDashed[iJetPtBin][iGammaPtBin]->SetLineStyle(2);
+      piLineShiftedDashed[iJetPtBin][iGammaPtBin]->SetLineColor(kGray);
+      piLineShiftedDashed[iJetPtBin][iGammaPtBin]->Draw("same");
+
+      // draw shaded box from pi-0.6 to pi+0.6
+      TBox* box = new TBox(TMath::Pi()-0.6, hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMinimum(), TMath::Pi()+0.6, hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMaximum());
+      box->SetFillColorAlpha(kRed, 0.1);
+      box->SetFillStyle(1001);
+      box->Draw("same");
+    }
+  }
+  cJetGammaDeltaPhi2piShifted->SaveAs(Form("%s/JetGammaDeltaPhiPtProjections_2piShifted.%s", outputDir.Data(), suffix));
+
+
+  Plotting1D PJetGammaDeltaPhi2piShiftedExampleBin;
+  PJetGammaDeltaPhi2piShiftedExampleBin.SetMargins(0.12, 0.12, 0.05, 0.05);
+  PJetGammaDeltaPhi2piShiftedExampleBin.New(hJetGammaDeltaPhi2piProjectionsShifted[0][0]);
+  PJetGammaDeltaPhi2piShiftedExampleBin.SetAxisLabel(Form("#Delta#phi_{%s-jet}", gammaLatex), Form("dN/d#Delta#phi_{%s-jet}"));
+  // latex legend
+  PJetGammaDeltaPhi2piShiftedExampleBin.NewLatex(0.2,0.9,Form("%s; %.1f < #it{p}_{T}^{jet} < %.1f GeV; %.1f < #it{p}_{T}^{#gamma} < %.1f GeV", legendHeaderJets.Data(), ptBinsCoarse[0], ptBinsCoarse[1], ptBinsCoarse[0], ptBinsCoarse[1]));
+  PJetGammaDeltaPhi2piShiftedExampleBin.NewLine(TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[0][0]->GetMinimum(), TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[0][0]->GetMaximum(),2,1,kGray);
+  PJetGammaDeltaPhi2piShiftedExampleBin.Plot(Form("%s/JetGammaDeltaPhiPtProjections_2piShiftedExampleBin.%s", outputDir.Data(), suffix));
+
 
   TCanvas* cJetGammaDeltaPhi2piPolar = new TCanvas("cJetGammaDeltaPhi2piPolar", "cJetGammaDeltaPhi2piPolar", 800, 800);
   cJetGammaDeltaPhi2piPolar->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
@@ -1429,10 +1664,13 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
   // -------------------------
   //        Event Plots
   // -------------------------
+  TDirectory *dEvent = (TDirectory *)fIn->Get("Events");
+  if (!dEvent)
+    FATAL("Dir Event not found")
   TDirectory *dEventQA = (TDirectory *)fIn->Get("EventQA");
   if (!dEventQA)
     FATAL("Dir EventQA not found")
-  plotEventQA(dEventQA, optns);
+  plotEventQA(dEvent, dEventQA, optns);
   
   // -------------------------
   //        Jet Plots
@@ -1457,6 +1695,44 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     // else WARN("Dir JetQA not found. Skipping");
 
   }
+
+  // now do plots only for the events where an exclusive trigger photon was found
+  TDirectory *dJetWithPhotonSignalTrigger = (TDirectory *)fIn->Get("JetsWithPhotonSignalTrigger");
+  TDirectory *dJetWithPhotonReferenceTrigger = (TDirectory *)fIn->Get("JetsWithPhotonReferenceTrigger");
+  if(dJetWithPhotonSignalTrigger) plotJets(dJetWithPhotonSignalTrigger, optns);
+  else WARN("Dir JetWithPhotonSignalTrigger not found. Skipping");
+  if(dJetWithPhotonReferenceTrigger) plotJets(dJetWithPhotonReferenceTrigger, optns);
+  else WARN("Dir JetWithPhotonReferenceTrigger not found. Skipping");
+
+  if (optns.doQA)
+  {
+    TDirectory *dJetWithPhotonSignalTriggerQA = (TDirectory *)fIn->Get("JetQAWithPhotonSignalTrigger");
+    TDirectory *dJetWithPhotonReferenceTriggerQA = (TDirectory *)fIn->Get("JetQAWithPhotonReferenceTrigger");
+    if(dJetWithPhotonSignalTriggerQA) plotJetQA(dJetWithPhotonSignalTriggerQA, "JetsWithPhotonSignalTrigger", optns);
+    else WARN("Dir JetQAWithPhotonSignalTrigger not found. Skipping");
+    if(dJetWithPhotonReferenceTriggerQA) plotJetQA(dJetWithPhotonReferenceTriggerQA, "JetsWithPhotonReferenceTrigger", optns);
+    else WARN("Dir JetQAWithPhotonReferenceTrigger not found. Skipping");
+  }
+
+  // now do plots only for the events where an exclusive trigger merged pi0 was found
+  TDirectory *dJetWithMergedPi0SignalTrigger = (TDirectory *)fIn->Get("JetsWithMergedPi0SignalTrigger");
+  TDirectory *dJetWithMergedPi0ReferenceTrigger = (TDirectory *)fIn->Get("JetsWithMergedPi0ReferenceTrigger");
+  if(dJetWithMergedPi0SignalTrigger) plotJets(dJetWithMergedPi0SignalTrigger, optns);
+  else WARN("Dir JetWithMergedPi0SignalTrigger not found. Skipping");
+  if(dJetWithMergedPi0ReferenceTrigger) plotJets(dJetWithMergedPi0ReferenceTrigger, optns);
+  else WARN("Dir JetWithMergedPi0ReferenceTrigger not found. Skipping");
+
+  if (optns.doQA)
+  {
+    TDirectory *dJetWithMergedPi0SignalTriggerQA = (TDirectory *)fIn->Get("JetQAWithMergedPi0SignalTrigger");
+    TDirectory *dJetWithMergedPi0ReferenceTriggerQA = (TDirectory *)fIn->Get("JetQAWithMergedPi0ReferenceTrigger");
+    if(dJetWithMergedPi0SignalTriggerQA) plotJetQA(dJetWithMergedPi0SignalTriggerQA, "JetsWithMergedPi0SignalTrigger", optns);
+    else WARN("Dir JetQAWithMergedPi0SignalTrigger not found. Skipping");
+    if(dJetWithMergedPi0ReferenceTriggerQA) plotJetQA(dJetWithMergedPi0ReferenceTriggerQA, "JetsWithMergedPi0ReferenceTrigger", optns);
+    else WARN("Dir JetQAWithMergedPi0ReferenceTrigger not found. Skipping");  
+  }
+
+
   
   // ------------------------------------------
   //        Cluster / Gamma / Iso Gamma Plots
@@ -1575,7 +1851,7 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
   else WARN("Dir TriggerGammaJetCorrelationSignalQA not found. Skipping");
   if(dTriggerGammaJetCorrelationsReferenceQA) plotIsoGammaJetCorrelationQA(dTriggerGammaJetCorrelationsReferenceQA, "TriggerPhotonsReference", optns);
   else WARN("Dir TriggerGammaJetCorrelationReferenceQA not found. Skipping");
-  if(dTriggerGammaJetCorrelationsSignal && dTriggerGammaJetCorrelationsReference && dTriggerPhotonSignalQA && dTriggerPhotonReferenceQA) plotExclusiveSelectionGammaJetCorrelations(dTriggerGammaJetCorrelationsSignal, dTriggerGammaJetCorrelationsReference, dTriggerPhotonsSignal, dTriggerPhotonSignalQA, dTriggerPhotonsReference, dTriggerPhotonReferenceQA, "TriggerPhotonCorrelationsCombined", optns);
+  if(dTriggerGammaJetCorrelationsSignal && dTriggerGammaJetCorrelationsReference && dTriggerPhotonSignalQA && dTriggerPhotonReferenceQA) plotExclusiveSelectionGammaJetCorrelations(dTriggerGammaJetCorrelationsSignal,dTriggerGammaJetCorrelationsSignalQA, dTriggerGammaJetCorrelationsReference,dTriggerGammaJetCorrelationsReferenceQA, dTriggerPhotonsSignal, dTriggerPhotonSignalQA, dTriggerPhotonsReference, dTriggerPhotonReferenceQA, "TriggerPhotonCorrelationsCombined", optns);
   else WARN("Dir TriggerGammaJetCorrelationsSignal or TriggerGammaJetCorrelationsReference not found. Skipping");
 
   //----------------------------------------------------------------
@@ -1595,7 +1871,7 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
   else WARN("Dir TriggerMergedPi0JetCorrelationSignalQA not found. Skipping");
   if(dTriggerMergedPi0JetCorrelationsReferenceQA) plotIsoGammaJetCorrelationQA(dTriggerMergedPi0JetCorrelationsReferenceQA, "TriggerMergedPi0sReference", optns);
   else WARN("Dir TriggerMergedPi0JetCorrelationReferenceQA not found. Skipping");
-  if(dTriggerMergedPi0JetCorrelationsSignal && dTriggerMergedPi0JetCorrelationsReference && dTriggerMergedPi0JetCorrelationsSignalQA && dTriggerMergedPi0JetCorrelationsReferenceQA) plotExclusiveSelectionGammaJetCorrelations(dTriggerMergedPi0JetCorrelationsSignal, dTriggerMergedPi0JetCorrelationsReference, dTriggerMergedPi0sSignal, dTriggerMergedPi0sSignalQA, dTriggerMergedPi0sReference, dTriggerMergedPi0sReferenceQA, "TriggerMergedPi0CorrelationsCombined", optns);
+  if(dTriggerMergedPi0JetCorrelationsSignal && dTriggerMergedPi0JetCorrelationsReference && dTriggerMergedPi0JetCorrelationsSignalQA && dTriggerMergedPi0JetCorrelationsReferenceQA) plotExclusiveSelectionGammaJetCorrelations(dTriggerMergedPi0JetCorrelationsSignal, dTriggerMergedPi0JetCorrelationsSignalQA, dTriggerMergedPi0JetCorrelationsReference, dTriggerMergedPi0JetCorrelationsReferenceQA, dTriggerMergedPi0sSignal, dTriggerMergedPi0sSignalQA, dTriggerMergedPi0sReference, dTriggerMergedPi0sReferenceQA, "TriggerMergedPi0CorrelationsCombined", optns);
   else WARN("Dir TriggerMergedPi0JetCorrelationsSignal or TriggerMergedPi0JetCorrelationsReference not found. Skipping");
 
   //------------------------------------

@@ -4,6 +4,45 @@
 #include "Utilities.h"
 #include "Cuts.h"
 #include "analyseExclGammaJet.h"
+#include "TVirtualFitter.h"
+#include "TMath.h"
+
+// takes as input a ratio histogram and returns the optimal fit function and used range
+// it begins using the fitting range specified in cRefFitRange
+// going from the upper edge it goes in steps of 1 GeV and performs a pol1 fit until it finds a range where the fit is stable
+std::pair<TF1*, std::pair<double, double>> findOptimalCRefFit(TH1F* ratio, TString name){
+    double ptMax = cRefFitRange.second;
+    double ptMin = cRefFitRange.first;
+    if(ptMax<ptMin){
+        FATAL("ptMax is less than ptMin");
+    }
+    while(ptMax - ptMin > minFitInterval){
+        TF1* fCRefFitTmp = new TF1(Form("fCRefFitTmp_%s", name.Data()), "pol1", ptMin, ptMax);
+        ratio->Fit(fCRefFitTmp, "R0");
+        double cRef = fCRefFitTmp->GetParameter(0);
+        double cRefError = fCRefFitTmp->GetParError(0);
+        double cRefSlope = fCRefFitTmp->GetParameter(1);
+        double cRefSlopeError = fCRefFitTmp->GetParError(1);
+        // check if slope is consistent with 0 within errors
+        bool isConsistent = (TMath::Abs(cRefSlope) < cRefSlopeError);
+        delete fCRefFitTmp; // Delete the temporary fit object to prevent memory leak
+        if(isConsistent){
+            break;
+        }
+        ptMax -= 1;
+    }
+
+    // do fit one more time with final fit range
+    TF1* fCRefFit = new TF1(Form("%s", name.Data()), "pol1", ptMin, ptMax);
+    ratio->Fit(fCRefFit, "R0");
+    // check one more time if slope is consistent with 0, otherwise throw warning
+    double cRefSlope = fCRefFit->GetParameter(1);
+    double cRefSlopeError = fCRefFit->GetParError(1);
+    if(TMath::Abs(cRefSlope) > cRefSlopeError){
+        INFO(Form("Slope is not consistent with 0 within errors for %s", name.Data()));
+    }
+    return std::make_pair(fCRefFit, std::make_pair(ptMin, ptMax));
+}
 
 
 void determineNTriggers(TDirectory *dSignalPhoton, TDirectory *dReferencePhoton, TDirectory *dSignalMerged, TDirectory *dReferenceMerged)
@@ -39,21 +78,20 @@ TH1F* shiftTH1ByX(T *h, double x, TString name)
    // we need to keep asme bin ranges otherwise divide will break later
    TH1F *hShifted = new TH1F(name, name, nbins, min, max);
    
-   // loop over all bins and copy the content of h - x to hShifted
+   // loop over shifted histogram
    for(int i = 1; i <= nbins; i++) {
-     double binContent = h->GetBinContent(i);
-     double binError = h->GetBinError(i);
-     double binCenter = h->GetBinCenter(i);
-     double shiftedBinCenter = binCenter + x;
-     
-     // Find bin in shifted histogram corresponding to shiftedBinCenter
-     int shiftedBin = hShifted->FindBin(shiftedBinCenter);
-     
-     // Only fill if bin is valid and shifted value is >= 0
-     if(shiftedBin > 0 && shiftedBin <= nbins && shiftedBinCenter >= 0) {
-       hShifted->SetBinContent(shiftedBin, binContent);
-       hShifted->SetBinError(shiftedBin, binError);
+     double binCenter = hShifted->GetBinCenter(i);
+     double shiftedBinCenter = binCenter - x;
+     double content = 0;
+     double error = 0;
+     int shiftedBin = -1;
+     if(shiftedBinCenter >= min && shiftedBinCenter <= max){
+      shiftedBin = h->FindBin(shiftedBinCenter);
+      content = h->GetBinContent(shiftedBin);
+      error = h->GetBinError(shiftedBin);
      }
+     hShifted->SetBinContent(i, content);
+     hShifted->SetBinError(i, error);
    }
 
    hShifted->SetTitle(Form("Rho distribution shifted by %.1f GeV", x));
@@ -84,8 +122,8 @@ void getRhoDistributions(TDirectory *dSignal, TDirectory *dReference, TString la
   TH2F *hRhoReferencePt = (TH2F*)dReference->Get("hIsoGammaRhoPt");
   hRhoReferencePt->SetName("hIsoGammaRhoPtReference");
   
-  hRhoSignalPt->RebinX(4);
-  hRhoReferencePt->RebinX(4);
+  // hRhoSignalPt->RebinX(4);
+  // hRhoReferencePt->RebinX(4);
   double dPt = hRhoSignalPt->GetYaxis()->GetBinWidth(1);
   hRhoSignalPt->Scale(1./(nTriggersSignal*dPt));
   hRhoReferencePt->Scale(1./(nTriggersReference*dPt));
@@ -116,7 +154,7 @@ void getRhoDistributions(TDirectory *dSignal, TDirectory *dReference, TString la
   {
     TH1F* hShifted = hRhoReferenceShifted[i];
     TH1F* hRatio = (TH1F*)hRhoSignal->Clone(Form("hRhoRatio_%.1f", ptShifts[i]));
-    hRatio->Divide(hShifted,hRhoSignal,1,1);
+    hRatio->Divide(hRhoSignal,hShifted,1,1);
     hRhoRatios.push_back(hRatio);
     
     TF1* fit = new TF1(Form("fRhoRatiosFit_%f", ptShifts[i]), "pol1", hRatio->GetXaxis()->GetXmin(), hRatio->GetXaxis()->GetXmax());
@@ -156,6 +194,11 @@ void getRhoDistributions(TDirectory *dSignal, TDirectory *dReference, TString la
   INFO(Form("Best shift index: %d with shift by %.1f GeV", bestShiftIndex, ptShifts[bestShiftIndex]));
   hRhoRatios[bestShiftIndex]->Write("hRhoRatioBestShift");
   fRhoRatiosFit[bestShiftIndex]->Write("fRhoRatiosFitBestShift");
+
+  TH1F* hBestShift = new TH1F("hBestShift", "best shift value", 1, -0.5, 0.5);
+  hBestShift->SetBinContent(1, ptShifts[bestShiftIndex]);
+  hBestShift->SetBinError(1, 0);
+  hBestShift->Write("hBestShift");
 
 
 }
@@ -210,14 +253,16 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
     hIsoGammaJetDeltaPhiJetPtReferenceMirrored->SetName("hIsoGammaJetDeltaPhiJetPtReferenceMirrored");
 
 
+
+
     // normalize by number of triggers 
     // rebin in pt by factor 4 in y axis
-    hIsoGammaJetDeltaPhiJetPtSignal->RebinY(4); // 0 to pi
-    hIsoGammaJetDeltaPhiJetPtReference->RebinY(4);
-    hIsoGammaJetDeltaPhi2piJetPtSignal->RebinY(4); // 0 to 2pi
-    hIsoGammaJetDeltaPhi2piJetPtReference->RebinY(4);
-    hIsoGammaJetDeltaPhiJetPtSignalMirrored->RebinY(4); // 0 to 2pi mirrored from 0 to pi
-    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->RebinY(4);
+    hIsoGammaJetDeltaPhiJetPtSignal->RebinY(2); // 0 to pi
+    hIsoGammaJetDeltaPhiJetPtReference->RebinY(2);
+    hIsoGammaJetDeltaPhi2piJetPtSignal->RebinY(2); // 0 to 2pi
+    hIsoGammaJetDeltaPhi2piJetPtReference->RebinY(2);
+    hIsoGammaJetDeltaPhiJetPtSignalMirrored->RebinY(2); // 0 to 2pi mirrored from 0 to pi
+    hIsoGammaJetDeltaPhiJetPtReferenceMirrored->RebinY(2);
 
     double dPt = hIsoGammaJetDeltaPhiJetPtSignal->GetYaxis()->GetBinWidth(1);
     double dPhi = hIsoGammaJetDeltaPhiJetPtSignal->GetXaxis()->GetBinWidth(1);
@@ -242,6 +287,12 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
     hIsoGammaJetDeltaPhi2piJetPtSignal->GetYaxis()->SetTitle("#it{p}_{T, ch jet}^{reco} (GeV/#it{c})");
     hIsoGammaJetDeltaPhi2piJetPtSignal->GetZaxis()->SetTitle("#frac{1}{N_{trig}} #frac{d^{3}N}{d#it{p}_{T, ch jet}^{reco} d#Delta#phi}");
 
+        // get histograms shifted by -pi/2
+    TH2F* hIsoGammaJetDeltaPhiJetPtSignalShifted = shiftDeltaPhiRange(hIsoGammaJetDeltaPhi2piJetPtSignal, -TMath::Pi()/2);
+    hIsoGammaJetDeltaPhiJetPtSignalShifted->SetName("hIsoGammaJetDeltaPhiJetPtSignalShifted");
+    TH2F* hIsoGammaJetDeltaPhiJetPtReferenceShifted = shiftDeltaPhiRange(hIsoGammaJetDeltaPhi2piJetPtReference, -TMath::Pi()/2);
+    hIsoGammaJetDeltaPhiJetPtReferenceShifted->SetName("hIsoGammaJetDeltaPhiJetPtReferenceShifted");
+
     // write all histograms of interest to dRecoilJet
     dRecoilJet->cd();
     hIsoGammaJetDeltaPhiJetPtSignal->Write("hIsoGammaJetDeltaPhiJetPtSignal");
@@ -250,6 +301,8 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
     hIsoGammaJetDeltaPhi2piJetPtReference->Write("hIsoGammaJetDeltaPhi2piJetPtReference");
     hIsoGammaJetDeltaPhiJetPtSignalMirrored->Write("hIsoGammaJetDeltaPhiJetPtSignalMirrored");
     hIsoGammaJetDeltaPhiJetPtReferenceMirrored->Write("hIsoGammaJetDeltaPhiJetPtReferenceMirrored");
+    hIsoGammaJetDeltaPhiJetPtSignalShifted->Write("hIsoGammaJetDeltaPhiJetPtSignalShifted");
+    hIsoGammaJetDeltaPhiJetPtReferenceShifted->Write("hIsoGammaJetDeltaPhiJetPtReferenceShifted");
 
     // arrays for integration in phi ranges
     double phiBinsMid[phiBins.size() - 1 ];
@@ -263,6 +316,11 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
     }
     double ptIntegralPhi[recoilJetPtBinsIntegration.size()][phiBins.size() - 1 ];
     double ptIntegralErrorPhi[recoilJetPtBinsIntegration.size()][phiBins.size() - 1 ];
+
+    double cRefValues[phiBins.size() - 1];
+    double cRefValuesError[phiBins.size() - 1];
+    double cRefSlopeValues[phiBins.size() - 1];
+    double cRefSlopeValuesError[phiBins.size() - 1];
 
     // do projections in phi bins
     int iPhiBin = 0;
@@ -282,10 +340,20 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       hRecoilJetPtRatio->SetName(Form("hRecoilJetPtSignalReferenceRatio_%.2f_%.2f", phiBin.first, phiBin.second));
 
       // determine scaling factor for reference in range cRefFitRange
-      TF1* fCRefFit = new TF1(Form("fCRefFit_%.2f_%.2f", phiBin.first, phiBin.second), "pol0", cRefFitRange.first, cRefFitRange.second);
+      auto fitResult = findOptimalCRefFit(hRecoilJetPtRatio, Form("fCRefFit_%.2f_%.2f", phiBin.first, phiBin.second));
+      TF1* fCRefFit = new TF1(Form("fCRefFit_%.2f_%.2f", phiBin.first, phiBin.second), "pol0", fitResult.second.first, fitResult.second.second);
       hRecoilJetPtRatio->Fit(fCRefFit, "R0");
+      TH1F* hCRefFitConfidence = new TH1F(Form("hCRefFitConfidence_%.2f_%.2f", phiBin.first, phiBin.second), "Confidence interval of fCRefFit", 200, fitResult.second.first, fitResult.second.second);
+      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(hCRefFitConfidence);
+      // determing fCRefFitPol1
+      TF1* fCRefFitPol1 = new TF1(Form("fCRefFitPol1_%.2f_%.2f", phiBin.first, phiBin.second), "[0]*x + [1]", fitResult.second.first, fitResult.second.second);
+      hRecoilJetPtRatio->Fit(fCRefFitPol1, "R0");
+      TH1F* hCRefFitPol1Confidence = new TH1F(Form("hCRefFitPol1Confidence_%.2f_%.2f", phiBin.first, phiBin.second), "Confidence interval of fCRefFitPol1", 200, fitResult.second.first, fitResult.second.second);
+      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(hCRefFitPol1Confidence);
       double cRef = fCRefFit->GetParameter(0);
-      INFO(Form("Determined scaling factor for reference in range %.2f_%.2f: %.3f", cRefFitRange.first, cRefFitRange.second, cRef));
+      double cRefSlope = fCRefFitPol1->GetParameter(0);
+      double cRefSlopeError = fCRefFitPol1->GetParError(0);
+      INFO(Form("Determined scaling factor for reference in range %.2f_%.2f: %.3f", fitResult.second.first, fitResult.second.second, cRef));
       
       TH1F* hRecoilJetReferenceScaled = (TH1F*)hRecoilJetPtReference->Clone(Form("hRecoilJetReferenceScaled_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetReferenceScaled->Scale(1./cRef);
@@ -294,6 +362,14 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       TH1F* hRecoilJetPtSignal_Subtracted = (TH1F*)hRecoilJetPtSignal->Clone(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetPtSignal_Subtracted->Add(hRecoilJetReferenceScaled, -1);
       hRecoilJetPtSignal_Subtracted->SetName(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
+
+      // do a rebinned distribution
+      TH1F* hRecoilJetReferenceScaled_Rebinned = (TH1F*) hRecoilJetReferenceScaled->Clone(Form("hRecoilJetReferenceScaled_Rebinned_%.2f_%.2f", phiBin.first, phiBin.second));
+      hRecoilJetReferenceScaled_Rebinned->Rebin(4);
+      hRecoilJetReferenceScaled_Rebinned->SetName(Form("hRecoilJetReferenceScaled_Rebinned_%.2f_%.2f", phiBin.first, phiBin.second));
+      TH1F* hRecoilJetPtSignal_Subtracted_Rebinned = (TH1F*)hRecoilJetPtSignal->Clone(Form("hRecoilJetPtSignal_Subtracted_Rebinned_%.2f_%.2f", phiBin.first, phiBin.second));
+      hRecoilJetPtSignal_Subtracted_Rebinned->Rebin(4);
+      hRecoilJetPtSignal_Subtracted_Rebinned->Add(hRecoilJetReferenceScaled_Rebinned, -1);
 
       for (int i=0; i<recoilJetPtBinsIntegration.size(); i++){
         // check if phi min and phi max are the first of phiBins. Then we should continue because this is always the back-to-back integrated bin
@@ -308,6 +384,11 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
         ptIntegralErrorPhi[i][iPhiBin-1] = ptIntegralError;
       }
 
+      // store cRef values also in vector
+      if(iPhiBin > 0){
+      cRefValues[iPhiBin-1] = cRef;
+      cRefValuesError[iPhiBin-1] = fCRefFit->GetParError(0);
+      }
 
       // write all histograms of interest to dRecoilJet
       dRecoilJet->cd();
@@ -316,7 +397,12 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       hRecoilJetPtRatio->Write(Form("hRecoilJetPtSignalReferenceRatio_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetReferenceScaled->Write(Form("hRecoilJetReferenceScaled_%.2f_%.2f", phiBin.first, phiBin.second));
       hRecoilJetPtSignal_Subtracted->Write(Form("hRecoilJetPtSignal_Subtracted_%.2f_%.2f", phiBin.first, phiBin.second));
+      hRecoilJetPtSignal_Subtracted_Rebinned->Write(Form("hRecoilJetPtSignal_Subtracted_Rebinned_%.2f_%.2f", phiBin.first, phiBin.second));
       fCRefFit->Write(Form("fCRefFit_%.2f_%.2f", phiBin.first, phiBin.second));
+      fCRefFitPol1->Write(Form("fCRefFitPol1_%.2f_%.2f", phiBin.first, phiBin.second));
+      hCRefFitConfidence->Write(Form("hCRefFitConfidence_%.2f_%.2f", phiBin.first, phiBin.second));
+      hCRefFitPol1Confidence->Write(Form("hCRefFitPol1Confidence_%.2f_%.2f", phiBin.first, phiBin.second));
+
 
       iPhiBin++;
     }
@@ -331,6 +417,16 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
       gRecoilJetPtIntegralPhi[i]->SetName(Form("gRecoilJetPtIntegralPhi_%.2f_%.2f", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second));
       gRecoilJetPtIntegralPhi[i]->Write(Form("gRecoilJetPtIntegralPhi_%.2f_%.2f", recoilJetPtBinsIntegration[i].first, recoilJetPtBinsIntegration[i].second));
     }
+
+    // create TGraphAsymmErrors for each cRef values
+    TGraphAsymmErrors* gCRefValues = new TGraphAsymmErrors(phiBins.size() - 1, phiBinsMid, cRefValues, phiBinsDownError, phiBinsUpError, cRefValuesError, cRefValuesError);
+    gCRefValues->SetName("gCRefValuesVsPhi");
+    gCRefValues->Write("gCRefValuesVsPhi");
+
+    // create TGraphAsymmErrors for each cRefSlope values
+    TGraphAsymmErrors* gCRefSlopeValues = new TGraphAsymmErrors(phiBins.size() - 1, phiBinsMid, cRefSlopeValues, phiBinsDownError, phiBinsUpError, cRefSlopeValuesError, cRefSlopeValuesError);
+    gCRefSlopeValues->SetName("gCRefSlopeValuesVsPhi");
+    gCRefSlopeValues->Write("gCRefSlopeValuesVsPhi");
 
     // Study of correlations with rapidity gaps
     THnSparseF *hIsoGammaJetDeltaPhi2piDeltaEtaJetPt = (THnSparseF*)dSignal->Get("hIsoGammaJetDeltaPhi2piDeltaEtaJetPt");
@@ -420,72 +516,34 @@ void getRecoilJetPtDistributions(TDirectory *dSignal, TDirectory *dReference, TS
 
 }
 
-std::pair<double, double> calculateABCDPurity(THnSparseF* hM02vsIsoPt, double ptMin, double ptMax)
+std::pair<double, double> calculateABCDPurity(TH2F* hM02vsIsoPt, double ptMin, double ptMax)
 {
     hM02vsIsoPt->Sumw2();
 
-    hM02vsIsoPt->GetAxis(0)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->UnZoom();
-    hM02vsIsoPt->GetAxis(2)->UnZoom();
-    // show the axis ranges
-    INFO(Form("Axis 0: %.2f_%.2f", hM02vsIsoPt->GetAxis(0)->GetXmin(), hM02vsIsoPt->GetAxis(0)->GetXmax()));
-    INFO(Form("Axis 1: %.2f_%.2f", hM02vsIsoPt->GetAxis(1)->GetXmin(), hM02vsIsoPt->GetAxis(1)->GetXmax()));
-    INFO(Form("Axis 2: %.2f_%.2f", hM02vsIsoPt->GetAxis(2)->GetXmin(), hM02vsIsoPt->GetAxis(2)->GetXmax()));
-    
+
     // find bins for region A
     INFO(Form("Region A: %.2f_%.2f, %.2f_%.2f", regionA.minM02, regionA.maxM02, regionA.minIso, regionA.maxIso));
-    std::tuple<int, int, int, int> binsA = {hM02vsIsoPt->GetAxis(1)->FindBin(regionA.minM02), hM02vsIsoPt->GetAxis(1)->FindBin(regionA.maxM02), hM02vsIsoPt->GetAxis(0)->FindBin(regionA.minIso), hM02vsIsoPt->GetAxis(0)->FindBin(regionA.maxIso)};
+    std::tuple<int, int, int, int> binsA = {hM02vsIsoPt->GetXaxis()->FindBin(regionA.minM02), hM02vsIsoPt->GetXaxis()->FindBin(regionA.maxM02), hM02vsIsoPt->GetYaxis()->FindBin(regionA.minIso), hM02vsIsoPt->GetYaxis()->FindBin(regionA.maxIso)};
   
     // Integrate over region B
-    std::tuple<int, int, int, int> binsB = {hM02vsIsoPt->GetAxis(1)->FindBin(regionB.minM02), hM02vsIsoPt->GetAxis(1)->FindBin(regionB.maxM02), hM02vsIsoPt->GetAxis(0)->FindBin(regionB.minIso), hM02vsIsoPt->GetAxis(0)->FindBin(regionB.maxIso)};
+    std::tuple<int, int, int, int> binsB = {hM02vsIsoPt->GetXaxis()->FindBin(regionB.minM02), hM02vsIsoPt->GetXaxis()->FindBin(regionB.maxM02), hM02vsIsoPt->GetYaxis()->FindBin(regionB.minIso), hM02vsIsoPt->GetYaxis()->FindBin(regionB.maxIso)};
     INFO(Form("Region B: %.2f_%.2f, %.2f_%.2f", regionB.minM02, regionB.maxM02, regionB.minIso, regionB.maxIso));
     // Integrate over region C
-    std::tuple<int, int, int, int> binsC = {hM02vsIsoPt->GetAxis(1)->FindBin(regionC.minM02), hM02vsIsoPt->GetAxis(1)->FindBin(regionC.maxM02), hM02vsIsoPt->GetAxis(0)->FindBin(regionC.minIso), hM02vsIsoPt->GetAxis(0)->FindBin(regionC.maxIso)};
+    std::tuple<int, int, int, int> binsC = {hM02vsIsoPt->GetXaxis()->FindBin(regionC.minM02), hM02vsIsoPt->GetXaxis()->FindBin(regionC.maxM02), hM02vsIsoPt->GetYaxis()->FindBin(regionC.minIso), hM02vsIsoPt->GetYaxis()->FindBin(regionC.maxIso)};
     INFO(Form("Region C: %.2f_%.2f, %.2f_%.2f", regionC.minM02, regionC.maxM02, regionC.minIso, regionC.maxIso));
     // Integrate over region D
-    std::tuple<int, int, int, int> binsD = {hM02vsIsoPt->GetAxis(1)->FindBin(regionD.minM02), hM02vsIsoPt->GetAxis(1)->FindBin(regionD.maxM02), hM02vsIsoPt->GetAxis(0)->FindBin(regionD.minIso), hM02vsIsoPt->GetAxis(0)->FindBin(regionD.maxIso)};
+    std::tuple<int, int, int, int> binsD = {hM02vsIsoPt->GetXaxis()->FindBin(regionD.minM02), hM02vsIsoPt->GetXaxis()->FindBin(regionD.maxM02), hM02vsIsoPt->GetYaxis()->FindBin(regionD.minIso), hM02vsIsoPt->GetYaxis()->FindBin(regionD.maxIso)};
     INFO(Form("Region D: %.2f_%.2f, %.2f_%.2f", regionD.minM02, regionD.maxM02, regionD.minIso, regionD.maxIso));
 
-    TH1D* hA;
-    TH1D* hB;
-    TH1D* hC;
-    TH1D* hD;
-    
-    hM02vsIsoPt->GetAxis(1)->SetRange(std::get<0>(binsA), std::get<1>(binsA));
-    hM02vsIsoPt->GetAxis(0)->SetRange(std::get<2>(binsA), std::get<3>(binsA));
-    hA = (TH1D*)hM02vsIsoPt->Projection(2,"E");
-    hM02vsIsoPt->GetAxis(1)->UnZoom();
-    hM02vsIsoPt->GetAxis(0)->UnZoom();
-    hM02vsIsoPt->GetAxis(2)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->SetRange(std::get<0>(binsB), std::get<1>(binsB));
-    hM02vsIsoPt->GetAxis(0)->SetRange(std::get<2>(binsB), std::get<3>(binsB));
-    hB = (TH1D*)hM02vsIsoPt->Projection(2,"E");
-    hM02vsIsoPt->GetAxis(0)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->UnZoom();
-    hM02vsIsoPt->GetAxis(2)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->SetRange(std::get<0>(binsC), std::get<1>(binsC));
-    hM02vsIsoPt->GetAxis(0)->SetRange(std::get<2>(binsC), std::get<3>(binsC));
-    hC = (TH1D*)hM02vsIsoPt->Projection(2,"E");
-    hM02vsIsoPt->GetAxis(0)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->UnZoom();
-    hM02vsIsoPt->GetAxis(2)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->SetRange(std::get<0>(binsD), std::get<1>(binsD));
-    hM02vsIsoPt->GetAxis(0)->SetRange(std::get<2>(binsD), std::get<3>(binsD));
-    hD = (TH1D*)hM02vsIsoPt->Projection(2,"E");
-    hM02vsIsoPt->GetAxis(0)->UnZoom();
-    hM02vsIsoPt->GetAxis(1)->UnZoom();
-    hM02vsIsoPt->GetAxis(2)->UnZoom();
 
     double nAErr;
-    double nA = hA->IntegralAndError(hA->GetXaxis()->FindBin(ptMin), hA->GetXaxis()->FindBin(ptMax), nAErr);
+    double nA = hM02vsIsoPt->IntegralAndError(std::get<0>(binsA), std::get<1>(binsA), std::get<2>(binsA), std::get<3>(binsA), nAErr);
     double nBErr;
-    double nB = hB->IntegralAndError(hB->GetXaxis()->FindBin(ptMin), hB->GetXaxis()->FindBin(ptMax), nBErr);
+    double nB = hM02vsIsoPt->IntegralAndError(std::get<0>(binsB), std::get<1>(binsB), std::get<2>(binsB), std::get<3>(binsB), nBErr);
     double nCErr;
-    double nC = hC->IntegralAndError(hC->GetXaxis()->FindBin(ptMin), hC->GetXaxis()->FindBin(ptMax), nCErr);
+    double nC = hM02vsIsoPt->IntegralAndError(std::get<0>(binsC), std::get<1>(binsC), std::get<2>(binsC), std::get<3>(binsC), nCErr);
     double nDErr;
-    double nD = hD->IntegralAndError(hD->GetXaxis()->FindBin(ptMin), hD->GetXaxis()->FindBin(ptMax), nDErr);
-
-
+    double nD = hM02vsIsoPt->IntegralAndError(std::get<0>(binsD), std::get<1>(binsD), std::get<2>(binsD), std::get<3>(binsD), nDErr);
 
     // calculate purity
     double purity = 0;
@@ -497,6 +555,7 @@ std::pair<double, double> calculateABCDPurity(THnSparseF* hM02vsIsoPt, double pt
 
 
     INFO(Form("Purity: %.3f #pm %.3f", purity, purityErr));
+    INFO(Form("Entries of region histograms:"));
     INFO(Form("\t nA: %.3f #pm %.3f", nA, nAErr));
     INFO(Form("\t nB: %.3f #pm %.3f", nB, nBErr));
     INFO(Form("\t nC: %.3f #pm %.3f", nC, nCErr));
@@ -532,8 +591,8 @@ void processPurity(TDirectory *dSignal,TString label, GlobalOptions optns)
     hM02vsIsoPt->GetAxis(2)->UnZoom();
 
     // calculate purity
-    std::pair<double, double> puritySignal = calculateABCDPurity(hM02vsIsoPt,exclTrigSelection.getPtMinSignal(), exclTrigSelection.getPtMaxSignal());
-    std::pair<double, double> purityReference = calculateABCDPurity(hM02vsIsoPt,exclTrigSelection.getPtMinReference(), exclTrigSelection.getPtMaxReference());
+    std::pair<double, double> puritySignal = calculateABCDPurity(hM02vsIsoSignal,exclTrigSelection.getPtMinSignal(), exclTrigSelection.getPtMaxSignal());
+    std::pair<double, double> purityReference = calculateABCDPurity(hM02vsIsoReference,exclTrigSelection.getPtMinReference(), exclTrigSelection.getPtMaxReference());
 
     // write output to dPurity
     dPurity->cd();

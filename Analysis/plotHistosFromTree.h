@@ -19,6 +19,10 @@ std::vector<float> SlicesPt={3,4,5,6,7,9,11};
 
   Int_t fancyColors[8];
 
+  std::pair<double, double> jetExamplePtRange = {20, 30};
+
+  const int nJetConstituentBins = 8;
+  Double_t jetConstituentBins[nJetConstituentBins+1] = {0,5,10,15,20,30,40,50,100};
   TString legendHeader = "ALICE work-in-progress";
   TString legendHeaderJets = "ALICE work-in-progress";
 #endif //_PLOTHISTOSFROMTREE_H_
