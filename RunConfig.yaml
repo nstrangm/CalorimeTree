@@ -2,6 +2,7 @@ doPlotting: true
 nParallelJobsPerVar: 20
 doIsoGamma: true
 doJets: true
+doSubstructure: true
 doGGPi0: true
 domPi0: true
 doAnalysisExclGammaJet: true
@@ -92,3 +93,10 @@ LHC24aq_pp_pass1_calo_IsoR02:
   label: "Run3"
   trainconfigs:
     Run3: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+
+LHC23_pass4_skimmed_IsoR02_SubStructure:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_pp_AO2D/605678_LHC23_pass4_skimmed_IsoR02_SubStructure/converted
+  label: "Run3"
+  trainconfigs:
+    Run3: Standard,JetRadius_R02,JetRadius_R03

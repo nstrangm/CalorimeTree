@@ -153,9 +153,12 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     doJets = runOptions['doJets']
     doGGPi0 = runOptions['doGGPi0']
     domPi0 = runOptions['domPi0']
+    doSubstructure = runOptions['doSubstructure']
     doPlotting = runOptions['doPlotting']
     doAnalysisExclGammaJet = runOptions['doAnalysisExclGammaJet']
     doPlottingExclGammaJet = runOptions['doPlottingExclGammaJet']
+    nodelist = runOptions.get('nodelist', None)
+    nodelist_opt = f'--nodelist={nodelist} ' if nodelist else ''
     def monitor_progress():
         while any(process.poll() is None for _, process in processes):
             for iJob, process in processes:
@@ -174,13 +177,13 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q ./Analysis/makeHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
+        command = f'srun --partition=short {nodelist_opt}--job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q ./Analysis/makeHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
         # if none of the analysis options are enables, just run a dummy job
-        if not (doIsoGamma or doJets or doGGPi0 or domPi0):
+        if not (doIsoGamma or doJets or doGGPi0 or domPi0 or doSubstructure):
             command = f'echo "Dummy job {iJob}. Nothing to see here!" >> {dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
-        if (doIsoGamma or doJets or doGGPi0 or domPi0):
+        if (doIsoGamma or doJets or doGGPi0 or domPi0 or doSubstructure):
             time.sleep(0.2)
 
     progress_thread = threading.Thread(target=monitor_progress)
@@ -192,22 +195,22 @@ def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
     # Ensure the progress is marked as 100% upon completion
     progress.update(task_id, completed=100)
     progress_thread.join()  # Wait for the progress monitoring thread to complete
-    if doIsoGamma or doJets or doGGPi0 or domPi0:
+    if doIsoGamma or doJets or doGGPi0 or domPi0 or doSubstructure:
         hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
     if doPlotting:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q ./Analysis/plotHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q ./Analysis/plotHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
             raise RuntimeError("plotHistosFromTree.C failed")
     if doAnalysisExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q ./Analysis/analyseExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q ./Analysis/analyseExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
             raise RuntimeError("analyseExclGammaJet.C failed")
     if doPlottingExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q ./Analysis/plotExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
+        command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q ./Analysis/plotExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             log.error(result.stderr)
@@ -418,6 +421,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Script for processing datasets.')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--config', type=str, help='Path to the configuration file, defaults to RunConfig.yaml', default='RunConfig.yaml')
+    parser.add_argument('--nodelist', type=str, help='SLURM nodelist to run jobs on (e.g., node01 or node[01-03])', default=None)
     return parser.parse_args()
 
 # Main function
@@ -436,12 +440,15 @@ def main():
     doJets = analysis_config.get('doJets')
     doGGPi0 = analysis_config.get('doGGPi0')
     domPi0 = analysis_config.get('domPi0')
+    doSubstructure = analysis_config.get('doSubstructure')
     doAnalysisExclGammaJet = analysis_config.get('doAnalysisExclGammaJet')
     doPlottingExclGammaJet = analysis_config.get('doPlottingExclGammaJet')
     doCombineExclGammaJet = analysis_config.get('doCombineExclGammaJet')
     log.info("Starting the analysis...")
     log.info("Detected options:")
-    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet} | doCombineExclGammaJet: {doCombineExclGammaJet}")
+    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doSubstructure: {doSubstructure} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet} | doCombineExclGammaJet: {doCombineExclGammaJet}")
+    if args.nodelist:
+        log.info(f"SLURM nodelist: {args.nodelist}")
 
     
     
@@ -452,7 +459,7 @@ def main():
     cuts_config = read_yaml('Cuts.yaml')
     
     # only compile what is needed for the selected options
-    if doIsoGamma or doJets or doGGPi0 or domPi0:
+    if doIsoGamma or doJets or doGGPi0 or domPi0 or doSubstructure:
         log.info("Compiling makeHistosFromTree.C...")
         compile_makeHistosFromTree()
     if doPlotting:
@@ -541,7 +548,7 @@ def main():
                     if foundCut:
                         check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                         jobs.append((dataset, trainconfig, cut_name, nSplit))
-    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet }
+    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doSubstructure': doSubstructure, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet, 'nodelist': args.nodelist }
     run_multiple_macros(jobs,runOptions)
 
     # combine excl gamma jet

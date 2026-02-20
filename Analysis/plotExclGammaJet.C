@@ -23,21 +23,38 @@ void extractConfigurationInformation(TString AnalysisDirectory, GlobalOptions &o
   }
   dataset = (TString)words[0].c_str();
   
-  if (dataset.Contains("_pp_")) {
+  // Check if this is a pp collision (either by name or by directory structure)
+  bool isPP = dataset.Contains("_pp_");
+  
+  // Also check if Run3- pattern exists in the path (indicates PbPb with centrality)
+  int run3Index = trainConfig.Index("Run3-");
+  if (run3Index == -1) {
+    // No Run3- pattern found, likely pp collision or non-standard format
+    isPP = true;
+  }
+  
+  if (isPP) {
     centralityRange.first = 0;
     centralityRange.second = 100;
-  }else{
-    trainConfig = trainConfig(trainConfig.Index("Run3-"), trainConfig.Length());
+  } else {
+    trainConfig = trainConfig(run3Index, trainConfig.Length());
     trainConfig = trainConfig(0, trainConfig.First("/"));
     
     // Run3-0-10
     INFO(Form("Train config: %s", trainConfig.Data()));
     // tokenize the Runstring with dashes
     TObjArray *runTokens = trainConfig.Tokenize("-");
-    centralityRange.first = ((TObjString*)runTokens->At(1))->GetString().Atof();
-    centralityRange.second = ((TObjString*)runTokens->At(2))->GetString().Atof();
-    delete runTokens;
     
+    // Check if we have enough tokens
+    if (runTokens->GetEntries() >= 3) {
+      centralityRange.first = ((TObjString*)runTokens->At(1))->GetString().Atof();
+      centralityRange.second = ((TObjString*)runTokens->At(2))->GetString().Atof();
+    } else {
+      WARN("Could not parse centrality from train config, using default 0-100");
+      centralityRange.first = 0;
+      centralityRange.second = 100;
+    }
+    delete runTokens;
   }
 
   DLJetCuts dljetCuts(optns);

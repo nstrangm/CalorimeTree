@@ -52,6 +52,16 @@ std::vector<Float_t> *fBuffer_cluster_data_match_deta;
 std::vector<Float_t> *fBuffer_cluster_data_match_dphi;
 std::vector<Float_t> *fBuffer_cluster_data_match_p;
 
+// jet substructure - flat array + count pattern
+// fBuffer_jetsubstr_data_nentries[k] = number of splittings for jet k in this event
+// the flat arrays contain all splittings for all jets concatenated in jet order;
+// splittings for jet k start at offset = sum(nentries[0..k-1])
+std::vector<Int_t>   *fBuffer_jetsubstr_data_nentries;
+std::vector<Float_t> *fBuffer_jetsubstr_data_energymother;
+std::vector<Float_t> *fBuffer_jetsubstr_data_ptleading;
+std::vector<Float_t> *fBuffer_jetsubstr_data_ptsubleading;
+std::vector<Float_t> *fBuffer_jetsubstr_data_theta;
+
 // define global switches
 Bool_t fIsPbPb = kFALSE;
 Bool_t fIsMC = kFALSE;

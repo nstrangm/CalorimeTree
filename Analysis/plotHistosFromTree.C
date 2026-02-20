@@ -1625,6 +1625,203 @@ void plotIsoGammaJetCorrelationQA(TDirectory *dGammaJetCorrelationQA, TString Ga
   PJEtaPhiMap.Plot(Form("%s/JetEtaPhiMap.%s", outputDir.Data(), suffix));
 }
 
+void plotSubstructure(TDirectory *dGammaJetCorrelations, TDirectory *dmPi0JetCorrelations, GlobalOptions optns){
+  TString outputDir = Form("%s/JetSubstructure", optns.analysisDirPath.Data());
+
+  createDirectory(outputDir.Data());
+
+  THnSparseF *hBack2BackJetPtPhotonPtRg_Gamma = (THnSparseF *)dGammaJetCorrelations->Get("hBack2BackJetPtPhotonPtRg");
+  THnSparseF *hBack2BackJetPtPhotonPtZg_Gamma = (THnSparseF *)dGammaJetCorrelations->Get("hBack2BackJetPtPhotonPtZg");
+  THnSparseF *hBack2BackJetPtPhotonPtNsd_Gamma = (THnSparseF *)dGammaJetCorrelations->Get("hBack2BackJetPtPhotonPtNsd");
+  THnSparseF *hBack2BackJetPtPhotonPtRg_mPi0 = (THnSparseF *)dmPi0JetCorrelations->Get("hBack2BackJetPtPhotonPtRg");
+  THnSparseF *hBack2BackJetPtPhotonPtZg_mPi0 = (THnSparseF *)dmPi0JetCorrelations->Get("hBack2BackJetPtPhotonPtZg");
+  THnSparseF *hBack2BackJetPtPhotonPtNsd_mPi0 = (THnSparseF *)dmPi0JetCorrelations->Get("hBack2BackJetPtPhotonPtNsd");
+  
+  // creat projections in bins of jet pt and photon pt
+  TH1F* hBack2BackJetPtPhotonPtRgProjection_Gamma[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hBack2BackJetPtPhotonPtZgProjection_Gamma[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hBack2BackJetPtPhotonPtNsdProjection_Gamma[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hBack2BackJetPtPhotonPtRgProjection_mPi0[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hBack2BackJetPtPhotonPtZgProjection_mPi0[nPtBinsCoarse][nPtBinsCoarse];
+  TH1F* hBack2BackJetPtPhotonPtNsdProjection_mPi0[nPtBinsCoarse][nPtBinsCoarse];
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      int minBinJetPt = hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin]);
+      int maxBinJetPt = hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin + 1]);
+      int minBinPhotonPt = hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(1)->FindBin(ptBinsCoarse[iPhotonPtBin]);
+      int maxBinPhotonPt = hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(1)->FindBin(ptBinsCoarse[iPhotonPtBin + 1]);
+      hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtRg_Gamma->Projection(2);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtRgProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtZg_Gamma->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtZg_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, max
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtZg_Gamma->Projection(2);
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtZgProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtNsd_Gamma->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtNsd_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtNsd_Gamma->Projection(2);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtNsdProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+
+      minBinJetPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin]);
+      maxBinJetPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin + 1]);
+      minBinPhotonPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(1)->FindBin(ptBinsCoarse[iPhotonPtBin]);
+      maxBinPhotonPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(1)->FindBin(ptBinsCoarse[iPhotonPtBin + 1]);
+      hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtRg_mPi0->Projection(2);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtRgProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtZg_mPi0->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtZg_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtZg_mPi0->Projection(2);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtZgProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtNsd_mPi0->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
+      hBack2BackJetPtPhotonPtNsd_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtNsd_mPi0->Projection(2);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtNsdProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+    }
+  }
+
+  TCanvas* cJetRgProjections_Gamma = new TCanvas("cJetRgProjections_Gamma", "cJetRgProjections_Gamma", 800, 800);
+  cJetRgProjections_Gamma->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetRgProjections_Gamma->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#gamma} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("rg");
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 0.5);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetLineColor(kBlack);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kBlack);
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+   
+    }
+  }
+  cJetRgProjections_Gamma->SaveAs(Form("%s/JetRgProjections_Gamma.%s", outputDir.Data(), suffix));
+
+  TCanvas* cJetZgProjections_Gamma = new TCanvas("cJetZgProjections_Gamma", "cJetZgProjections_Gamma", 800, 800);
+  cJetZgProjections_Gamma->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetZgProjections_Gamma->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#gamma} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("zg");
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 0.5);
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetLineColor(kBlack);
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kBlack);
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+    }
+  }
+  cJetZgProjections_Gamma->SaveAs(Form("%s/JetZgProjections_Gamma.%s", outputDir.Data(), suffix));
+
+  TCanvas* cJetNsdProjections_Gamma = new TCanvas("cJetNsdProjections_Gamma", "cJetNsdProjections_Gamma", 800, 800);
+  cJetNsdProjections_Gamma->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetNsdProjections_Gamma->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#gamma} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("nsd");
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 15);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetLineColor(kBlack);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kBlack);
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+    }
+  }
+  cJetNsdProjections_Gamma->SaveAs(Form("%s/JetNsdProjections_Gamma.%s", outputDir.Data(), suffix));
+
+  TCanvas* cJetRgProjections_mPi0 = new TCanvas("cJetRgProjections_mPi0", "cJetRgProjections_mPi0", 800, 800);
+  cJetRgProjections_mPi0->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetRgProjections_mPi0->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#pi^{0}} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("rg");
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 0.5);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetLineColor(kRed);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kRed);
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+    }
+  }
+  cJetRgProjections_mPi0->SaveAs(Form("%s/JetRgProjections_mPi0.%s", outputDir.Data(), suffix));
+
+  TCanvas* cJetZgProjections_mPi0 = new TCanvas("cJetZgProjections_mPi0", "cJetZgProjections_mPi0", 800, 800);
+  cJetZgProjections_mPi0->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetZgProjections_mPi0->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#pi^{0}} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("zg");
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 0.5);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetLineColor(kRed);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kRed);
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+    }
+  }
+  cJetZgProjections_mPi0->SaveAs(Form("%s/JetZgProjections_mPi0.%s", outputDir.Data(), suffix));
+
+  TCanvas* cJetNsdProjections_mPi0 = new TCanvas("cJetNsdProjections_mPi0", "cJetNsdProjections_mPi0", 800, 800);
+  cJetNsdProjections_mPi0->Divide(nPtBinsCoarse, nPtBinsCoarse,0,0);
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      cJetNsdProjections_mPi0->cd(iJetPtBin * nPtBinsCoarse + iPhotonPtBin + 1);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetTitle(Form("%.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#pi^{0}} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]));
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetTitle("nsd");
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetXaxis()->SetRangeUser(0, 15);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetYaxis()->SetTitle("counts");
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetLineColor(kRed);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetMarkerColor(kRed);
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->Draw("hist e");
+    }
+  }
+  cJetNsdProjections_mPi0->SaveAs(Form("%s/JetNsdProjections_mPi0.%s", outputDir.Data(), suffix));
+
+  // now do individual plots for different bins where pi0 and prompt gamma are plotted together!
+  Plotting1D PRgProjections[nPtBinsCoarse][nPtBinsCoarse];
+  Plotting1D PZgProjections[nPtBinsCoarse][nPtBinsCoarse];
+  Plotting1D PNsdProjections[nPtBinsCoarse][nPtBinsCoarse];
+  for (int iJetPtBin = 0; iJetPtBin < nPtBinsCoarse; iJetPtBin++)
+  {
+    for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
+    {
+      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
+      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+      PRgProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 0.5);
+      PRgProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("r_g", "counts/jet");
+      PRgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetRgProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+
+      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
+      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+      PZgProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 0.5);
+      PZgProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("z_g", "counts/jet");
+      PZgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetZgProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+
+      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
+      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+      PNsdProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 15);
+      PNsdProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("n_{sd}", "counts/jet");
+      PNsdProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetNsdProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+    }
+  }
+}
+
 void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
 {
 
@@ -1818,6 +2015,17 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
     TDirectory *dmPi0JetCorrelationQA = (TDirectory *)fIn->Get("mPi0JetCorrelationQA");
     if (dmPi0JetCorrelationQA) plotIsoGammaJetCorrelationQA(dmPi0JetCorrelationQA, "mPi0", optns);
     else WARN("Dir mPi0JetCorrelationQA not found. Skipping");
+  }
+
+  //------------------------------------
+  //       Jet Substructure Plots
+  //------------------------------------
+  if (optns.doSubstructure)
+  {
+    TDirectory *dGammaJetSubstructure = (TDirectory *)fIn->Get("GammaJetCorrelations");
+    TDirectory *dmPi0JetSubstructure = (TDirectory *)fIn->Get("mPi0JetCorrelations");
+    if(dmPi0JetSubstructure) plotSubstructure(dGammaJetSubstructure, dmPi0JetSubstructure, optns);
+    else WARN("Dir mPi0JetSubstructure not found. Skipping");
   }
 
   //------------------------------------

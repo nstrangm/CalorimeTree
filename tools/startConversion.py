@@ -25,6 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", help="The output directory. If empty, then inputdir/converted will be used", default="")
     parser.add_argument("--filename", help="The input filename", default="AO2D.root")
     parser.add_argument("--nFilesPerJob", help="The number of files to convert per job", default=1)
+    parser.add_argument("--local", action="store_true", help="Run locally with bash instead of sbatch without splitting")
     args = parser.parse_args()
 
     input_dir = Path(args.input)
@@ -91,7 +92,11 @@ if __name__ == "__main__":
 
     
     # split the files into chunks each containing nFilesPerJob
-    nFilesPerJob = int(args.nFilesPerJob)
+    if args.local:
+        nFilesPerJob = max(len(files), 1)
+    else:
+        nFilesPerJob = int(args.nFilesPerJob)
+
     filechunks = [files[i:i + nFilesPerJob] for i in range(0, len(files), nFilesPerJob)]
     log.info(f"Splitting files into {len(filechunks)} chunks with {nFilesPerJob} files each")
 
@@ -134,10 +139,16 @@ if __name__ == "__main__":
         log.info(f"Writing chunk {i} to {tmpfile}")
         # submit a job
         log.info(f"Submitting job for chunk {i}")
-        # submit a job
-        cmd=f"sbatch --partition=short {tmpscript}" 
-        # save the job id and run
-        slurmJobIDs.append(subprocess.check_output(cmd, shell=True).decode('utf-8').split()[-1])
+        
+        if args.local:
+            cmd = f"bash {tmpscript}"
+            log.info(f"Running locally: {cmd}")
+            os.system(cmd)
+        else:
+            # submit a job
+            cmd=f"sbatch --partition=short {tmpscript}" 
+            # save the job id and run
+            slurmJobIDs.append(subprocess.check_output(cmd, shell=True).decode('utf-8').split()[-1])
 
 
     filelistmakerscript = tmpdir / "filelistmaker.sh"
@@ -148,9 +159,14 @@ if __name__ == "__main__":
 
 
     # run sbatch with filelistmakerscript after all jobs from slurJobIDs are done
-    cmd = f"sbatch --dependency=afterok:{':'.join(slurmJobIDs)} {filelistmakerscript}"
-    log.info(f"Running {cmd}")
-    os.system(cmd)
+    if args.local:
+        cmd = f"bash {filelistmakerscript}"
+        log.info(f"Running {cmd}")
+        os.system(cmd)
+    else:
+        cmd = f"sbatch --dependency=afterok:{':'.join(slurmJobIDs)} {filelistmakerscript}"
+        log.info(f"Running {cmd}")
+        os.system(cmd)
     
 
     

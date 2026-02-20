@@ -30,6 +30,7 @@ public:
   bool doQA = true;
   bool doIsoGamma = false;
   bool doJets = false;
+  bool doSubstructure = false;
   bool domPi0 = false;
   bool doGGPi0 = false;
   bool doCombineExclGammaJet = false;
@@ -72,6 +73,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 
   doIsoGamma = config["doIsoGamma"].as<bool>();
   doJets = config["doJets"].as<bool>();
+  doSubstructure = config["doSubstructure"].as<bool>();
   domPi0 = config["domPi0"].as<bool>();
   doGGPi0 = config["doGGPi0"].as<bool>();
   doCombineExclGammaJet = config["doCombineExclGammaJet"].as<bool>();
@@ -95,7 +97,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
           _______\/////////___\////////\//__\/////////_____\/////_____\///__________\///__\///___\///___\///____\//////////________\///________\///____________\//////////____\//////////__
         )" << '\n';
 
-  INFO(Form("Analyzing %s%s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", domPi0 ? " + mPi0" : "", doGGPi0 ? " + GGPi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
+  INFO(Form("Analyzing %s%s%s%s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doSubstructure ? " + Substructure" : "", domPi0 ? " + mPi0" : "", doGGPi0 ? " + GGPi0" : "", doCombineExclGammaJet ? " + Combine" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
 }
 
 // Returns the fraction of a cone at Eta = cEta and radius r that lies within the acceptance of a detector covering +-maxEta

@@ -416,6 +416,37 @@ TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOption
   hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(2)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
   hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->Sumw2();
   dir->Add(hIsoGammaJetDeltaPhi2piDeltaEtaJetPt);
+
+
+  if (optns.doSubstructure)
+  {
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, rg
+    THnSparseF *hBack2BackJetPtPhotonPtRg = new THnSparseF("hBack2BackJetPtPhotonPtRg", "hBack2BackJetPtPhotonPtRg", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 1});
+    hBack2BackJetPtPhotonPtRg->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtRg->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtRg->GetAxis(2)->SetTitle("rg");
+    hBack2BackJetPtPhotonPtRg->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtRg);
+
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, zg
+    THnSparseF *hBack2BackJetPtPhotonPtZg = new THnSparseF("hBack2BackJetPtPhotonPtZg", "hBack2BackJetPtPhotonPtZg", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 1});
+    hBack2BackJetPtPhotonPtZg->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtZg->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtZg->GetAxis(2)->SetTitle("zg");
+    hBack2BackJetPtPhotonPtZg->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtZg);
+    
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, nsd
+    THnSparseF *hBack2BackJetPtPhotonPtNsd = new THnSparseF("hBack2BackJetPtPhotonPtNsd", "hBack2BackJetPtPhotonPtNsd", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 100});
+    hBack2BackJetPtPhotonPtNsd->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtNsd->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtNsd->GetAxis(2)->SetTitle("nsd");
+    hBack2BackJetPtPhotonPtNsd->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtNsd);
+  }
   return dir;
 }
 
@@ -695,6 +726,29 @@ void fillHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, TDirectory *
         double coords[3] = {obj.at(i).jet->Eta(), obj.at(i).jet->Pt(), static_cast<double>(obj.at(i).jet->Nconstits)};
         ((THnSparseF *)QAdir->FindObject("hJetEtaPtConstBackToBack"))->Fill(coords, eventWeight);
       }
+    }
+  }
+  if (optns.doSubstructure)
+  {
+    for (unsigned long i = 0; i < obj.size(); i++)
+    {
+     if (obj.at(i).isBack2Back())
+     {
+        double coordsSubstructure[3] = {obj.at(i).jet->Pt(), obj.at(i).isoGamma->Pt(), obj.at(i).jet->rg};
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtRg"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->zg;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtZg"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->nsd;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtNsd"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->rg;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtRg"))->Fill(coordsSubstructure, eventWeight);
+     }
     }
   }
 }

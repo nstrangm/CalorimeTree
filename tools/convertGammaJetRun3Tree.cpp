@@ -59,6 +59,11 @@ void createTree() {
     outputTree->Branch("cluster_data_match_deta", &fBuffer_cluster_data_match_deta);
     outputTree->Branch("cluster_data_match_dphi", &fBuffer_cluster_data_match_dphi);
     outputTree->Branch("cluster_data_match_p", &fBuffer_cluster_data_match_p);
+    outputTree->Branch("jetsubstr_data_nentries",    &fBuffer_jetsubstr_data_nentries);
+    outputTree->Branch("jetsubstr_data_energymother", &fBuffer_jetsubstr_data_energymother);
+    outputTree->Branch("jetsubstr_data_ptleading",    &fBuffer_jetsubstr_data_ptleading);
+    outputTree->Branch("jetsubstr_data_ptsubleading", &fBuffer_jetsubstr_data_ptsubleading);
+    outputTree->Branch("jetsubstr_data_theta",        &fBuffer_jetsubstr_data_theta);
 
 }
 
@@ -89,11 +94,17 @@ void clearBuffers(){
     fBuffer_cluster_data_match_deta->clear();
     fBuffer_cluster_data_match_dphi->clear();
     fBuffer_cluster_data_match_p->clear();
+    fBuffer_jetsubstr_data_nentries->clear();
+    fBuffer_jetsubstr_data_energymother->clear();
+    fBuffer_jetsubstr_data_ptleading->clear();
+    fBuffer_jetsubstr_data_ptsubleading->clear();
+    fBuffer_jetsubstr_data_theta->clear();
 }
 
-void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
+void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets, TTree* tJetSubstr){
     std::unordered_map<int, std::vector<int>> jetMap;
     std::unordered_map<int, std::vector<int>> clusterMap;
+    std::unordered_map<int, std::vector<int>> jetSubstrMap;
     if (!tEvents) {
     cout << "-> Collisions is not found. Skipping this file" << endl;
         return;
@@ -105,6 +116,10 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
     if (!tJets) {
     cout << "-> Jets is not found. Skipping this file" << endl;
         return;
+    }
+    if (!tJetSubstr) {
+    cout << "-> Jet substructure is not found. I will not convert this to the output tree" << endl;
+        // return;
     }
 
     // loop over all jets
@@ -119,6 +134,36 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
       tClusters->GetEntry(j);
       int collisionID = tClusters->GetBranch("fIndexGjEvents")->GetLeaf("fIndexGjEvents")->GetValue();
       clusterMap[collisionID].push_back(j);
+    }
+
+    // Set up branch addresses for jet substructure (vector<vector<float>> per event)
+    const Int_t kMaxSplittings = 100;
+
+    Int_t   substr_energyMother_size = 0;
+    Float_t substr_energyMother[kMaxSplittings];
+    Int_t   substr_ptLeading_size = 0;
+    Float_t substr_ptLeading[kMaxSplittings];
+    Int_t   substr_ptSubLeading_size = 0;
+    Float_t substr_ptSubLeading[kMaxSplittings];
+    Int_t   substr_theta_size = 0;
+    Float_t substr_theta[kMaxSplittings];
+
+    if (tJetSubstr) {
+      tJetSubstr->SetBranchAddress("fEnergyMother_size", &substr_energyMother_size);
+      tJetSubstr->SetBranchAddress("fEnergyMother", substr_energyMother);
+      tJetSubstr->SetBranchAddress("fPtLeading_size", &substr_ptLeading_size);
+      tJetSubstr->SetBranchAddress("fPtLeading", substr_ptLeading);
+      tJetSubstr->SetBranchAddress("fPtSubLeading_size", &substr_ptSubLeading_size);
+      tJetSubstr->SetBranchAddress("fPtSubLeading", substr_ptSubLeading);
+      tJetSubstr->SetBranchAddress("fTheta_size", &substr_theta_size);
+      tJetSubstr->SetBranchAddress("fTheta", substr_theta);
+
+      // Map collision ID to jet substructure entry (one entry per event)
+      for (int j = 0; j < tJetSubstr->GetEntries(); j++) {
+        tJetSubstr->GetEntry(j);
+        int collisionID = tJetSubstr->GetBranch("fIndexGjEvents")->GetLeaf("fIndexGjEvents")->GetValue();
+        jetSubstrMap[collisionID].push_back(j);
+      }
     }
 
     // loop over all events
@@ -150,7 +195,7 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
         }
 
 
-        // loop over jets for this event
+        // loop over clusters for this event
         for (int k = 0; k < clusterMap[collisionID].size(); k++) {
             tClusters->GetEntry(clusterMap[collisionID].at(k));
             fBuffer_cluster_data_energy->push_back(tClusters->GetBranch("fEnergy")->GetLeaf("fEnergy")->GetValue());
@@ -171,6 +216,26 @@ void readAndFillTree(TTree* tEvents, TTree* tClusters, TTree* tJets){
             fBuffer_cluster_data_match_p->push_back(tClusters->GetBranch("fTMtrackP")->GetLeaf("fTMtrackP")->GetValue());
         }
 
+        // Read jet substructure for this event (if exists).
+        // One substructure entry per jet (same ordering as jetMap).
+        // We use the flat array + count pattern:
+        //   nentries[k]  = number of splittings for jet k
+        //   flat arrays  = all splittings for all jets concatenated in jet order
+        // To recover splittings for jet k: offset = sum(nentries[0..k-1])
+        if (tJetSubstr) {
+            for (int k = 0; k < (int)jetSubstrMap[collisionID].size(); k++) {
+                tJetSubstr->GetEntry(jetSubstrMap[collisionID].at(k));
+
+                fBuffer_jetsubstr_data_nentries->push_back(substr_energyMother_size);
+                for (int s = 0; s < substr_energyMother_size; s++) {
+                    fBuffer_jetsubstr_data_energymother->push_back(substr_energyMother[s]);
+                    fBuffer_jetsubstr_data_ptleading->push_back(substr_ptLeading[s]);
+                    fBuffer_jetsubstr_data_ptsubleading->push_back(substr_ptSubLeading[s]);
+                    fBuffer_jetsubstr_data_theta->push_back(substr_theta[s]);
+                }
+            }
+        }
+
         outputTree->Fill();
         clearBuffers();
 
@@ -184,6 +249,7 @@ void processFile(TFile *inputFile) {
   TTree * O2gjevent = nullptr;
   TTree * O2gjgamma = nullptr;
   TTree * O2gjjet = nullptr;
+  TTree * O2gjjetsubstr = nullptr;
 
   // loop over all directories and print name
   TIter next(inputFile->GetListOfKeys());
@@ -206,16 +272,19 @@ void processFile(TFile *inputFile) {
         O2gjgamma = tree;
       } else if (strcmp(tree->GetName(), "O2gjchjet") == 0) {
         O2gjjet = tree;
+      } else if (strcmp(tree->GetName(), "O2gjjetsubstr") == 0) {
+        O2gjjetsubstr = tree;
       }
     }
     cout << "Processing directory " << dir->GetName() << endl;
     // build event
-    readAndFillTree(O2gjevent, O2gjgamma, O2gjjet);
+    readAndFillTree(O2gjevent, O2gjgamma, O2gjjet, O2gjjetsubstr);
 
     // delete all TTrees
     delete O2gjevent;
     delete O2gjgamma;
     delete O2gjjet;
+    delete O2gjjetsubstr;
   }
 }
 void convertGammaJetRun3Tree(TString inputFileList = "",

@@ -2,9 +2,12 @@
 #define _TREEUTILITIES_
 
 #include <fstream>
+#include <vector>
 #include <TTree.h>
 #include <TKey.h>
 #include <TChain.h>
+#include <TInterpreter.h>
+
 
 enum TreeTypes
 {
@@ -57,6 +60,7 @@ TChain *readTree(TString InputFileNamesFile, GlobalOptions optns)
     if (tempLine.Contains("histos")) // Skip the file that contains the histograms
       continue;
     // before adding check if file is health
+    /*
     TFile *f = TFile::Open(tempLine.Data());
     if ((!f) || f->IsZombie())
     {
@@ -64,6 +68,8 @@ TChain *readTree(TString InputFileNamesFile, GlobalOptions optns)
       continue;
     }
     f->Close();
+    */
+
     INFO(Form("Adding tree %s from %s to chain", treeName.Data(), tempLine.Data()))
     tree->Add(Form("%s", tempLine.Data()));
     if (optns.isDebugRun)
@@ -172,6 +178,23 @@ public:
   std::vector<float> *Jet_LeadingTrackPt = 0;     // Run     3
   std::vector<float> *Jet_PerpConeRho = 0;        // Run     3
   std::vector<unsigned short> *Jet_Nconstits = 0; // Run     3
+
+  // -------------- Substructure branches ---------------
+  // Flat array + count pattern: NEntries[k] splittings for jet k,
+  // starting at offset = sum(NEntries[0..k-1]) in the flat arrays.
+  // Use GetJetSubstrOffset(k) and GetJetNSplittings(k) for convenient access.
+  std::vector<int>   *JetSubstr_NEntries     = 0; // Run     3
+  std::vector<float> *JetSubstr_EnergyMother = 0; // Run     3
+  std::vector<float> *JetSubstr_PtLeading    = 0; // Run     3
+  std::vector<float> *JetSubstr_PtSubLeading = 0; // Run     3
+  std::vector<float> *JetSubstr_Theta        = 0; // Run     3
+
+  int GetJetNSplittings(int jetIdx) const { return JetSubstr_NEntries->at(jetIdx); }
+  int GetJetSubstrOffset(int jetIdx) const {
+    int offset = 0;
+    for (int j = 0; j < jetIdx; j++) offset += JetSubstr_NEntries->at(j);
+    return offset;
+  }
 
   // ###########################################
   // Members that will be matched to MC branches
@@ -362,6 +385,14 @@ void TreeBuffer::ReadRun3TreeIntoBuffer(TChain *tree, GlobalOptions optns)
     tree->SetBranchAddress("jet_data_leadingtrackpt", &Jet_LeadingTrackPt);
     tree->SetBranchAddress("jet_data_perpconerho", &Jet_PerpConeRho);
     tree->SetBranchAddress("jet_data_nconstituents", &Jet_Nconstits);
+  }
+  if (optns.doSubstructure)
+  {
+    tree->SetBranchAddress("jetsubstr_data_nentries",    &JetSubstr_NEntries);
+    tree->SetBranchAddress("jetsubstr_data_energymother", &JetSubstr_EnergyMother);
+    tree->SetBranchAddress("jetsubstr_data_ptleading",    &JetSubstr_PtLeading);
+    tree->SetBranchAddress("jetsubstr_data_ptsubleading", &JetSubstr_PtSubLeading);
+    tree->SetBranchAddress("jetsubstr_data_theta",        &JetSubstr_Theta);
   }
 }
 
