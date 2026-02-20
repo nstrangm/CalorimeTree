@@ -1,36 +1,54 @@
-# Ignore everything
-/*
+# --- ROOT / ACLiC build artifacts ---
+*_C.d
+*_C.so
+*_C_ACLiC_dict_rdict.pcm
+*_dictUmbrella.h
+*_dictContent.h
+*.d
+*.so
+*.pcm
+AutoDict_*
 
-# Do not ignore the .gitignore file itself
-!.gitignore
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
 
-# Do not ignore the DummyDataSet folder and its contents
-!DummyDataSet/
-!DummyDataSet/**
-DummyDataSet/DummyTrainConfig/Standard/**
+# --- Generated / output data ---
+*.root
+*.pdf
+*.png
 
-# Do not ignore the Analysis folder and its contents
-!Analysis/
-!Analysis/**
-Analysis/*_C.d
-Analysis/*_C.so
-Analysis/*_C_ACLiC_dict_rdict.pcm
-Analysis/*_dictUmbrella.h
-Analysis/*_dictContent.h
-RunConfig.yaml
+# --- Job / cluster outputs ---
+*.out
+*.log
+*.txt
+# --- Local / machine-specific config (paths, tokens) ---
+# RunConfig.yaml
+dpl-config.json
 
-#Do not ignore the ML folder and its contents
-!ML/
-!ML/**
-!ML/*.py
+# --- IDE / editor ---
+.vscode/
+.idea/
+*.swp
+*~
+.cursorignore
+.trunk
+cvmfs
 
-# Do not ignore the CutStudies directory and its files, but ignore all subfolders within it
-!CutStudies/
-!CutStudies/*
+# --- OS ---
+.DS_Store
+Thumbs.db
 
-# Ignore all subfolders within CutStudies
-CutStudies/*/**
+# --- Optional: ignore large or ephemeral input lists in tools (uncomment if desired) ---
+# tools/input*.txt
+# tools/inputfiles*.txt
+# tools/*Grid*.txt
 
-# Do not ignore the tools folder
-!tools/
-!tools/*
+# --- Optional: ignore local run config dirs with machine-specific inputs (uncomment if desired) ---
+# tools/LocalRunConfigs/
