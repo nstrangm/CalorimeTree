@@ -11,10 +11,11 @@ Standard:
 
   # Acceptance cuts
   gamma_Acceptance: EMC
-  gamma_ClusterDefinition: 10 # V3
+  # gamma_ClusterDefinition: 10 # V3
+  gamma_ClusterDefinition: 0 #kV3NoSplit
 
   #Cluster energy
-  gamma_min_E: 8.
+  gamma_min_E: 10. # adjust to be above threshold
   gamma_max_E: 200.
 
   gamma_min_time: -35.
@@ -46,7 +47,16 @@ Standard:
   mPi0_max_ptiso: 100 #Cluster isolation
 
   gamma_applyNonLin: false
-  useRhoInsteadOfPerpCone: true
+  useRhoInsteadOfPerpCone: false
+
+  # ----------------------------> ABCD Purity Cut Regions
+  purity_iso_sig_max:   1.5   # upper edge of signal isolation region
+  purity_iso_sb_min:    5.0   # lower edge of isolation sideband
+  purity_iso_sb_max:   20.0   # upper edge of isolation sideband
+  purity_m02_sig_min:   0.1   # lower edge of signal M02 window
+  purity_m02_sig_max:   0.3   # upper edge of signal M02 window
+  purity_m02_sb_min:    0.5   # lower edge of background M02 sideband
+  purity_m02_sb_max:    1.6   # upper edge of background M02 sideband
 
   # additional settings used for the photon entering pi0->
   gPi0_min_M02: 0.1

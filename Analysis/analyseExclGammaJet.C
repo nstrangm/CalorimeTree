@@ -611,9 +611,9 @@ void processPurity(TDirectory *dSignal,TString label, GlobalOptions optns)
 
 
 
-void analyseExclGammaJet(TString AnalysisDirectory, bool isDebugRun = false)
+void analyseExclGammaJet(TString AnalysisDirectory, bool isDebugRun = false, TString configPath = "RunConfig.yaml")
 {
-  GlobalOptions optns(AnalysisDirectory, isDebugRun);
+  GlobalOptions optns(AnalysisDirectory, isDebugRun ? 0 : 1, configPath);
 
 
 

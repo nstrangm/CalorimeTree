@@ -1,13 +1,15 @@
 doPlotting: true
-nParallelJobsPerVar: 2 # 15
+nParallelJobsPerVar: 20 # 15
 doIsoGamma: true  
 doJets: true
 doSubstructure: true
 doGGPi0: false
 domPi0: true
 doAnalysisExclGammaJet: false
-doPlottingExclGammaJet: true
+doPlottingExclGammaJet: false
 doCombineExclGammaJet: false
+doPurity: false
+doPlottingPurity: false
 LHC23_pass4_skimmed_IsoR02_SubStructure:
   isMC: false
   path: /alf/data/calorimetrees/JE_pp_AO2D/605678_LHC23_pass4_skimmed_IsoR02_SubStructure/converted 

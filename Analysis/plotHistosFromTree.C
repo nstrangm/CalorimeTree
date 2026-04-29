@@ -37,7 +37,10 @@ void BuildLegendHeader(GlobalOptions optns)
     centMin = std::stoi(tokens[1]);
     centMax = std::stoi(tokens[2]);
   }
-  legendHeader = Form("#bf{ALICE work-in-progress};%s;Centrality: %d-%d%%",optns.dataSet.Data(),centMin,centMax);
+  if (optns.isPP)
+    legendHeader = Form("#bf{ALICE work-in-progress};%s", optns.dataSet.Data());
+  else
+    legendHeader = Form("#bf{ALICE work-in-progress};%s;Centrality: %d-%d%%", optns.dataSet.Data(), centMin, centMax);
 
   // get jet radius
   double jetRadius = chosencut["jet_Radius"].IsDefined() ? chosencut["jet_Radius"].as<float>() : standardcut["jet_Radius"].as<float>();
@@ -85,24 +88,67 @@ void plotEventQA(TDirectory* dEvent, TDirectory* dEventQA, GlobalOptions optns)
   TH2F* hOccupancyCentrality = (TH2F*)dEventQA->Get("hOccupancyCentrality");
 
   TH1F* hNEvents = (TH1F*)dEvent->Get("hNEvents");
-  // AvoidLogYconflict(hNEvents);
-  TH1F* hNEventswoWeights = (TH1F*)dEvent->Get("hNEventswoWeights");
-  // AvoidLogYconflict(hNEventswoWeights);
+  TH1F* hNEventswoWeights = dEventQA ? (TH1F*)dEventQA->Get("hNEventswoWeights") : nullptr;
 
  
 
-  Plotting1D PNEvents;
-  PNEvents.New(hNEvents,"",-1,1,kBlack,"hist");
-  PNEvents.SetAxisLabel("#bf{Events}", "#bf{Counts}");
-  PNEvents.NewLatex(0.8,0.9,Form("%s;%.2e accepted events",legendHeader.Data(),hNEvents->GetBinContent(6)));
-  // Add number of entries above each bin in exponential notation
-  PNEvents.Plot(Form("%s/NEvents.%s", outputDir, suffix));
+  // hNEvents and hNEventswoWeights have bin labels on the x-axis. The Plotting1D
+  // class draws a dummy TH2D axis with 1000 numeric bins that masks those labels,
+  // so we draw these two histograms directly with ROOT instead.
+  auto DrawBinLabelHist = [&](TH1F *h, const char *latexText, const char *outPath) {
+    if (!h) return;
+    TCanvas *c = new TCanvas("cBinLabel", "cBinLabel", 2000, 1500);
+    c->SetLeftMargin(0.1);
+    c->SetRightMargin(0.025);
+    c->SetBottomMargin(0.22);
+    c->SetTopMargin(0.025);
+    c->SetLogy(true);
+    gPad->SetTickx();
+    gPad->SetTicky();
+    gStyle->SetOptStat(0);
+  h->SetTitle("");
+  // log y
 
-  Plotting1D PNEventswoWeights;
-  PNEventswoWeights.New(hNEventswoWeights,"",-1,1,kBlack,"hist");
-  PNEventswoWeights.SetAxisLabel("#bf{Events}", "#bf{Counts}");
-  PNEventswoWeights.NewLatex(0.8,0.9,legendHeader);
-  PNEventswoWeights.Plot(Form("%s/NEventswoWeights.%s", outputDir, suffix));
+    h->SetLineColor(kBlack);
+    h->SetLineWidth(1);
+    h->SetStats(0);
+    h->GetXaxis()->SetLabelFont(43);
+    h->GetXaxis()->SetLabelSize(StdTextSize);
+    h->GetXaxis()->SetTitleFont(43);
+    h->GetXaxis()->SetTitleSize(TitleSizeScaling * StdTextSize);
+    h->GetXaxis()->SetTitleOffset(1.);
+    h->GetYaxis()->SetLabelFont(43);
+    h->GetYaxis()->SetLabelSize(StdTextSize);
+    h->GetYaxis()->SetTitleFont(43);
+    h->GetYaxis()->SetTitleSize(TitleSizeScaling * StdTextSize);
+    h->GetYaxis()->SetTitleOffset(1.25);
+    h->GetXaxis()->SetTitle("");
+    h->GetYaxis()->SetTitle("N_{events}");
+    // h->GetYaxis()->SetRangeUser(1e-10, 1e10);
+    h->Draw("hist");
+
+    TLatex latex;
+    latex.SetNDC();
+    latex.SetTextFont(43);
+    latex.SetTextSize(StdTextSize);
+    latex.SetTextAlign(32);
+    TString latexStr(latexText);
+    TObjArray *lines = latexStr.Tokenize(";");
+    for (int iL = 0; iL < lines->GetEntries(); iL++) {
+      latex.DrawLatex(0.8, 0.4 - iL * 0.06, ((TObjString *)lines->At(iL))->GetString());
+    }
+    delete lines;
+
+    c->SaveAs(outPath);
+    delete c;
+  };
+
+  DrawBinLabelHist(hNEvents,
+                   Form("%s;%.2e accepted events", legendHeader.Data(), hNEvents->GetBinContent(6)),
+                   Form("%s/NEvents.%s", outputDir, suffix));
+  DrawBinLabelHist(hNEventswoWeights,
+                   legendHeader.Data(),
+                   Form("%s/NEventswoWeights.%s", outputDir, suffix));
   
   
 
@@ -1540,7 +1586,7 @@ void plotIsoGammaJetCorrelations(TDirectory *dGammaJetCorrelations, TString Gamm
       piLineShiftedDashed[iJetPtBin][iGammaPtBin]->Draw("same");
 
       // draw shaded box from pi-0.6 to pi+0.6
-      TBox* box = new TBox(TMath::Pi()-0.6, hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMinimum(), TMath::Pi()+0.6, hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMaximum());
+      TBox* box = new TBox(0.5*TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMinimum(), 1.5*TMath::Pi(), hJetGammaDeltaPhi2piProjectionsShifted[iJetPtBin][iGammaPtBin]->GetMaximum());
       box->SetFillColorAlpha(kRed, 0.1);
       box->SetFillStyle(1001);
       box->Draw("same");
@@ -1656,14 +1702,18 @@ void plotSubstructure(TDirectory *dGammaJetCorrelations, TDirectory *dmPi0JetCor
       hBack2BackJetPtPhotonPtRg_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtRg_Gamma->Projection(2);
       hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtRgProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+      // normalize bt the entries (one entry per jet so same as normalising with number of jets)
+      hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetEntries());
       hBack2BackJetPtPhotonPtZg_Gamma->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
-      hBack2BackJetPtPhotonPtZg_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, max
+      hBack2BackJetPtPhotonPtZg_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtZg_Gamma->Projection(2);
       hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtZgProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetEntries());
       hBack2BackJetPtPhotonPtNsd_Gamma->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
       hBack2BackJetPtPhotonPtNsd_Gamma->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtNsd_Gamma->Projection(2);
       hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtNsdProjection_Gamma_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin]->GetEntries());
 
       minBinJetPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin]);
       maxBinJetPt = hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(0)->FindBin(ptBinsCoarse[iJetPtBin + 1]);
@@ -1673,14 +1723,17 @@ void plotSubstructure(TDirectory *dGammaJetCorrelations, TDirectory *dmPi0JetCor
       hBack2BackJetPtPhotonPtRg_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtRg_mPi0->Projection(2);
       hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtRgProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetEntries());
       hBack2BackJetPtPhotonPtZg_mPi0->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
       hBack2BackJetPtPhotonPtZg_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtZg_mPi0->Projection(2);
       hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtZgProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetEntries());
       hBack2BackJetPtPhotonPtNsd_mPi0->GetAxis(0)->SetRange(minBinJetPt, maxBinJetPt);
       hBack2BackJetPtPhotonPtNsd_mPi0->GetAxis(1)->SetRange(minBinPhotonPt, maxBinPhotonPt);
       hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin] = (TH1F*)hBack2BackJetPtPhotonPtNsd_mPi0->Projection(2);
       hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->SetName(Form("hBack2BackJetPtPhotonPtNsdProjection_mPi0_%d_%d", iJetPtBin, iPhotonPtBin));
+      hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->Scale(1./hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin]->GetEntries());
     }
   }
 
@@ -1801,28 +1854,34 @@ void plotSubstructure(TDirectory *dGammaJetCorrelations, TDirectory *dmPi0JetCor
   {
     for (int iPhotonPtBin = 0; iPhotonPtBin < nPtBinsCoarse; iPhotonPtBin++)
     {
-      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
-      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+
+      TString thisLegend = legendHeader + Form(", %.1f < #it{p}_{T}^{jet} < %.1f, %.1f < #it{p}_{T}^{#gamma} < %.1f", ptBinsCoarse[iJetPtBin], ptBinsCoarse[iJetPtBin + 1], ptBinsCoarse[iPhotonPtBin], ptBinsCoarse[iPhotonPtBin + 1]);
+      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",-1,1,kRed);
+      PRgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtRgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",-1,1,kBlack);
       PRgProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 0.5);
       PRgProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("r_g", "counts/jet");
-      PRgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetRgProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+      PRgProjections[iJetPtBin][iPhotonPtBin].NewLatex(0.9,0.9,thisLegend);
+      PRgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetRgProjections_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
 
-      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
-      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",-1,1,kRed);
+      PZgProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtZgProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",-1,1,kBlack);
       PZgProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 0.5);
       PZgProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("z_g", "counts/jet");
-      PZgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetZgProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+      PZgProjections[iJetPtBin][iPhotonPtBin].NewLatex(0.9,0.9,thisLegend);
+      PZgProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetZgProjections_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
 
-      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",kRed);
-      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",kBlack);
+      // put general legend on the plot
+      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_mPi0[iJetPtBin][iPhotonPtBin],"#pi^{0} trigger",-1,1,kRed);
+      PNsdProjections[iJetPtBin][iPhotonPtBin].New(hBack2BackJetPtPhotonPtNsdProjection_Gamma[iJetPtBin][iPhotonPtBin],"#gamma trigger",-1,1,kBlack);
       PNsdProjections[iJetPtBin][iPhotonPtBin].SetAxisRange(0, 15);
       PNsdProjections[iJetPtBin][iPhotonPtBin].SetAxisLabel("n_{sd}", "counts/jet");
-      PNsdProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetNsdProjections_mPi0_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
+      PNsdProjections[iJetPtBin][iPhotonPtBin].NewLatex(0.9,0.9,thisLegend);
+      PNsdProjections[iJetPtBin][iPhotonPtBin].Plot(Form("%s/JetNsdProjections_%d_%d.%s", outputDir.Data(), iJetPtBin, iPhotonPtBin, suffix));
     }
   }
 }
 
-void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
+void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false, TString configPath = "RunConfig.yaml")
 {
 
   Float_t r[4][2] = {{77, 228}, {115, 165}, {0, 72}, {134, 173}};
@@ -1842,7 +1901,7 @@ void plotHistosFromTree(TString AnalysisDirectory, bool isDebugRun = false)
       fancyColors[i] = TColor::GetColor(fancyColorHex[i]);
   }
 
-  GlobalOptions optns(AnalysisDirectory, isDebugRun);
+  GlobalOptions optns(AnalysisDirectory, isDebugRun ? 0 : 1, configPath);
 
   BuildLegendHeader(optns);
 

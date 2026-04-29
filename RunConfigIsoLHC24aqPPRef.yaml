@@ -7,6 +7,8 @@ domPi0: false
 doAnalysisExclGammaJet: false
 doPlottingExclGammaJet: false
 doCombineExclGammaJet: false
+doPurity: false
+doPlottingPurity: false
 LHC24aq_pp_pass1_calo_IsoR02:
   isMC: false
   path: /alf/data/calorimetrees/JE_pp_AO2D/397330_LHC24aq_PbPb_pass1_calo_IsoR02/converted 

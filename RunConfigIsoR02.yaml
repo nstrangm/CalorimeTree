@@ -7,6 +7,8 @@ domPi0: true
 doAnalysisExclGammaJet: true
 doPlottingExclGammaJet: true
 doCombineExclGammaJet: true
+doPurity: false
+doPlottingPurity: false
 LHC23_PbPb_pass4_IsoR02_calo:
   isMC: false
   path: /alf/data/calorimetrees/JE_PbPb_AO2D/0000015_LHC23_PbPb_pass4_calo_IsoR02/sorted
