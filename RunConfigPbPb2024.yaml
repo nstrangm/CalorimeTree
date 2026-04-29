@@ -1,0 +1,64 @@
+doPlotting: true
+nParallelJobsPerVar: 15
+doIsoGamma: true  
+doJets: true
+doGGPi0: false
+domPi0: true
+doAnalysisExclGammaJet: true
+doPlottingExclGammaJet: true
+doCombineExclGammaJet: true
+doPurity: false
+doPlottingPurity: false
+LHC24ar_PbPb_pass4_IsoR02_calo:
+  isMC: false
+  path: /alf/data/calorimetrees/JE_PbPb_AO2D/397302_LHC24ar_pass1_calo_IsoR02/sorted
+  label: "Run3"
+  trainconfigs:
+    # Run3-0-10: Standard,GammaV1,Occupancy5000,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-10-30: Standard,GammaV1,Occupancy5000,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-30-50: Standard,GammaV1,Occupancy5000,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-50-90: Standard,GammaV1,Occupancy5000,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-0-90: Standard,GammaV1,Occupancy5000,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    
+    # Run3-0-10: Standard,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-10-30: Standard,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-30-50: Standard,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-50-90: Standard,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+    # Run3-0-90: Standard,NoOccupancyCut,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06,JetRadius_R04_PerpCone,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3,JetRadius_R02_RestrictedAcceptance
+
+    # Standard cuts
+    Run3-0-10: WideTime_R02,WideTime_R03,WideTime_R04,WideTime_R05,WideTime_R06
+    Run3-10-30: WideTime_R02,WideTime_R03,WideTime_R04,WideTime_R05,WideTime_R06
+    Run3-30-50: WideTime_R02,WideTime_R03,WideTime_R04,WideTime_R05,WideTime_R06
+    Run3-50-90: WideTime_R02,WideTime_R03,WideTime_R04,WideTime_R05,WideTime_R06
+    Run3-0-90: WideTime_R02,WideTime_R03,WideTime_R04,WideTime_R05,WideTime_R06
+    
+    # Occupancy studies
+    # Run3-0-10: NoOccupancyCut, NoOccupancyCut_R02, NoOccupancyCut_R03, NoOccupancyCut_R05, NoOccupancyCut_R06
+    # Run3-10-30: NoOccupancyCut, NoOccupancyCut_R02, NoOccupancyCut_R03, NoOccupancyCut_R05, NoOccupancyCut_R06
+    # Run3-30-50: NoOccupancyCut, NoOccupancyCut_R02, NoOccupancyCut_R03, NoOccupancyCut_R05, NoOccupancyCut_R06
+    # Run3-0-90: NoOccupancyCut, NoOccupancyCut_R02, NoOccupancyCut_R03, NoOccupancyCut_R05, NoOccupancyCut_R06
+
+    # AreaCut studies
+    # Run3-0-10: AreaCut_R02, AreaCut_R03, AreaCut_R04, AreaCut_R05, AreaCut_R06
+    # Run3-10-30: AreaCut_R02, AreaCut_R03, AreaCut_R04, AreaCut_R05, AreaCut_R06
+    # Run3-30-50: AreaCut_R02, AreaCut_R03, AreaCut_R04, AreaCut_R05, AreaCut_R06
+    # Run3-50-90: AreaCut_R02, AreaCut_R03, AreaCut_R04, AreaCut_R05, AreaCut_R06
+    # Run3-0-90: AreaCut_R02, AreaCut_R03, AreaCut_R04, AreaCut_R05, AreaCut_R06
+
+    # Trigger TT interval studies
+    # Run3-0-10: R02_RefTTVariation1,R02_RefTTVariation2,R02_RefTTVariation3,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3
+    # Run3-10-30: R02_RefTTVariation1,R02_RefTTVariation2,R02_RefTTVariation3,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3
+    # Run3-30-50: R02_RefTTVariation1,R02_RefTTVariation2,R02_RefTTVariation3,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3
+    # Run3-50-90: R02_RefTTVariation1,R02_RefTTVariation2,R02_RefTTVariation3,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3
+    # Run3-0-90: R02_RefTTVariation1,R02_RefTTVariation2,R02_RefTTVariation3,R02_SigTTVariation1,R02_SigTTVariation2,R02_SigTTVariation3
+    
+
+    
+  # Settings to be used for comination of excl. gamma jets 
+combineExclGammaJet:
+  dataset: LHC24ar_PbPb_pass4_IsoR02_calo
+  ppref: LHC24aq_pp_pass1_calo_IsoR02
+  jetRadiusFolders: Standard,JetRadius_R02,JetRadius_R03,JetRadius_R05,JetRadius_R06
+  centralityFolders: Run3-0-10,Run3-10-30,Run3-30-50,Run3-50-90
+  outputFolder: ExclGammaJetCombined

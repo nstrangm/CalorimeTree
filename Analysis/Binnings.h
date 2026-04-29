@@ -19,6 +19,17 @@ Double_t pTbinsToplot2[8] = {11.25, 13.75, 16.25, 18.75, 25, 35, 50, 70};
 float pTIsoABCDCuts[4] = {-50, 1.5, 4.0, 100};
 float M02ABCDCuts[4] = {0.1, 0.3, 0.4, 2.0};
 
+//
+const Int_t nPtBinsTrigger = 5;
+Double_t ptBinsTrigger[nPtBinsTrigger+1] =  {10, 20, 30, 40, 50, 80};
+
+const Int_t nPtBinsJetCoarse = 5;
+Double_t ptBinsJetCoarse[nPtBinsJetCoarse+1] = {10, 20, 30, 40, 50, 80};
+
+// Coarse binning for the Level 3 differential calculation (photon pT, jet pT slices)
+const std::vector<double> kPhotonPtBins =  {10, 20, 30, 40, 50, 80};
+const std::vector<double> kJetPtBins    =  {10, 20, 30, 40, 50, 80};
+
 #endif //_BINNINGS_H_
 
 // ML pT-binning: int npTbinEdges=17;

@@ -46,6 +46,25 @@ class FilePair:
     def __repr__(self):
         return f"Source: {self.source}, Destination: {self.destination}"
 
+def searchFilesAlien(search_pairs, task, progress, results_list, lock):
+    """
+    Search for files on alien for a given list of (path, file) pairs.
+    Thread-safe function that updates a shared results list.
+    """
+    local_results = []
+    for path, file in search_pairs:
+        try:
+            found_paths = subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
+            local_results.extend(found_paths)
+        except subprocess.CalledProcessError as e:
+            log.error(f"Failed to find {file} in {path}")
+            log.error(e)
+        progress.update(task, advance=1)
+    
+    # Thread-safe append to shared results list
+    with lock:
+        results_list.extend(local_results)
+
 def downloadAlien(downloadpairs,task,progress,verbose=False):
     failedPairs = list()
     for downloadpair in downloadpairs:
@@ -86,54 +105,8 @@ def createFileList(folder, filename):
         for file in files:
             f.write(file + '\n')
 
-# 
-def check_if_AOD_folder_present(path, file):
-    """
-    Check if the given path has a subfolder called AOD that contains the specified file.
-    
-    Args:
-        path (str): The alien path to check
-        file (str): The filename to look for in the AOD subfolder
-        
-    Returns:
-        bool: True if the AOD subfolder exists and contains the file, False otherwise
-    """
-    try:
-        # Check if AOD subfolder exists and contains the specified file
-        result = subprocess.run(f'alien_find {path}/AOD {file} -c 1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-        
-        # If we found at least one file, return True
-        if result.returncode == 0 and result.stdout.decode('utf-8').strip():
-            log.info(f"Found AOD subfolder with {file} in {path}")
-            return True
-        else:
-            log.info(f"No AOD subfolder with {file} found in {path}")
-            return False
-    except subprocess.CalledProcessError as e:
-        log.warning(f"Error checking for AOD subfolder in {path}: {e}")
-        return False
-    except subprocess.TimeoutExpired:
-        log.warning(f"Timeout while checking for AOD subfolder in {path}")
-        return False
 
-def check_if_merged_file_present(path, file):
-    """
-    Check if the given path contains a merged file for the whole job.
-    """
-    try:
-        result = subprocess.run(f'alien_find {path} {file} -c 1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-        if result.returncode == 0 and result.stdout.decode('utf-8').strip():
-            log.info(f"Found merged file for {file} in {path}")
-            return True
-        else:
-            log.info(f"No merged file for {file} found in {path}")
-            return False
-    except subprocess.CalledProcessError as e:
-        log.warning(f"Error checking for merged file in {path}: {e}")
-        return False
-    except subprocess.TimeoutExpired:
-        log.warning(f"Timeout while checking for merged file in {path}")
-        return False
+
     
 
 def downloadHyperloop(inputfilelist, outputfolder, filename):
@@ -160,28 +133,29 @@ def downloadHyperloop(inputfilelist, outputfolder, filename):
     downloadpaths = []
     totDownloads = len(inputpaths)*len(inputfiles)
     log.info(f"Searching for {totDownloads} directories for files to download...")
+    
+    # Create all (path, file) pairs to search
+    search_pairs = [(path, file) for path in inputpaths for file in inputfiles]
+    
+    # Split search pairs into chunks for multithreading
+    search_chunks = [search_pairs[i::args.nThreads] for i in range(args.nThreads)]
+    
+    # Thread-safe list and lock for collecting results
+    results_list = []
+    lock = threading.Lock()
+    
+    # Perform multithreaded search
+    threads = []
     with Progress() as progress:
-        search_task = progress.add_task("[green]Searching for files...", total=totDownloads,refresh_per_second=1)
-        for i, path in enumerate(inputpaths):
-            # run bash command and store output
-            aodfolderpresent = False
-            if check_if_AOD_folder_present(path, inputfiles[0]):
-                path = f"{path}/AOD"
-                aodfolderpresent = True
-            for file in inputfiles:
-                if not aodfolderpresent and check_if_merged_file_present(path, file):
-                    downloadpaths += [path + "/" + file]
-                    continue
-                else:
-                    if file == "":
-                        continue
-                    try:
-                        downloadpaths += subprocess.check_output(f'alien_find {path} {file}', shell=True).decode('utf-8').split('\n')
-                    except subprocess.CalledProcessError as e:
-                        log.error(f"Failed to find {file} in {path}")
-                        log.error(e)
-                    progress.update(search_task, advance=1)
-
+        for i in range(args.nThreads):
+            task_id = progress.add_task(f"[green] Searching files (thread {i}) ...", total=len(search_chunks[i]), refresh_per_second=1)
+            t = threading.Thread(target=searchFilesAlien, args=(search_chunks[i], task_id, progress, results_list, lock))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+    
+    downloadpaths = results_list
     # find the biggest number of slashes in the downloadpaths. This we do as a dirty hack to really only get those files that are in the lowest level
     # number_of_slashes = 0
     # for path in downloadpaths:

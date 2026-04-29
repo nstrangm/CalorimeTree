@@ -371,6 +371,77 @@ TDirectory *DefineGGPi0QAHistograms(TFile *f, std::string dirname, GlobalOptions
   return dir;
 }
 
+
+TDirectory *DefinePurityHistograms(TFile *f, std::string dirname, GlobalOptions optns)
+{
+  if (!optns.doIsoGamma || !optns.doJets)
+    return nullptr;
+  TDirectory *dir = f->mkdir(dirname.c_str());
+  dir->cd();
+
+  const int    nBinsIso      = 200;
+  const int    nBinsM02      = 200;
+  const int    nBinsPhotonPt = 20;
+  const int    nBinsJetPt    = 50;
+  const double isoRange[2]      = {-20, 80};
+  const double m02Range[2]      = {0, 2};
+  const double photonPtRange[2] = {0, 100};
+  const double jetPtRange[2]    = {-50, 200};
+
+  // 4D: (IsoCharged, M02, photonPt, jetPt) — base ABCD histogram
+  int    nBins4D[4] = {nBinsIso, nBinsM02, nBinsPhotonPt, nBinsJetPt};
+  double xmin4D[4]  = {isoRange[0], m02Range[0], photonPtRange[0], jetPtRange[0]};
+  double xmax4D[4]  = {isoRange[1], m02Range[1], photonPtRange[1], jetPtRange[1]};
+  THnSparseF *hPurityABCD = new THnSparseF("hPurityABCD", "hPurityABCD", 4, nBins4D, xmin4D, xmax4D);
+  hPurityABCD->GetAxis(0)->SetTitle("I_{T,charged} (GeV/c)");
+  hPurityABCD->GetAxis(1)->SetTitle("M_{02}");
+  hPurityABCD->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+  hPurityABCD->GetAxis(3)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+  hPurityABCD->Sumw2();
+  dir->Add(hPurityABCD);
+
+  if (optns.doSubstructure)
+  {
+    // 5D: (IsoCharged, M02, photonPt, jetPt, Rg)
+    int    nBins5DRgZg[5] = {nBinsIso, nBinsM02, nBinsPhotonPt, nBinsJetPt, 10};
+    double xmin5DRgZg[5]  = {isoRange[0], m02Range[0], photonPtRange[0], jetPtRange[0], 0};
+    double xmax5DRgZg[5]  = {isoRange[1], m02Range[1], photonPtRange[1], jetPtRange[1], 1};
+    THnSparseF *hPurityABCDRg = new THnSparseF("hPurityABCDRg", "hPurityABCDRg", 5, nBins5DRgZg, xmin5DRgZg, xmax5DRgZg);
+    hPurityABCDRg->GetAxis(0)->SetTitle("I_{T,charged} (GeV/c)");
+    hPurityABCDRg->GetAxis(1)->SetTitle("M_{02}");
+    hPurityABCDRg->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hPurityABCDRg->GetAxis(3)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hPurityABCDRg->GetAxis(4)->SetTitle("R_{g}");
+    hPurityABCDRg->Sumw2();
+    dir->Add(hPurityABCDRg);
+
+    // 5D: (IsoCharged, M02, photonPt, jetPt, Zg)
+    THnSparseF *hPurityABCDZg = new THnSparseF("hPurityABCDZg", "hPurityABCDZg", 5, nBins5DRgZg, xmin5DRgZg, xmax5DRgZg);
+    hPurityABCDZg->GetAxis(0)->SetTitle("I_{T,charged} (GeV/c)");
+    hPurityABCDZg->GetAxis(1)->SetTitle("M_{02}");
+    hPurityABCDZg->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hPurityABCDZg->GetAxis(3)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hPurityABCDZg->GetAxis(4)->SetTitle("z_{g}");
+    hPurityABCDZg->Sumw2();
+    dir->Add(hPurityABCDZg);
+
+    // 5D: (IsoCharged, M02, photonPt, jetPt, Nsd)
+    int    nBins5DNsd[5] = {nBinsIso, nBinsM02, nBinsPhotonPt, nBinsJetPt, 50};
+    double xmin5DNsd[5]  = {isoRange[0], m02Range[0], photonPtRange[0], jetPtRange[0], 0};
+    double xmax5DNsd[5]  = {isoRange[1], m02Range[1], photonPtRange[1], jetPtRange[1], 50};
+    THnSparseF *hPurityABCDNsd = new THnSparseF("hPurityABCDNsd", "hPurityABCDNsd", 5, nBins5DNsd, xmin5DNsd, xmax5DNsd);
+    hPurityABCDNsd->GetAxis(0)->SetTitle("I_{T,charged} (GeV/c)");
+    hPurityABCDNsd->GetAxis(1)->SetTitle("M_{02}");
+    hPurityABCDNsd->GetAxis(2)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hPurityABCDNsd->GetAxis(3)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hPurityABCDNsd->GetAxis(4)->SetTitle("n_{SD}");
+    hPurityABCDNsd->Sumw2();
+    dir->Add(hPurityABCDNsd);
+  }
+  return dir;
+}
+
+
 TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOptions optns)
 {
   if (!optns.doIsoGamma || !optns.doJets)
@@ -416,6 +487,37 @@ TDirectory *DefineGammaJetHistograms(TFile *f, std::string dirname, GlobalOption
   hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->GetAxis(2)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
   hIsoGammaJetDeltaPhi2piDeltaEtaJetPt->Sumw2();
   dir->Add(hIsoGammaJetDeltaPhi2piDeltaEtaJetPt);
+
+
+  if (optns.doSubstructure)
+  {
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, rg
+    THnSparseF *hBack2BackJetPtPhotonPtRg = new THnSparseF("hBack2BackJetPtPhotonPtRg", "hBack2BackJetPtPhotonPtRg", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 1});
+    hBack2BackJetPtPhotonPtRg->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtRg->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtRg->GetAxis(2)->SetTitle("rg");
+    hBack2BackJetPtPhotonPtRg->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtRg);
+
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, zg
+    THnSparseF *hBack2BackJetPtPhotonPtZg = new THnSparseF("hBack2BackJetPtPhotonPtZg", "hBack2BackJetPtPhotonPtZg", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 1});
+    hBack2BackJetPtPhotonPtZg->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtZg->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtZg->GetAxis(2)->SetTitle("zg");
+    hBack2BackJetPtPhotonPtZg->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtZg);
+    
+    // histogram that only stores back-to-back jets with photon
+    // stores, jet pt, photon pt, nsd
+    THnSparseF *hBack2BackJetPtPhotonPtNsd = new THnSparseF("hBack2BackJetPtPhotonPtNsd", "hBack2BackJetPtPhotonPtNsd", 3, new int[3]{nBinsJetPt, nBinsPhotonPt, 100}, new double[3]{jetPtMinMax[0], photonPtMinMax[0], 0}, new double[3]{jetPtMinMax[1], photonPtMinMax[1], 100});
+    hBack2BackJetPtPhotonPtNsd->GetAxis(0)->SetTitle("#it{p}_{T}^{jet} (GeV/c)");
+    hBack2BackJetPtPhotonPtNsd->GetAxis(1)->SetTitle("#it{p}_{T}^{#gamma} (GeV/c)");
+    hBack2BackJetPtPhotonPtNsd->GetAxis(2)->SetTitle("nsd");
+    hBack2BackJetPtPhotonPtNsd->Sumw2();
+    dir->Add(hBack2BackJetPtPhotonPtNsd);
+  }
   return dir;
 }
 
@@ -695,6 +797,66 @@ void fillHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, TDirectory *
         double coords[3] = {obj.at(i).jet->Eta(), obj.at(i).jet->Pt(), static_cast<double>(obj.at(i).jet->Nconstits)};
         ((THnSparseF *)QAdir->FindObject("hJetEtaPtConstBackToBack"))->Fill(coords, eventWeight);
       }
+    }
+  }
+  if (optns.doSubstructure)
+  {
+    for (unsigned long i = 0; i < obj.size(); i++)
+    {
+     if (obj.at(i).isBack2Back())
+     {
+        double coordsSubstructure[3] = {obj.at(i).jet->Pt(), obj.at(i).isoGamma->Pt(), obj.at(i).jet->rg};
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtRg"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->zg;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtZg"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->nsd;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtNsd"))->Fill(coordsSubstructure, eventWeight);
+        coordsSubstructure[0] = obj.at(i).jet->Pt();
+        coordsSubstructure[1] = obj.at(i).isoGamma->Pt();
+        coordsSubstructure[2] = obj.at(i).jet->rg;
+        ((THnSparseF *)dir->FindObject("hBack2BackJetPtPhotonPtRg"))->Fill(coordsSubstructure, eventWeight);
+     }
+    }
+  }
+}
+
+void fillPurityHistograms(std::vector<GammaJetPair> obj, TDirectory *dir, float eventWeight, GlobalOptions optns)
+{
+  if (!dir) return;
+  THnSparseF *hPurityABCD    = (THnSparseF *)dir->FindObject("hPurityABCD");
+  THnSparseF *hPurityABCDRg  = optns.doSubstructure ? (THnSparseF *)dir->FindObject("hPurityABCDRg")  : nullptr;
+  THnSparseF *hPurityABCDZg  = optns.doSubstructure ? (THnSparseF *)dir->FindObject("hPurityABCDZg")  : nullptr;
+  THnSparseF *hPurityABCDNsd = optns.doSubstructure ? (THnSparseF *)dir->FindObject("hPurityABCDNsd") : nullptr;
+  for (unsigned long i = 0; i < obj.size(); i++)
+  {
+    if (!obj.at(i).isBack2Back())
+      continue;
+    double coords4D[4] = {
+      obj.at(i).isoGamma->IsoChargedCorrected,
+      obj.at(i).isoGamma->M02,
+      obj.at(i).isoGamma->Pt(),
+      obj.at(i).jet->Pt()
+    };
+    hPurityABCD->Fill(coords4D, eventWeight);
+    if (optns.doSubstructure)
+    {
+      double coords5D[5] = {
+        obj.at(i).isoGamma->IsoChargedCorrected,
+        obj.at(i).isoGamma->M02,
+        obj.at(i).isoGamma->Pt(),
+        obj.at(i).jet->Pt(),
+        0.
+      };
+      coords5D[4] = obj.at(i).jet->rg;
+      hPurityABCDRg->Fill(coords5D, eventWeight);
+      coords5D[4] = obj.at(i).jet->zg;
+      hPurityABCDZg->Fill(coords5D, eventWeight);
+      coords5D[4] = obj.at(i).jet->nsd;
+      hPurityABCDNsd->Fill(coords5D, eventWeight);
     }
   }
 }

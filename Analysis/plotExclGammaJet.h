@@ -5,6 +5,7 @@
 
 // information about the run configuration
 std::pair<double, double> centralityRange;
+TString centralityStr = "";
 double jetRadius = 0.4;
 std::pair<double, double> signalTriggerPt;
 std::pair<double, double> referenceTriggerPt;

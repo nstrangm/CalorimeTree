@@ -21,6 +21,7 @@ public:
   bool isDebugRun = false; // Active if jobId = 0 to only run over one file for debugging
   // int jobId = 0; // Slurm jobId
   bool isMC = false;
+  bool isPP = false;
   TString dataSet;
   TString dataSetLabel;
   TString trainConfig;
@@ -30,16 +31,17 @@ public:
   bool doQA = true;
   bool doIsoGamma = false;
   bool doJets = false;
+  bool doSubstructure = false;
   bool domPi0 = false;
   bool doGGPi0 = false;
   bool doCombineExclGammaJet = false;
-  GlobalOptions(TString AnalysisDirectory, int jobId);
+  GlobalOptions(TString AnalysisDirectory, int jobId, TString configPath = "RunConfig.yaml");
   // GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString);
   ~GlobalOptions() {};
 };
 
 // GlobalOptions::GlobalOptions(bool userWantsMC, bool userWantsQA, TString EventCutString, TString IsoGammaCutString, TString JetCutString, TString Pi0CutString)
-GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
+GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId, TString configPath)
 {
   if (jobId < 0)
     FATAL("Negative jobId")
@@ -68,20 +70,24 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
 
   INFO(Form("dataSet = %s, trainConfig = %s, cutString = %s", dataSet.Data(), trainConfig.Data(), cutString.Data()))
 
-  YAML::Node config = YAML::LoadFile("RunConfig.yaml");
+  if (!configPath.Length())
+    configPath = "RunConfig.yaml";
+  YAML::Node config = YAML::LoadFile(configPath.Data());
 
   doIsoGamma = config["doIsoGamma"].as<bool>();
   doJets = config["doJets"].as<bool>();
+  doSubstructure = config["doSubstructure"].as<bool>();
   domPi0 = config["domPi0"].as<bool>();
   doGGPi0 = config["doGGPi0"].as<bool>();
   doCombineExclGammaJet = config["doCombineExclGammaJet"].as<bool>();
 
   if (!config[(std::string)dataSet])
-    FATAL(Form("Dataset %s not found in YAML file RunConfig.yaml", dataSet.Data()))
+    FATAL(Form("Dataset %s not found in YAML file %s", dataSet.Data(), configPath.Data()))
 
   YAML::Node dataSetConfig = config[(std::string)dataSet];
   dataSetLabel = dataSetConfig["label"].as<string>().c_str();
   isMC = dataSetConfig["isMC"].as<bool>();
+  isPP = dataSetConfig["isPP"].IsDefined() ? dataSetConfig["isPP"].as<bool>() : false;
 
   std::cout << R"(
   ________/\\\\\\\\\_________________/\\\\\\__________________________________________________________________________/\\\\\\\\\\\\\\\_____________________________________________
@@ -95,7 +101,7 @@ GlobalOptions::GlobalOptions(TString AnalysisDirectory, int jobId)
           _______\/////////___\////////\//__\/////////_____\/////_____\///__________\///__\///___\///___\///____\//////////________\///________\///____________\//////////____\//////////__
         )" << '\n';
 
-  INFO(Form("Analyzing %s%s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", domPi0 ? " + mPi0" : "", doGGPi0 ? " + GGPi0" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
+  INFO(Form("Analyzing %s%s%s%s%s%s with%s QA in %s", doIsoGamma ? "Isolated Gammas" : "", doJets ? " + Jets" : "", doSubstructure ? " + Substructure" : "", domPi0 ? " + mPi0" : "", doGGPi0 ? " + GGPi0" : "", doCombineExclGammaJet ? " + Combine" : "", doQA ? "" : "out", isMC ? "MC" : "data"))
 }
 
 // Returns the fraction of a cone at Eta = cEta and radius r that lies within the acceptance of a detector covering +-maxEta
@@ -319,7 +325,7 @@ CombineExclGammaJetOptions::CombineExclGammaJetOptions(TString AnalysisDirectory
     // which we will only use in this case to get the trigger cuts
     TString jetRadiusFolderPath =  dataset + "/" + centralityFolders[0] + "/" + jetRadiusFolder;
     INFO(Form("Jet Radius Folder: %s", jetRadiusFolderPath.Data()));
-    jetRadiusOptions.emplace_back(GlobalOptions(jetRadiusFolderPath,0));
+    jetRadiusOptions.emplace_back(GlobalOptions(jetRadiusFolderPath, 0, configYaml));
     int centCounter = 0;
     for (auto centralityFolder : centralityFolders){
       inputFiles.push_back(FilePath(dataset + "/" + centralityFolder + "/" + jetRadiusFolder + "/ExclGammaJet.root"));

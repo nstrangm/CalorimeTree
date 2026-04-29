@@ -442,6 +442,9 @@ public:
   unsigned short Nclus = 0;
   unsigned short Nconstits = 0;
   float M = 0;
+  float rg = 0;
+  float zg = 0;
+  float nsd = 0;
   bool isInJetAcceptance(float JetEtaPhiMinMax[2][2]);
 };
 
@@ -486,6 +489,37 @@ void saveJetsFromEventInVector(TreeBuffer tree, std::vector<DLJet> &Jets, Global
       jet.LeadingTrackPt = tree.Jet_LeadingTrackPt->at(iJet);
       jet.PerpConeRho = tree.Jet_PerpConeRho->at(iJet);
       jet.Radius = tree.Jet_Radius->at(iJet);
+
+      if (optns.doSubstructure)
+      {
+        // Use iJet (original tree index) to index into the flat substructure
+        // buffers — jets skipped by the radius filter still occupy a slot there.
+        const float zcut = 0.1;
+        const float beta = 0;
+        int nSplit = tree.GetJetNSplittings(iJet);
+        int offset = tree.GetJetSubstrOffset(iJet);
+        bool softDropped = false;
+        int nsd = 0;
+        for (int p = 0; p < nSplit; p++)
+        {
+          float pt1      = tree.JetSubstr_PtLeading->at(offset + p);
+          float pt2      = tree.JetSubstr_PtSubLeading->at(offset + p);
+          float thetaVal = tree.JetSubstr_Theta->at(offset + p);
+          float z = std::min(pt1, pt2) / (pt1 + pt2);
+          if (z > zcut * TMath::Power(thetaVal / jet.Radius, beta))
+          {
+            nsd++;
+            if (!softDropped)
+            {
+              softDropped = true;
+              jet.zg = z;
+              jet.rg = thetaVal;
+            }
+          }
+        }
+        jet.nsd = nsd;
+      }
+
       Jets.push_back(jet);
     }
     else
@@ -587,6 +621,10 @@ public:
   float DPhi2pi = 0;
   float DEta = 0;
   float pTImbalance = 1; // pTjet/pTgamma
+
+  bool isBack2Back(){
+    return DPhi2pi > 0.5 * TMath::Pi() && DPhi2pi < 1.5 * TMath::Pi();
+  }
 };
 
 class GammaJetPair : public CorrelationPair

@@ -123,16 +123,13 @@ def hadd_root_files(input_folder, output_file):
     
     # Create the full paths for the ROOT files
     root_files = [os.path.join(input_folder, f) for f in root_files]
-    
-    # Construct the hadd command
-    command = ['hadd', '-f', output_file ] + root_files
-    
-    # Execute the hadd command
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
+    log.info(f"Hadding files: {root_files}")
+    command = ['hadd', '-f', '-O', '-j', '6', output_file] + root_files
+
+    # Run without pipe capture so hadd can stream output freely and use all 6 cores
+    result = subprocess.run(command)
+
     if result.returncode != 0:
-        log.error("Error running hadd:")
-        log.error(result.stderr.decode('utf-8'))
         raise RuntimeError("hadd failed")
     else:
         print(f"Successfully combined ROOT files into {output_file}")
@@ -145,102 +142,68 @@ def hadd_root_files(input_folder, output_file):
             except OSError as e:
                 log.error(f"Error deleting file {root_file}: {e}")
 
-def run_macro(dataset, setting, cut, nSplit, task_id, progress, runOptions):
+def run_macro(dataset, setting, cut, nSplit, runOptions):
+    """Submit SLURM makeHistosFromTree jobs and wait for them to complete.
+
+    All post-processing (hadd, purity, plotting) is intentionally NOT done
+    here.  This function runs inside a multiprocessing.Process (fork), and
+    the rich Progress object lives only in the parent.  Calling
+    progress.update() from a forked child deadlocks because the parent's
+    rendering thread (which holds internal locks) is not copied by fork.
+    Post-processing is therefore performed in the parent after all child
+    processes have joined.
+    """
     processes = []
-    progress_values = [0] * nSplit  # Initialize progress list for all jobs
-    
-    doIsoGamma = runOptions['doIsoGamma']
-    doJets = runOptions['doJets']
-    doGGPi0 = runOptions['doGGPi0']
-    domPi0 = runOptions['domPi0']
-    doPlotting = runOptions['doPlotting']
-    doAnalysisExclGammaJet = runOptions['doAnalysisExclGammaJet']
-    doPlottingExclGammaJet = runOptions['doPlottingExclGammaJet']
-    def monitor_progress():
-        while any(process.poll() is None for _, process in processes):
-            for iJob, process in processes:
-                log_file = f"{dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log"
-                if os.path.exists(log_file):
-                    with open(log_file, 'r') as f:
-                        lines = f.readlines()
-                        for line in reversed(lines):
-                            match = re.search(r'\[(\d+(\.\d+)?)%\]', line)
-                            if match:
-                                progress_value = float(match.group(1))
-                                progress_values[iJob - 1] = progress_value
-                                break
-            min_progress = min(progress_values)
-            progress.update(task_id, completed=min_progress)
-            time.sleep(0.5)  # Adjust the sleep time as needed
+
+    doMakeHistos = runOptions['doMakeHistos']
+    configPath = runOptions.get('configPath', 'RunConfig.yaml')
+    nodelist = runOptions.get('nodelist', None)
+    nodelist_opt = f'--nodelist={nodelist} ' if nodelist else ''
 
     for iJob in range(1, nSplit + 1):
-        command = f'srun --partition=short --job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q ./Analysis/makeHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\)'
-        # if none of the analysis options are enables, just run a dummy job
-        if not (doIsoGamma or doJets or doGGPi0 or domPi0):
-            command = f'echo "Dummy job {iJob}. Nothing to see here!" >> {dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log'
+        if doMakeHistos:
+            command = f'srun --partition=short {nodelist_opt}--job-name=ct_{iJob} --output={dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log root -b -q ./Analysis/makeHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\,\{iJob}\,\\"{configPath}\\"\)'
+        else:
+            command = f'echo "Skipping makeHistosFromTree (doMakeHistos=false)" >> {dataset}/{setting}/{cut}/log_{iJob}_CutsAnalysis.log'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         processes.append((iJob, process))
-        if (doIsoGamma or doJets or doGGPi0 or domPi0):
+        if doMakeHistos:
             time.sleep(0.2)
 
-    progress_thread = threading.Thread(target=monitor_progress)
-    progress_thread.start()
-    # Wait for all subprocesses to complete
     for _, process in processes:
         process.wait()
-
-    # Ensure the progress is marked as 100% upon completion
-    progress.update(task_id, completed=100)
-    progress_thread.join()  # Wait for the progress monitoring thread to complete
-    if doIsoGamma or doJets or doGGPi0 or domPi0:
-        hadd_root_files(f'{dataset}/{setting}/{cut}', f'{dataset}/{setting}/{cut}/HistosFromTree.root')
-    if doPlotting:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_plot_CutsAnalysis.log root -b -q ./Analysis/plotHistosFromTree\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode != 0:
-            log.error(result.stderr)
-            raise RuntimeError("plotHistosFromTree.C failed")
-    if doAnalysisExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_AnalysisExclGammaJet.log root -b -q ./Analysis/analyseExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode != 0:
-            log.error(result.stderr)
-            raise RuntimeError("analyseExclGammaJet.C failed")
-    if doPlottingExclGammaJet:
-        command = f'srun --partition=vip --job-name=ctp --output={dataset}/{setting}/{cut}/log_PlottingExclGammaJet.log root -b -q ./Analysis/plotExclGammaJet\_C.so\(\\"{dataset}/{setting}/{cut}\\"\)'
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode != 0:
-            log.error(result.stderr)
-            raise RuntimeError("plotExclGammaJet.C failed")
 
 def run_multiple_macros(jobs , runOptions):
     color_cycle = cycle(COLORS)  # Create a cycle iterator for colors
     trainconfig_colors = {}
     console = Console()
-    bar_columns = {}
+
+    doMakeHistos = runOptions['doMakeHistos']
+    doPlotting = runOptions['doPlotting']
+    doAnalysisExclGammaJet = runOptions['doAnalysisExclGammaJet']
+    doPlottingExclGammaJet = runOptions['doPlottingExclGammaJet']
+    doPurity = runOptions['doPurity']
+    doPlottingPurity = runOptions['doPlottingPurity']
+    configPath = runOptions.get('configPath', 'RunConfig.yaml')
+    nodelist = runOptions.get('nodelist', None)
+    nodelist_opt = f'--nodelist={nodelist} ' if nodelist else ''
 
     # Initialize a single Progress object
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
         TimeRemainingColumn(),
         console=console
     ) as progress:
         tasks = {}
         processes = []
+        job_info = []  # parallel list: (dataset, trainconfig, cut, nSplit, task_id)
 
         for job in jobs:
             dataset, trainconfig, cut, nSplit = job[:4]  # Ensure we only unpack the expected number of elements
             nSplit = int(nSplit)  # Ensure nSplit is an integer
             description = f"{dataset}, {trainconfig}, {cut}"
-
-            # Temporarily update progress columns to include the custom BarColumn
-            progress.columns = (
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TimeRemainingColumn(),
-            )
 
             # Assign a new color if not already assigned
             if trainconfig not in trainconfig_colors:
@@ -252,12 +215,85 @@ def run_multiple_macros(jobs , runOptions):
             task_id = progress.add_task(f"{trainconfig_colors[trainconfig]}{description}[/]", total=100)
             tasks[description] = task_id
 
-            process = Process(target=run_macro, args=(dataset, trainconfig, cut, nSplit, task_id, progress, runOptions))
+            # run_macro only submits SLURM jobs and waits — no progress object
+            # passed to avoid fork-safety deadlocks with rich's rendering thread.
+            process = Process(target=run_macro, args=(dataset, trainconfig, cut, nSplit, runOptions))
             processes.append(process)
+            job_info.append((dataset, trainconfig, cut, nSplit, task_id))
             process.start()
+
+        # Monitor progress from log files in the parent process (no fork-safety issues)
+        def monitor_all_progress():
+            while any(p.is_alive() for p in processes):
+                for dataset, trainconfig, cut, nSplit, task_id in job_info:
+                    progress_values = []
+                    for iJob in range(1, nSplit + 1):
+                        log_file = f"{dataset}/{trainconfig}/{cut}/log_{iJob}_CutsAnalysis.log"
+                        if os.path.exists(log_file):
+                            try:
+                                with open(log_file, 'r') as f:
+                                    lines = f.readlines()
+                                for line in reversed(lines):
+                                    match = re.search(r'\[(\d+(\.\d+)?)%\]', line)
+                                    if match:
+                                        progress_values.append(float(match.group(1)))
+                                        break
+                            except OSError:
+                                pass
+                    if progress_values:
+                        progress.update(task_id, completed=min(progress_values))
+                time.sleep(0.5)
+
+        monitor_thread = threading.Thread(target=monitor_all_progress, daemon=True)
+        monitor_thread.start()
 
         for process in processes:
             process.join()
+
+        monitor_thread.join(timeout=2)
+
+        # Mark all as complete
+        for task_id in tasks.values():
+            progress.update(task_id, completed=100)
+
+    # ----------------------------------------------------------------
+    # Post-processing: hadd → purity → plotting
+    # Runs in the parent process after all SLURM jobs have finished.
+    # This avoids the fork-safety issue and makes exceptions visible.
+    # ----------------------------------------------------------------
+    for dataset, trainconfig, cut, nSplit, _ in job_info:
+        if doMakeHistos:
+            hadd_root_files(f'{dataset}/{trainconfig}/{cut}', f'{dataset}/{trainconfig}/{cut}/HistosFromTree.root')
+        if doPurity:
+            command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{trainconfig}/{cut}/log_Purity_CutsAnalysis.log root -b -q ./Analysis/calculatePurity\_C.so\(\\"{dataset}/{trainconfig}/{cut}\\"\,0\,\\"{configPath}\\"\)'
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                log.error(result.stderr)
+                raise RuntimeError("calculatePurity.C failed")
+        if doPlotting:
+            command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{trainconfig}/{cut}/log_plot_CutsAnalysis.log root -b -q ./Analysis/plotHistosFromTree\_C.so\(\\"{dataset}/{trainconfig}/{cut}\\"\,0\,\\"{configPath}\\"\)'
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                log.error(result.stderr)
+                raise RuntimeError("plotHistosFromTree.C failed")
+        if doAnalysisExclGammaJet:
+            command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{trainconfig}/{cut}/log_AnalysisExclGammaJet.log root -b -q ./Analysis/analyseExclGammaJet\_C.so\(\\"{dataset}/{trainconfig}/{cut}\\"\,0\,\\"{configPath}\\"\)'
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                log.error(result.stderr)
+                raise RuntimeError("analyseExclGammaJet.C failed")
+        if doPlottingExclGammaJet:
+            command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{trainconfig}/{cut}/log_PlottingExclGammaJet.log root -b -q ./Analysis/plotExclGammaJet\_C.so\(\\"{dataset}/{trainconfig}/{cut}\\"\,0\,\\"{configPath}\\"\)'
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                log.error(result.stderr)
+                raise RuntimeError("plotExclGammaJet.C failed")
+        if doPlottingPurity:
+            command = f'srun --partition=vip {nodelist_opt}--job-name=ctp --output={dataset}/{trainconfig}/{cut}/log_PlottingPurity.log root -b -q ./Analysis/plotPurity\_C.so\(\\"{dataset}/{trainconfig}/{cut}\\"\,0\,\\"{configPath}\\"\)'
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                log.error(result.stderr)
+                raise RuntimeError("plotPurity.C failed")
 
 
 def check_files_need_distributing(subdirectory, nSplit):
@@ -390,6 +426,23 @@ def compile_plotExclGammaJet():
         log.error("Error message reads:")
         log.exception(result.stderr)
         raise RuntimeError("Compilation failed")
+def compile_calculatePurity():
+    command = 'root -q -b -x ./Analysis/calculatePurity.C+\(\\"\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # if compilation fails, raise an error and print the whole compilation output
+    if result.returncode != 0:
+        log.error("Error compiling calculatePurity.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
+        raise RuntimeError("Compilation failed")
+def compile_plotPurity():
+    command = 'root -q -b -x ./Analysis/plotPurity.C+\(\\"\\"\)'
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        log.error("Error compiling plotPurity.C:")
+        log.error("Error message reads:")
+        log.exception(result.stderr)
+        raise RuntimeError("Compilation failed")
 
 def check_and_create_folder(folder_path):
     # Check if the folder exists
@@ -400,15 +453,21 @@ def check_and_create_folder(folder_path):
     else:
         log.info(f"Folder '{folder_path}' already exists.")
 
-def run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet):
-    process = subprocess.run('root -b -q -x ./Analysis/makeHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\,\\0\\)', shell=True)
+def run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet, doPurity=False, doPlottingPurity=False, configPath='RunConfig.yaml'):
+    # makeHistosFromTree(AnalysisDirectory, jobId=0, configPath)
+    process = subprocess.run(f'root -b -q -x ./Analysis/makeHistosFromTree.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,\\0\\,\\"{configPath}\\"\\)', shell=True)
     process = subprocess.run('mv DummyDataSet/DummyTrainConfig/Standard/HistosFromTree_0.root DummyDataSet/DummyTrainConfig/Standard/HistosFromTree.root', shell=True)
+    # plotHistosFromTree / analyseExclGammaJet / plotExclGammaJet: (AnalysisDirectory, isDebugRun, configPath); use 0 for isDebugRun (debug run)
     if doPlotting:
-        process = subprocess.run('root -b -q -l ./Analysis/plotHistosFromTree.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
+        process = subprocess.run(f'root -b -q -l ./Analysis/plotHistosFromTree.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,0\\,\\"{configPath}\\"\\)', shell=True, check=True)
     if doAnalysisExclGammaJet:
-        process = subprocess.run('root -b -q -l ./Analysis/analyseExclGammaJet.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
+        process = subprocess.run(f'root -b -q -l ./Analysis/analyseExclGammaJet.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,0\\,\\"{configPath}\\"\\)', shell=True, check=True)
     if doPlottingExclGammaJet:
-        process = subprocess.run('root -b -q -l ./Analysis/plotExclGammaJet.C\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\)', shell=True, check=True)
+        process = subprocess.run(f'root -b -q -l ./Analysis/plotExclGammaJet.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,0\\,\\"{configPath}\\"\\)', shell=True, check=True)
+    if doPurity:
+        process = subprocess.run(f'root -b -q -l ./Analysis/calculatePurity.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,0\\,\\"{configPath}\\"\\)', shell=True, check=True)
+    if doPlottingPurity:
+        process = subprocess.run(f'root -b -q -l ./Analysis/plotPurity.C\\(\\"DummyDataSet/DummyTrainConfig/Standard\\"\\,0\\,\\"{configPath}\\"\\)', shell=True, check=True)
 
 def run_combineExclGammaJet(analysis_directory, config_yaml):
     process = subprocess.run(f'root -x -q -b ./Analysis/combineExclGammaJet.C\(\\"{analysis_directory}\\"\,\\"{config_yaml}\\"\)', shell=True, check=True)
@@ -418,6 +477,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Script for processing datasets.')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--config', type=str, help='Path to the configuration file, defaults to RunConfig.yaml', default='RunConfig.yaml')
+    parser.add_argument('--nodelist', type=str, help='SLURM nodelist to run jobs on (e.g., node01 or node[01-03])', default=None)
     return parser.parse_args()
 
 # Main function
@@ -436,23 +496,34 @@ def main():
     doJets = analysis_config.get('doJets')
     doGGPi0 = analysis_config.get('doGGPi0')
     domPi0 = analysis_config.get('domPi0')
+    doSubstructure = analysis_config.get('doSubstructure')
     doAnalysisExclGammaJet = analysis_config.get('doAnalysisExclGammaJet')
     doPlottingExclGammaJet = analysis_config.get('doPlottingExclGammaJet')
     doCombineExclGammaJet = analysis_config.get('doCombineExclGammaJet')
+    doPurity = analysis_config.get('doPurity', False)
+    doPlottingPurity = analysis_config.get('doPlottingPurity', False)
+    # doMakeHistos controls makeHistosFromTree independently of the content flags.
+    # Defaults to true when any content flag is set, but can be set to false explicitly
+    # to skip tree-making and run only downstream steps (e.g. purity, plotting) on
+    # an already-existing HistosFromTree.root.
+    doMakeHistos = analysis_config.get('doMakeHistos',
+                       bool(doIsoGamma or doJets or doGGPi0 or domPi0 or doSubstructure))
     log.info("Starting the analysis...")
     log.info("Detected options:")
-    log.info(f"doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet} | doCombineExclGammaJet: {doCombineExclGammaJet}")
+    log.info(f"doMakeHistos: {doMakeHistos} | doIsoGamma: {doIsoGamma} | doJets: {doJets} | doGGPi0: {doGGPi0} | domPi0: {domPi0} | doSubstructure: {doSubstructure} | doPlotting: {doPlotting} | doAnalysisExclGammaJet: {doAnalysisExclGammaJet} | doPlottingExclGammaJet: {doPlottingExclGammaJet} | doCombineExclGammaJet: {doCombineExclGammaJet} | doPurity: {doPurity} | doPlottingPurity: {doPlottingPurity}")
+    if args.nodelist:
+        log.info(f"SLURM nodelist: {args.nodelist}")
 
     
     
     if doDebug:
-        run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet)
+        run_debug(doPlotting, doAnalysisExclGammaJet, doPlottingExclGammaJet, doPurity, doPlottingPurity, args.config)
         exit()
 
     cuts_config = read_yaml('Cuts.yaml')
     
     # only compile what is needed for the selected options
-    if doIsoGamma or doJets or doGGPi0 or domPi0:
+    if doMakeHistos:
         log.info("Compiling makeHistosFromTree.C...")
         compile_makeHistosFromTree()
     if doPlotting:
@@ -464,6 +535,12 @@ def main():
     if doPlottingExclGammaJet:
         log.info("Compiling plotExclGammaJet.C...")
         compile_plotExclGammaJet()
+    if doPurity:
+        log.info("Compiling calculatePurity.C...")
+        compile_calculatePurity()
+    if doPlottingPurity:
+        log.info("Compiling plotPurity.C...")
+        compile_plotPurity()
 
     nSplit = analysis_config.get('nParallelJobsPerVar', 1)
     log.info(f"Running {nSplit} parallel jobs per variation.")
@@ -541,7 +618,7 @@ def main():
                     if foundCut:
                         check_and_create_folder(f'{trainconfigdir}/{cut_name}')
                         jobs.append((dataset, trainconfig, cut_name, nSplit))
-    runOptions = { 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet }
+    runOptions = { 'doMakeHistos': doMakeHistos, 'doIsoGamma': doIsoGamma, 'doJets': doJets, 'doGGPi0': doGGPi0, 'domPi0': domPi0, 'doSubstructure': doSubstructure, 'doPlotting': doPlotting, 'doAnalysisExclGammaJet': doAnalysisExclGammaJet, 'doPlottingExclGammaJet': doPlottingExclGammaJet, 'doPurity': doPurity, 'doPlottingPurity': doPlottingPurity, 'nodelist': args.nodelist, 'configPath': args.config }
     run_multiple_macros(jobs,runOptions)
 
     # combine excl gamma jet

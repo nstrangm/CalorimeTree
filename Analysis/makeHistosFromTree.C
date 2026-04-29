@@ -6,11 +6,11 @@
 #include "ClusterECorrections.h"
 #include "JetCorrections.h"
 
-void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
+void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0, TString configPath = "RunConfig.yaml")
 {
   ENTER
 
-  GlobalOptions optns(AnalysisDirectory, jobId);
+  GlobalOptions optns(AnalysisDirectory, jobId, configPath);
   // Create output file
   TFile *fOut = new TFile(Form("%s/HistosFromTree_%d.root", AnalysisDirectory.Data(), jobId), "RECREATE");
 
@@ -32,6 +32,9 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
   TDirectory *hDirmPi0s = DefineIsoGammaHistograms(fOut, "mPi0s", optns);
   TDirectory *hQADirmPi0s = DefineIsoGammaQAHistograms(fOut, "mPi0QA", optns);
   TDirectory *hQADirgPi0s = DefineIsoGammaQAHistograms(fOut, "gammaForPi0QA", optns);
+  TDirectory *hDirRawGammaJetCorrelations = DefineGammaJetHistograms(fOut, "RawGammaJetCorrelations", optns);
+  TDirectory *hQADirRawGammaJetCorrelations = DefineGammaJetQAHistograms(fOut, "RawGammaJetCorrelationQA", optns);
+  TDirectory *hDirPurityHistograms = DefinePurityHistograms(fOut, "PurityHistograms", optns);
   TDirectory *hDirGammaJetCorrelations = DefineGammaJetHistograms(fOut, "GammaJetCorrelations", optns);
   TDirectory *hQADirGammaJetCorrelations = DefineGammaJetQAHistograms(fOut, "GammaJetCorrelationQA", optns);
   TDirectory *hDirmPi0JetCorrelations = DefineGammaJetHistograms(fOut, "mPi0JetCorrelations", optns);
@@ -85,10 +88,12 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
 
   // These vectors store all information about all selected (by cuts) physics objects within a given event
   std::vector<Cluster> IsoGammas;
+  std::vector<Cluster> RawGammas; // no isolation, no m02 cut (needed for purity determination later on)
   std::vector<GammaGen> GammaGens;
   std::vector<DLJet> DLJets;
   std::vector<PLJet> PLJets; // Particle Level Jets -> Will only be filled if this is a MC
   std::vector<GammaJetPair> GammaJetPairs;
+  std::vector<GammaJetPair> RawGammaJetPairs; // no isolation, not m02 cut
   std::vector<GGPi0JetPair> GGPi0JetPairs;
   std::vector<GammaJetPair> mPi0JetPairs;
   std::vector<Pi0> ggPi0s;
@@ -139,6 +144,8 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       fillHistograms(IsoGammas,event, hDirClusters, hQADirClusters, event.weight, optns, isoGammaCuts); // Fill hists (raw clusters)
       doIsoGammaClusterCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas,event, hDirGammas, hQADirGammas, event.weight, optns, isoGammaCuts); // Fill hists (cluster cuts, not isolated)
+      // copy IsoGammas to RawGammas before applying cuts
+      RawGammas = IsoGammas;
       doIsoGammaCuts(IsoGammas, isoGammaCuts);
       fillHistograms(IsoGammas,event, hDirIsoGammas, hQADirIsoGammas, event.weight, optns, isoGammaCuts); // Fill hists (cluster cuts and isolated)
     }
@@ -227,6 +234,19 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       fillHistograms(ggPi0s, hDirggPi0s, nullptr, event.weight, optns);
     }
 
+    // ###################### Raw Gamma - Jet Correlations ######################
+    // ###################### This is pairing with every cluster before iso cut and M02 cut
+    if (optns.doIsoGamma && optns.doJets)
+    {
+      pairXWithYIntoZ(RawGammas, DLJets, RawGammaJetPairs);
+      // TODO: CorrelationCuts
+      fillHistograms(RawGammaJetPairs, hDirRawGammaJetCorrelations, hQADirRawGammaJetCorrelations, event.weight, optns);
+      fillPurityHistograms(RawGammaJetPairs, hDirPurityHistograms, event.weight, optns);
+
+    }
+
+    
+
     // ###################### Isolated Gamma - Jet Correlations ######################
     if (optns.doIsoGamma && optns.doJets)
     {
@@ -234,6 +254,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
       // TODO: CorrelationCuts
       fillHistograms(GammaJetPairs, hDirGammaJetCorrelations, hQADirGammaJetCorrelations, event.weight, optns);
     }
+
 
     // ###################### GammaGamma Pi0 - Jet Correlations ######################
     if (optns.doGGPi0 && optns.doJets)
@@ -278,6 +299,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     // ###################### Clear vectors ######################
 
     IsoGammas.clear();
+    RawGammas.clear();
     GammaGens.clear();
     triggerIsoPhotons.clear();
     triggermPi0s.clear();
@@ -287,6 +309,7 @@ void makeHistosFromTree(TString AnalysisDirectory, int jobId = 0)
     gPi0s.clear();
     ggPi0s.clear();
     GammaJetPairs.clear();
+    RawGammaJetPairs.clear();
     GGPi0JetPairs.clear();
     mPi0JetPairs.clear();
     triggerGammaJetPairs.clear();
